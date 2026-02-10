@@ -36,42 +36,53 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
         currentValue: boolean
     ) => {
         const newValue = !currentValue;
-
-        // 🚀 INSTANT UI UPDATE
         onPublishToggle(unitId, newValue);
 
-        // 🔔 Non-blocking Swal toast (NO DELAY)
-        Swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "success",
-            title: newValue ? "Unit published" : "Unit unlisted",
-            showConfirmButton: false,
-            timer: 1500,
-            timerProgressBar: true,
-        });
-
         try {
-            await axios.put(`/api/unitListing/publish`, {
+            const res = await axios.put(`/api/unitListing/publish`, {
                 unit_id: unitId,
                 publish: newValue,
             });
-        } catch (error) {
+
+            await Swal.fire({
+                toast: true,
+                position: "top-end",
+                icon: "success",
+                title: newValue ? "Unit published" : "Unit unlisted",
+                showConfirmButton: false,
+                timer: 1500,
+                timerProgressBar: true,
+            });
+
+        } catch (error: any) {
             console.error("Publish toggle failed:", error);
 
-            // ❌ ROLLBACK UI
             onPublishToggle(unitId, currentValue);
 
-            Swal.fire({
+            const status = error.response?.status;
+            const message =
+                error.response?.data?.message ||
+                "Failed to update unit status.";
+
+            await Swal.fire({
                 toast: true,
                 position: "top-end",
                 icon: "error",
-                title: "Failed to update status",
+                title:
+                    status === 403
+                        ? "Property not verified"
+                        : "Update failed",
+                text:
+                    status === 403
+                        ? "Verify the property before publishing units."
+                        : message,
                 showConfirmButton: false,
-                timer: 2000,
+                timer: 2500,
+                timerProgressBar: true,
             });
         }
     };
+
 
     return (
         <div className="p-4 md:p-6">
