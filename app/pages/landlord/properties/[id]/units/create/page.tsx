@@ -267,67 +267,83 @@ export default function UnitListingForm() {
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-    const result = unitSchema.safeParse({
-      ...formData,
-      rentAmt: Number(formData.rentAmt),
-      photos,
-    });
+        const result = unitSchema.safeParse({
+            ...formData,
+            rentAmt: Number(formData.rentAmt),
+            photos,
+        });
 
-    if (!result.success) {
-      Swal.fire({
-        title: "Validation Error",
-        text: result.error.errors.map((err) => err.message).join(", "),
-        icon: "error",
-        confirmButtonColor: "#ef4444",
-      });
-      return;
-    }
+        // ✅ SAFE ZOD VALIDATION
+        if (!result.success) {
+            const messages =
+                result.error?.issues
+                    ?.map((issue) => issue.message)
+                    .join(", ") || "Please fill in all required fields.";
 
-    const confirmSubmit = await Swal.fire({
-      title: "Create Unit?",
-      text: "Do you want to submit this unit listing?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#10b981",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: "Yes, create it!",
-    });
+            Swal.fire({
+                title: "Validation Error",
+                text: messages,
+                icon: "error",
+                confirmButtonColor: "#ef4444",
+            });
 
-    if (!confirmSubmit.isConfirmed) return;
+            return;
+        }
 
-    setLoading(true);
-    const propURL = `/pages/landlord/properties/${propertyId}`;
+        const confirmSubmit = await Swal.fire({
+            title: "Create Unit?",
+            text: "Do you want to submit this unit listing?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#10b981",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: "Yes, create it!",
+        });
 
-    try {
-      const form = new FormData();
-      Object.entries(formData).forEach(([k, v]) => form.append(k, String(v)));
-      photos.forEach((photo) => form.append("photos", photo));
-      if (photo360) form.append("photo360", photo360);
+        if (!confirmSubmit.isConfirmed) return;
 
-      await axios.post("/api/unitListing/addUnit", form);
+        setLoading(true);
+        const propURL = `/pages/landlord/properties/${propertyId}`;
 
-      Swal.fire({
-        title: "Success!",
-        text: "Unit created successfully!",
-        icon: "success",
-        confirmButtonColor: "#10b981",
-      }).then(() => {
-        router.replace(propURL);
-      });
-    } catch (error: any) {
-      Swal.fire({
-        title: "Error!",
-        text: `Error creating unit: ${error.message}`,
-        icon: "error",
-        confirmButtonColor: "#ef4444",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+        try {
+            const form = new FormData();
+
+            Object.entries(formData).forEach(([key, value]) => {
+                form.append(key, String(value));
+            });
+
+            photos.forEach((photo) => {
+                form.append("photos", photo);
+            });
+
+            if (photo360) {
+                form.append("photo360", photo360);
+            }
+
+            await axios.post("/api/unitListing/addUnit", form);
+
+            Swal.fire({
+                title: "Success!",
+                text: "Unit created successfully!",
+                icon: "success",
+                confirmButtonColor: "#10b981",
+            }).then(() => {
+                router.replace(propURL);
+            });
+        } catch (error: any) {
+            Swal.fire({
+                title: "Error!",
+                text: error?.message || "Failed to create unit.",
+                icon: "error",
+                confirmButtonColor: "#ef4444",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
   const handleCancel = () => {
     Swal.fire({
