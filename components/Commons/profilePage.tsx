@@ -201,22 +201,32 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (user && user?.userType === "landlord" && user.user_id) {
-      axios
-        .get(`/api/landlord/subscription/${user.user_id}`)
-        .then((response) => {
-          if (response.data.plan_name) {
-            setSubscriptionPlan(response.data.plan_name);
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to fetch subscription plan:", err);
-        });
-    }
-  }, [user]);
+    useEffect(() => {
+        if (user?.userType === "landlord" && user?.landlord_id) {
+            axios
+                .get(`/api/landlord/subscription/active/${user.landlord_id}`)
+                .then((response) => {
+                    const subscription = response.data;
 
-  const handleChange = (
+                    if (subscription?.plan_name) {
+                        setSubscriptionPlan(subscription.plan_name);
+                    }
+
+                })
+                .catch((err) => {
+                    // 404 = no active subscription (FREE / expired)
+                    if (err.response?.status === 404) {
+                        setSubscriptionPlan("FREE");
+                        return;
+                    }
+
+                    console.error("Failed to fetch subscription info:", err);
+                });
+        }
+    }, [user]);
+
+
+    const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >,

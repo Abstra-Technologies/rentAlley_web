@@ -17,11 +17,6 @@ export async function GET(
 
     const { landlord_id } = await params;
 
-    console.log(
-        `[SUBSCRIPTION][${requestId}] START`,
-        { landlord_id, url: req.url }
-    );
-
     if (!landlord_id || landlord_id === "undefined") {
         console.warn(
             `[SUBSCRIPTION][${requestId}] INVALID landlord_id`,
@@ -56,18 +51,12 @@ export async function GET(
                 parsed = cached;
             }
 
-            console.log(
-                `[SUBSCRIPTION][${requestId}] CACHE HIT`,
-                `duration=${Date.now() - startTime}ms`
-            );
-
             return NextResponse.json(parsed);
         }
 
         /* --------------------------------------------------
            DATABASE QUERY
         -------------------------------------------------- */
-        console.log(`[SUBSCRIPTION][${requestId}] QUERY subscription`);
         const queryStart = Date.now();
 
         const [rows]: any = await db.query({
