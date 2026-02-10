@@ -97,56 +97,81 @@ export default function ViewPropertyDetailedPage() {
                         </div>
 
                         {/* ACTION BUTTONS */}
-                        <div className="flex flex-row items-center gap-1.5 w-full overflow-x-auto">
+                        <div
+                            className="
+    flex items-center gap-2
+    w-full
+    overflow-x-auto
+    lg:overflow-visible
+    lg:justify-end
+  "
+                        >
                             {/* Add Unit */}
                             <button
                                 onClick={handleAddUnitClick}
                                 disabled={unitActionsDisabled}
-                                className={`flex items-center gap-1.5
-      px-2.5 py-1.5
-      rounded-md
-      text-[11px] font-semibold
+                                className={`
+      flex items-center gap-2
+      px-2.5 py-1.5 text-[11px]
+      sm:px-3 sm:py-2 sm:text-xs
+      lg:px-5 lg:py-2.5 lg:text-sm
+      rounded-lg
+      font-semibold
       whitespace-nowrap
-      transition shadow-sm
+      transition-all duration-200
+      shadow-sm
       ${
                                     unitActionsDisabled
                                         ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                                        : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
-                                }`}
+                                        : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:from-blue-700 hover:to-emerald-700 hover:shadow-md active:scale-95"
+                                }
+    `}
                             >
-                                <Plus className="w-3 h-3" />
+                                <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4" />
                                 <span>Add Unit</span>
                             </button>
 
                             {/* Bulk Import */}
                             <button
                                 onClick={() => setBulkImportModal(true)}
-                                className="flex items-center gap-1.5
-      px-2.5 py-1.5
-      rounded-md
-      text-[11px] font-semibold
+                                className="
+      flex items-center gap-2
+      px-2.5 py-1.5 text-[11px]
+      sm:px-3 sm:py-2 sm:text-xs
+      lg:px-5 lg:py-2.5 lg:text-sm
+      rounded-lg
+      font-semibold
       whitespace-nowrap
       bg-gradient-to-r from-indigo-600 to-blue-600
       hover:from-indigo-700 hover:to-blue-700
-      text-white shadow-sm transition"
+      text-white
+      transition-all duration-200
+      shadow-sm hover:shadow-md active:scale-95
+    "
                             >
-                                <Sparkles className="w-3 h-3" />
+                                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4" />
                                 <span>Bulk Import</span>
                             </button>
 
                             {/* Invite Tenant */}
                             <button
                                 onClick={() => setInviteModalOpen(true)}
-                                className="flex items-center gap-1.5
-      px-2.5 py-1.5
-      rounded-md
-      text-[11px] font-semibold
+                                className="
+      flex items-center gap-2
+      px-2.5 py-1.5 text-[11px]
+      sm:px-3 sm:py-2 sm:text-xs
+      lg:px-5 lg:py-2.5 lg:text-sm
+      rounded-lg
+      font-semibold
       whitespace-nowrap
       bg-gradient-to-r from-purple-600 to-pink-600
       hover:from-purple-700 hover:to-pink-700
-      text-white shadow-sm transition"
+      text-white
+      transition-all duration-200
+      shadow-sm hover:shadow-md active:scale-95
+    "
                             >
-                                <Sparkles className="w-3 h-3" />
+                                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4" />
                                 <span>Invite Tenant</span>
                             </button>
                         </div>

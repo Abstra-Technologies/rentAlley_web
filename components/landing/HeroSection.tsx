@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ChevronRight, Receipt, Users } from "lucide-react";
 import { motion } from "motion/react";
+import PaymentPartnersMarquee from "@/components/Commons/PaymentPartnersMarquee";
 
 export default function HeroSection() {
   return (
@@ -33,7 +34,12 @@ export default function HeroSection() {
         />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+        <div className="absolute top-2 left-0 right-0 z-30">
+            <PaymentPartnersMarquee />
+        </div>
+
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Content */}
           <motion.div
