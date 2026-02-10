@@ -178,14 +178,14 @@ export default function PropertyRatesModal({
               <div className="flex items-center gap-2 mb-4">
                 <Calendar className="w-5 h-5 text-blue-600" />
                 <label className="text-sm font-semibold text-gray-800">
-                  Reading Period
+                  Consumption Period
                 </label>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                    Start Date
+                    From:
                   </label>
                   <input
                     type="date"
@@ -198,7 +198,7 @@ export default function PropertyRatesModal({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                    End Date
+                    To:
                   </label>
                   <input
                     type="date"
@@ -227,7 +227,7 @@ export default function PropertyRatesModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                      Consumption (kWh)
+                      Total Consumption (kWh)
                     </label>
                     <input
                       type="number"
@@ -284,7 +284,7 @@ export default function PropertyRatesModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
-                      Consumption (m³)
+                     Total Consumption (m³)
                     </label>
                     <input
                       type="number"
