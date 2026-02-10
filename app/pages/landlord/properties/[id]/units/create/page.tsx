@@ -186,18 +186,43 @@ export default function UnitListingForm() {
   }, [propertyId]);
 
   // Load 360 Viewer
-  useEffect(() => {
-    if (!preview360) return;
-    import("@egjs/view360").then(({ default: Viewer }) => {
-      new Viewer("#viewer360", {
-        image: preview360,
-        projection: "equirectangular",
-        autoResize: true,
-      });
-    });
-  }, [preview360]);
+    useEffect(() => {
+        if (!preview360) return;
 
-  const handleAmenityChange = (amenityName: string) => {
+        let viewer: any;
+        let destroyed = false;
+
+        const initViewer = async () => {
+            const container = document.getElementById("viewer360");
+            if (!container) return;
+
+            const { Viewer } = await import("@photo-sphere-viewer/core");
+
+            if (destroyed) return;
+
+            viewer = new Viewer({
+                container,
+                panorama: preview360, // blob URL is OK
+                loadingTxt: "Loading 360° view...",
+                navbar: ["zoom", "fullscreen", "autorotate"],
+                defaultZoomLvl: 50,
+            });
+        };
+
+        initViewer();
+
+        return () => {
+            destroyed = true;
+            if (viewer) {
+                viewer.destroy();
+                viewer = null;
+            }
+        };
+    }, [preview360]);
+
+
+
+    const handleAmenityChange = (amenityName: string) => {
     setFormData((prev) => {
       const isSelected = prev.amenities.includes(amenityName);
       return {

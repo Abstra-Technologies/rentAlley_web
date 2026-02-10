@@ -4,6 +4,7 @@
 @import "@fortawesome/fontawesome-svg-core/styles.css";
 @import "leaflet/dist/leaflet.css";
 @import "leaflet-geosearch/dist/geosearch.css";
+@import "@photo-sphere-viewer/core/index.css";
 
 @tailwind base;
 @tailwind components;

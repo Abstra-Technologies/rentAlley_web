@@ -36,6 +36,7 @@
     "@mui/material": "^7.3.7",
     "@mui/x-charts": "^8.11.3",
     "@mui/x-date-pickers": "^8.27.0",
+    "@photo-sphere-viewer/core": "^5.14.1",
     "@react-email/components": "^1.0.2",
     "@react-email/render": "^2.0.0",
     "@tanstack/react-table": "^8.21.3",
