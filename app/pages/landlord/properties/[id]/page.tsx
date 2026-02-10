@@ -97,58 +97,60 @@ export default function ViewPropertyDetailedPage() {
                         </div>
 
                         {/* ACTION BUTTONS */}
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-row items-center gap-1.5 w-full overflow-x-auto">
                             {/* Add Unit */}
                             <button
                                 onClick={handleAddUnitClick}
                                 disabled={unitActionsDisabled}
-                                className={`inline-flex items-center gap-2
-    px-3 py-2 md:px-4 md:py-2.5
-    rounded-md md:rounded-lg
-    text-xs md:text-sm font-semibold
-    transition shadow-sm
-    ${
+                                className={`flex items-center gap-1.5
+      px-2.5 py-1.5
+      rounded-md
+      text-[11px] font-semibold
+      whitespace-nowrap
+      transition shadow-sm
+      ${
                                     unitActionsDisabled
                                         ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                                         : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
-                                }
-  `}
+                                }`}
                             >
-                                <Plus className="w-4 h-4" />
-                                <span className="hidden sm:inline">Add Unit</span>
+                                <Plus className="w-3 h-3" />
+                                <span>Add Unit</span>
                             </button>
-
 
                             {/* Bulk Import */}
                             <button
                                 onClick={() => setBulkImportModal(true)}
-                                className="inline-flex items-center gap-2
-      px-3 py-2 md:px-4 md:py-2.5
-      rounded-md md:rounded-lg
-      text-xs md:text-sm font-semibold
+                                className="flex items-center gap-1.5
+      px-2.5 py-1.5
+      rounded-md
+      text-[11px] font-semibold
+      whitespace-nowrap
       bg-gradient-to-r from-indigo-600 to-blue-600
       hover:from-indigo-700 hover:to-blue-700
       text-white shadow-sm transition"
                             >
-                                <Sparkles className="w-4 h-4" />
-                                <span className="hidden sm:inline">Bulk Import</span>
+                                <Sparkles className="w-3 h-3" />
+                                <span>Bulk Import</span>
                             </button>
 
                             {/* Invite Tenant */}
                             <button
                                 onClick={() => setInviteModalOpen(true)}
-                                className="inline-flex items-center gap-2
-      px-3 py-2 md:px-4 md:py-2.5
-      rounded-md md:rounded-lg
-      text-xs md:text-sm font-semibold
+                                className="flex items-center gap-1.5
+      px-2.5 py-1.5
+      rounded-md
+      text-[11px] font-semibold
+      whitespace-nowrap
       bg-gradient-to-r from-purple-600 to-pink-600
       hover:from-purple-700 hover:to-pink-700
       text-white shadow-sm transition"
                             >
-                                <Sparkles className="w-4 h-4" />
-                                <span className="hidden sm:inline">Invite Tenant</span>
+                                <Sparkles className="w-3 h-3" />
+                                <span>Invite Tenant</span>
                             </button>
                         </div>
+
                     </div>
 
                     {/* SEARCH */}
