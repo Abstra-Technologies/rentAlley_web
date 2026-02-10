@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
                         {
                             auth: {
                                 username: process.env.XENDIT_DISBURSE_SECRET_KEY!,
-                                password: process.env.XENDIT_PASSWORD,
+                                password: "",
                             },
                         }
                     );

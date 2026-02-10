@@ -48,3 +48,22 @@ export async function uploadToS3(
 
     return `https://${bucket}.s3.${process.env.NEXT_AWS_REGION}.amazonaws.com/${key}`;
 }
+
+export const deleteS3Object = async (url: string) => {
+    if (!url) return;
+
+    try {
+        const parsed = new URL(url);
+        const Key = decodeURIComponent(parsed.pathname.substring(1));
+
+        await s3.send(
+            new DeleteObjectCommand({
+                Bucket: process.env.NEXT_S3_BUCKET_NAME!,
+                Key,
+            })
+        );
+    } catch (err) {
+        console.error("❌ Failed to delete S3 object:", url, err);
+        throw err;
+    }
+};
