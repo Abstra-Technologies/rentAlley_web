@@ -22,7 +22,7 @@ export async function GET(
       SELECT
         l.setup_completed,
         p.payout_id,
-        p.payout_method,
+      
         p.account_name,
         p.account_number,
         p.bank_name,

@@ -8,9 +8,10 @@ import {
 } from "react-icons/fi";
 import axios from "axios";
 
-type Bank = {
+type Channel = {
     name: string;
     code: string;
+    type: "BANK" | "EWALLET";
 };
 
 type Props = {
@@ -38,72 +39,65 @@ export default function StepPayoutInfo({
                                            setBankName,
                                            onSaved,
                                        }: Props) {
-    const [banks, setBanks] = useState<Bank[]>([]);
-    const [showBanks, setShowBanks] = useState(false);
-    const [loadingExisting, setLoadingExisting] = useState(true);
+    const [channels, setChannels] = useState<Channel[]>([]);
+    const [methodSearch, setMethodSearch] = useState("");
+    const [showMethods, setShowMethods] = useState(false);
+    const [showPartnersModal, setShowPartnersModal] = useState(false);
+
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    /* ================= LOAD EXISTING PAYOUT INFO ================= */
+    /* ================= LOAD PAYOUT CHANNELS ================= */
     useEffect(() => {
-        if (!landlordId) return;
-
-        async function loadExistingPayout() {
+        async function loadChannels() {
             try {
-                const res = await axios.get(
-                    `/api/landlord/payout/${landlordId}`
-                );
-
-                if (res.data) {
-                    const data = res.data;
-                    setPayoutMethod(data.payout_method || "");
-                    setAccountName(data.account_name || "");
-                    setAccountNumber(data.account_number || "");
-                    setBankName(data.bank_name || "");
-                }
-            } catch (err: any) {
-                if (err.response?.status !== 404) {
-                    console.error("Failed to load payout info:", err);
-                }
-            } finally {
-                setLoadingExisting(false);
+                const res = await axios.get("/api/payment/payoutChannels");
+                setChannels(res.data || []);
+            } catch (err) {
+                console.error("Failed to load payout channels:", err);
             }
         }
+        loadChannels();
+    }, []);
 
-        loadExistingPayout();
-    }, [landlordId]);
-
-    const filteredBanks = banks.filter((b) =>
-        b.name.toLowerCase().includes(bankName.toLowerCase())
+    /* ================= FILTER (SEARCH ONLY) ================= */
+    const filteredChannels = channels.filter(c =>
+        c.name.toLowerCase().includes(methodSearch.toLowerCase())
     );
 
-    /* ================= BASIC VALIDATION ================= */
+    /* ================= VALIDATION ================= */
     const isValid =
         payoutMethod &&
         accountName &&
-        accountNumber &&
-        (payoutMethod !== "bank_transfer" || bankName);
+        accountNumber;
 
-    /* ================= SAVE HANDLER ================= */
+    /* ================= SAVE ================= */
     async function handleSave() {
         if (!isValid || saving) return;
 
         setSaving(true);
         setError(null);
 
+        const selectedChannel = channels.find(c => c.code === payoutMethod);
+
         try {
             await axios.post("/api/landlord/payout/saveAccount", {
                 landlord_id: landlordId,
-                payout_method: payoutMethod,
+
+                // NEW: canonical identifier
+                channel_code: payoutMethod,
+
+                // still useful for UI / reporting
+                bank_name: selectedChannel?.name || null,
+
                 account_name: accountName,
                 account_number: accountNumber,
-                bank_name: payoutMethod === "bank_transfer" ? bankName : null,
             });
 
             onSaved?.();
         } catch (err) {
             console.error(err);
-            setError("Failed to save payout information. Please try again.");
+            setError("Failed to save payout information.");
         } finally {
             setSaving(false);
         }
@@ -117,31 +111,58 @@ export default function StepPayoutInfo({
                 <h2 className="text-2xl font-bold text-gray-900">
                     Payout Information
                 </h2>
-               Landlord ID:  {landlordId}
             </div>
 
-            {loadingExisting && (
-                <p className="text-sm text-gray-500">
-                    Loading payout details…
-                </p>
-            )}
-
             <div className="grid gap-6 md:grid-cols-2">
-                {/* Payout Method */}
-                <div className="md:col-span-2 space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                        Select Payout Method
-                    </label>
-                    <select
-                        value={payoutMethod}
-                        onChange={(e) => setPayoutMethod(e.target.value)}
+                {/* Searchable Payout Channel */}
+                <div className="md:col-span-2 relative">
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-gray-700">
+                            Search Payout Method
+                        </label>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowPartnersModal(true)}
+                            className="text-xs text-blue-600 hover:text-blue-700 underline"
+                        >
+                            View available partners
+                        </button>
+                    </div>
+
+                    <input
+                        value={methodSearch}
+                        onChange={(e) => {
+                            setMethodSearch(e.target.value);
+                            setShowMethods(true);
+                        }}
+                        onFocus={() => setShowMethods(true)}
+                        onBlur={() => setTimeout(() => setShowMethods(false), 150)}
+                        placeholder="Search payout partner"
                         className="w-full px-4 py-3 border rounded-xl bg-gray-50"
-                    >
-                        <option value="">Choose payout method...</option>
-                        <option value="gcash">GCash</option>
-                        <option value="maya">Maya</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                    </select>
+                    />
+
+                    {showMethods && methodSearch && (
+                        <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-xl border bg-white shadow">
+                            {filteredChannels.map(channel => (
+                                <li
+                                    key={channel.code}
+                                    onClick={() => {
+                                        setPayoutMethod(channel.code);
+                                        setMethodSearch(channel.name);
+                                        setBankName(channel.name);
+                                        setShowMethods(false);
+                                    }}
+                                    className="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50"
+                                >
+                                    {channel.name}
+                                    <span className="ml-2 text-xs text-gray-400">
+                    ({channel.type})
+                  </span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
 
                 {/* Account Name */}
@@ -167,71 +188,27 @@ export default function StepPayoutInfo({
                         className="w-full px-4 py-3 border rounded-xl bg-gray-50"
                     />
                 </div>
-
-                {/* Bank Name */}
-                {payoutMethod === "bank_transfer" && (
-                    <div className="md:col-span-2 relative">
-                        <label className="text-sm font-medium text-gray-700">
-                            Bank Name
-                        </label>
-
-                        <input
-                            value={bankName}
-                            onChange={(e) => {
-                                setBankName(e.target.value);
-                                setShowBanks(true);
-                            }}
-                            onFocus={() => setShowBanks(true)}
-                            onBlur={() => setTimeout(() => setShowBanks(false), 150)}
-                            placeholder="Search or type bank name"
-                            className="w-full px-4 py-3 border rounded-xl bg-gray-50"
-                        />
-
-                        {showBanks && bankName && (
-                            <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-xl border bg-white shadow">
-                                {filteredBanks.slice(0, 8).map((bank) => (
-                                    <li
-                                        key={bank.code}
-                                        onClick={() => {
-                                            setBankName(bank.name);
-                                            setShowBanks(false);
-                                        }}
-                                        className="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50"
-                                    >
-                                        {bank.name}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </div>
-                )}
             </div>
 
-            {/* Info + Warning */}
+            {/* Info */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
                 <div className="flex items-start">
                     <FiInfo className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
                     <p className="text-blue-700 text-sm">
-                        Your payout details are required so Upkyp can securely send your
-                        rental income.
+                        Your payout details are required so Upkyp can securely send your rental income.
                     </p>
                 </div>
 
                 <div className="flex items-start">
                     <FiAlertTriangle className="w-5 h-5 text-orange-500 mr-3 mt-0.5" />
                     <p className="text-orange-700 text-sm">
-                        Please double-check that all information is correct. Incorrect
-                        payout details may result in delayed or failed payments.
+                        Please double-check all details to avoid payout delays.
                     </p>
                 </div>
             </div>
 
-            {/* Error */}
-            {error && (
-                <p className="text-sm text-red-600">{error}</p>
-            )}
+            {error && <p className="text-sm text-red-600">{error}</p>}
 
-            {/* Save Button */}
             <div className="flex justify-end">
                 <button
                     onClick={handleSave}
@@ -245,6 +222,44 @@ export default function StepPayoutInfo({
                     {saving ? "Saving..." : "Save Payout Info"}
                 </button>
             </div>
+
+            {/* Partners Modal */}
+            {showPartnersModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                    <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden">
+                        <div className="flex items-center justify-between px-6 py-4 border-b">
+                            <h3 className="text-lg font-bold text-gray-800">
+                                Available Payout Partners
+                            </h3>
+                            <button
+                                onClick={() => setShowPartnersModal(false)}
+                                className="text-gray-400 hover:text-gray-600 text-xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
+                            <ul className="space-y-1">
+                                {channels.map(c => (
+                                    <li key={c.code} className="text-sm text-gray-600">
+                                        • {c.name}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="px-6 py-4 border-t bg-gray-50 flex justify-end">
+                            <button
+                                onClick={() => setShowPartnersModal(false)}
+                                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                            >
+                                Got it
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }
