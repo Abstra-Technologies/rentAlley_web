@@ -1,8 +1,15 @@
 "use client";
 
 import React from "react";
-import { Home, Plus, Sparkles, Search } from "lucide-react";
+import {
+    Home,
+    Plus,
+    Sparkles,
+    Search,
+    QrCode,
+} from "lucide-react";
 import { Pagination } from "@mui/material";
+import Swal from "sweetalert2";
 
 import useSubscription from "@/hooks/landlord/useSubscription";
 import UnitLimitsCard from "@/components/landlord/subscriptions-limitations/UnitLimitsCard";
@@ -15,17 +22,16 @@ import InviteTenantModal from "@/components/landlord/properties/InviteTenantModa
 import BulkImportUnitModal from "@/components/landlord/properties/BulkImportUnitModal";
 
 import { usePropertyUnitsPage } from "@/hooks/landlord/usePropertyUnitsPage";
+import axios from "axios";
 import { mutate } from "swr";
 
 export default function ViewPropertyDetailedPage() {
-
     const { user } = useAuthStore();
     const landlordId = user?.landlord_id;
 
     const {
         subscription,
         loadingSubscription,
-        errorSubscription,
     } = useSubscription(landlordId);
 
     const {
@@ -64,6 +70,58 @@ export default function ViewPropertyDetailedPage() {
     const unitActionsDisabled =
         loadingSubscription || !subscription || reachedUnitLimit;
 
+    // 🆕 Generate QR Codes (FUNCTION)
+    const handleGenerateQRCodes = async () => {
+        if (!units.length) {
+            Swal.fire(
+                "No Units",
+                "There are no units available to generate QR codes.",
+                "info"
+            );
+            return;
+        }
+
+        try {
+            Swal.fire({
+                title: "Generating QR Codes",
+                text: "Please wait while we prepare your QR codes…",
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading(),
+            });
+
+            // 👉 Backend should return a PDF or ZIP
+            const response = await axios.post(
+                "/api/landlord/unit/qr-code/generate",
+                { property_id },
+                { responseType: "blob" }
+            );
+
+            const blob = new Blob([response.data]);
+            const url = window.URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `unit-qr-codes-${property_id}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            Swal.close();
+            Swal.fire(
+                "Done",
+                "QR codes generated successfully.",
+                "success"
+            );
+        } catch (err) {
+            Swal.close();
+            Swal.fire(
+                "Error",
+                "Failed to generate QR codes. Please try again.",
+                "error"
+            );
+        }
+    };
+
     if (error) {
         return (
             <ErrorBoundary
@@ -75,7 +133,6 @@ export default function ViewPropertyDetailedPage() {
 
     return (
         <div className="min-h-screen w-full max-w-none bg-gray-50 pb-24 md:pb-6 overflow-x-hidden">
-
             <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
 
                 {/* ================= HEADER ================= */}
@@ -97,85 +154,48 @@ export default function ViewPropertyDetailedPage() {
                         </div>
 
                         {/* ACTION BUTTONS */}
-                        <div
-                            className="
-    flex items-center gap-2
-    w-full
-    overflow-x-auto
-    lg:overflow-visible
-    lg:justify-end
-  "
-                        >
+                        <div className="flex items-center gap-2 w-full overflow-x-auto lg:justify-end">
+
                             {/* Add Unit */}
                             <button
                                 onClick={handleAddUnitClick}
                                 disabled={unitActionsDisabled}
-                                className={`
-      flex items-center gap-2
-      px-2.5 py-1.5 text-[11px]
-      sm:px-3 sm:py-2 sm:text-xs
-      lg:px-5 lg:py-2.5 lg:text-sm
-      rounded-lg
-      font-semibold
-      whitespace-nowrap
-      transition-all duration-200
-      shadow-sm
-      ${
-                                    unitActionsDisabled
-                                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                                        : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:from-blue-700 hover:to-emerald-700 hover:shadow-md active:scale-95"
-                                }
-    `}
+                                className={`px-2.5 py-1.5 sm:px-3 sm:py-2 lg:px-5 lg:py-2.5 rounded-lg font-semibold flex items-center gap-2
+                                ${unitActionsDisabled
+                                    ? "bg-gray-300 text-gray-600"
+                                    : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-md active:scale-95"}`}
                             >
-                                <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4" />
-                                <span>Add Unit</span>
+                                <Plus className="w-4 h-4" />
+                                Add Unit
                             </button>
 
                             {/* Bulk Import */}
                             <button
                                 onClick={() => setBulkImportModal(true)}
-                                className="
-      flex items-center gap-2
-      px-2.5 py-1.5 text-[11px]
-      sm:px-3 sm:py-2 sm:text-xs
-      lg:px-5 lg:py-2.5 lg:text-sm
-      rounded-lg
-      font-semibold
-      whitespace-nowrap
-      bg-gradient-to-r from-indigo-600 to-blue-600
-      hover:from-indigo-700 hover:to-blue-700
-      text-white
-      transition-all duration-200
-      shadow-sm hover:shadow-md active:scale-95
-    "
+                                className="px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:shadow-md active:scale-95 flex items-center gap-2"
                             >
-                                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4" />
-                                <span>Bulk Import</span>
+                                <Sparkles className="w-4 h-4" />
+                                Bulk Import
                             </button>
 
                             {/* Invite Tenant */}
                             <button
                                 onClick={() => setInviteModalOpen(true)}
-                                className="
-      flex items-center gap-2
-      px-2.5 py-1.5 text-[11px]
-      sm:px-3 sm:py-2 sm:text-xs
-      lg:px-5 lg:py-2.5 lg:text-sm
-      rounded-lg
-      font-semibold
-      whitespace-nowrap
-      bg-gradient-to-r from-purple-600 to-pink-600
-      hover:from-purple-700 hover:to-pink-700
-      text-white
-      transition-all duration-200
-      shadow-sm hover:shadow-md active:scale-95
-    "
+                                className="px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-md active:scale-95 flex items-center gap-2"
                             >
-                                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4" />
-                                <span>Invite Tenant</span>
+                                <Sparkles className="w-4 h-4" />
+                                Invite Tenant
+                            </button>
+
+                            {/* 🆕 Generate QR Codes */}
+                            <button
+                                onClick={handleGenerateQRCodes}
+                                className="px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-gray-800 to-black text-white hover:shadow-md active:scale-95 flex items-center gap-2"
+                            >
+                                <QrCode className="w-4 h-4" />
+                                Generate QR Codes
                             </button>
                         </div>
-
                     </div>
 
                     {/* SEARCH */}
@@ -183,20 +203,18 @@ export default function ViewPropertyDetailedPage() {
                         <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search units (e.g. 501, studio, furnished)"
+                            placeholder="Search units"
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
                                 setPage(1);
                             }}
-                            className="w-full pl-10 pr-4 py-2 text-sm border rounded-lg
-                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full pl-10 pr-4 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
                 </div>
 
                 {/* ================= UNIT LIMITS ================= */}
-
                 {!loadingSubscription && (
                     <div className="mb-4 max-w-xl">
                         <UnitLimitsCard
@@ -207,8 +225,7 @@ export default function ViewPropertyDetailedPage() {
                 )}
 
                 {/* ================= UNITS LIST ================= */}
-                <div className="bg-white w-full rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-
+                <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
                     <UnitsTab
                         units={currentUnits}
                         isLoading={isLoading}
@@ -217,21 +234,19 @@ export default function ViewPropertyDetailedPage() {
                         handleDeleteUnit={handleDeleteUnit}
                         handleAddUnitClick={handleAddUnitClick}
                         onPublishToggle={(unitId, publish) => {
-                            // update local SWR cache
                             mutate(
                                 `/api/unitListing/getUnitListings?property_id=${property_id}`,
                                 (prev: any[]) =>
                                     prev.map((u) =>
                                         u.unit_id === unitId ? { ...u, publish } : u
                                     ),
-                                false // no re-fetch
+                                false
                             );
                         }}
                     />
 
-
                     {filteredUnits.length > itemsPerPage && (
-                        <div className="flex justify-center p-4 border-t border-gray-100">
+                        <div className="flex justify-center p-4 border-t">
                             <Pagination
                                 count={Math.ceil(filteredUnits.length / itemsPerPage)}
                                 page={page}

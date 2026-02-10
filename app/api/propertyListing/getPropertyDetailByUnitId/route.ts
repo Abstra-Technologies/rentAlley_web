@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { NextResponse, NextRequest } from "next/server";
-import { decryptData } from "@/crypto/encrypt"; // ✅ make sure you have this util
+import { decryptData } from "@/crypto/encrypt";
+
+// /pages/landlord/properties/UPKYP10IPH4/units/details pages api
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -19,6 +21,9 @@ export async function GET(req: NextRequest) {
                     u.unit_name,
                     u.rent_amount,
                     u.status,
+                    u.qr_code_url,        -- 🆕
+                    u.qr_enabled,         -- 🆕
+                    u.qr_claim_enabled,   -- 🆕
                     p.property_id,
                     p.property_name,
                     p.street,
@@ -70,10 +75,9 @@ export async function GET(req: NextRequest) {
             // remove any null entries
             unitPhotos = unitPhotos.filter(Boolean);
         }
-        // ✅ 3. Return complete response
         return NextResponse.json({
             propertyDetails,
-            unitPhotos, // 🔥 now included and decrypted
+            unitPhotos,
         });
     } catch (error) {
         console.error("❌ Database Error:", error);

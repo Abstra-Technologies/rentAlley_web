@@ -23,6 +23,9 @@ export async function GET(req: NextRequest) {
           u.furnish,
           u.amenities,
           u.publish,
+          u.qr_code_url,          -- 🆕
+          u.qr_enabled,           -- 🆕
+          u.qr_claim_enabled,
           u.status AS unit_status, 
           DATE_FORMAT(u.updated_at, '%Y-%m-%d %H:%i:%s') AS last_updated,
           la.agreement_id AS lease_agreement_id,
@@ -103,6 +106,10 @@ export async function GET(req: NextRequest) {
                 end_date: row.end_date || null,
                 billing_due_day: row.billing_due_day || null,
                 tenant_name,
+
+                qr_code_url: row.qr_code_url || null,
+                qr_enabled: !!row.qr_enabled,
+                qr_claim_enabled: !!row.qr_claim_enabled,
             });
         }
 

@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import axios from "axios";
+import { QrCode } from "lucide-react";
 
 import {
     MaterialReactTable,
@@ -181,6 +182,18 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
                             <Trash2 className="inline w-4 h-4 mr-1" />
                             Delete
                         </button>
+                        {row.original.qr_code_url && (
+                            <button
+                                onClick={() =>
+                                    window.open(row.original.qr_code_url, "_blank")
+                                }
+                                className="px-3 py-1.5 rounded-lg text-sm
+                           bg-gray-900 text-white hover:bg-black"
+                            >
+                                <QrCode className="inline w-4 h-4 mr-1" />
+                                View QR
+                            </button>
+                        )}
                     </div>
                 ),
             },
