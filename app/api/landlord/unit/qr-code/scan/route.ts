@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
     // ✅ Always redirect to unit landing page
     return NextResponse.redirect(
         new URL(
-            `/pages/landlord/unit/${unit_id}`,
+            `/pages/unit/${unit_id}`,
             process.env.APP_URL
         )
     );

@@ -20,6 +20,8 @@ import Pagination from "@/components/Commons/Pagination";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 import EmptyState from "@/components/Commons/EmptyStateUnitSearch";
 import RenewalRequestForm from "@/components/tenant/currentRent/RenewalRequestForm";
+import { QrCodeIcon } from "@heroicons/react/24/outline";
+import ScanUnitModal from "@/components/landlord/properties/units/ScanUnitModal";
 
 // Types & utils
 import { Unit } from "@/types/units";
@@ -97,6 +99,7 @@ export default function MyUnit() {
     // @ts-ignore
     const { user, admin, fetchSession } = useAuthStore();
     const router = useRouter();
+    const [isScanOpen, setIsScanOpen] = useState(false);
 
     const [showRenewalForm, setShowRenewalForm] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -321,6 +324,17 @@ export default function MyUnit() {
                     </button>
 
                     <button
+                        onClick={() => setIsScanOpen(true)}
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2
+                   bg-gradient-to-r from-indigo-600 to-blue-600
+                   text-white rounded-lg font-semibold text-sm
+                   hover:from-indigo-700 hover:to-blue-700"
+                    >
+                        <QrCodeIcon className="w-4 h-4" />
+                        <span className="hidden sm:inline">Scan QR</span>
+                    </button>
+
+                    <button
                         onClick={() => router.push("/pages/tenant/viewInvites")}
                         className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg font-semibold text-sm"
                     >
@@ -388,6 +402,14 @@ export default function MyUnit() {
                     )}
                 </>
             )}
+
+            <ScanUnitModal
+                isOpen={isScanOpen}
+                onClose={() => setIsScanOpen(false)}
+            />
+
+
         </div>
+
     );
 }
