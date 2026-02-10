@@ -117,18 +117,26 @@ export default function LoginAdmin() {
 
     /* ================= UI ================= */
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
-            <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
-                <h1 className="mb-2 text-center text-3xl font-bold text-blue-600">
-                    Upkyp Admin
-                </h1>
-                <p className="mb-6 text-center text-gray-600">
-                    Secure Administrator Login
-                </p>
+        <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 px-4">
+            {/* Background glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.15),transparent_60%)]" />
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl backdrop-blur">
+                {/* Header */}
+                <div className="mb-8 text-center">
+                    <h1 className="text-3xl font-extrabold tracking-tight text-blue-600">
+                        UPKYP Admin
+                    </h1>
+                    <p className="mt-1 text-sm text-gray-500">
+                        Authorized personnel only
+                    </p>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Login */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700">
+                        <label className="mb-1 block text-sm font-medium text-gray-700">
                             Email or Username
                         </label>
                         <input
@@ -137,12 +145,18 @@ export default function LoginAdmin() {
                             disabled={isLocked}
                             value={form.login}
                             onChange={handleChange}
-                            className="mt-1 w-full rounded-lg border p-3 focus:ring-2 focus:ring-blue-500"
+                            placeholder="admin@upkyp.com"
+                            className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${
+                                isLocked
+                                    ? "bg-gray-100 text-gray-400"
+                                    : "focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40"
+                            }`}
                         />
                     </div>
 
+                    {/* Password */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700">
+                        <label className="mb-1 block text-sm font-medium text-gray-700">
                             Password
                         </label>
                         <input
@@ -152,29 +166,44 @@ export default function LoginAdmin() {
                             disabled={isLocked}
                             value={form.password}
                             onChange={handleChange}
-                            className="mt-1 w-full rounded-lg border p-3 focus:ring-2 focus:ring-blue-500"
+                            placeholder="••••••••"
+                            className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${
+                                isLocked
+                                    ? "bg-gray-100 text-gray-400"
+                                    : "focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40"
+                            }`}
                         />
                     </div>
 
+                    {/* Button */}
                     <button
                         type="submit"
                         disabled={isLocked}
-                        className={`w-full rounded-lg py-3 font-bold text-white ${
+                        className={`mt-2 w-full rounded-lg py-3 text-sm font-semibold tracking-wide text-white transition-all ${
                             isLocked
-                                ? "bg-gray-400"
-                                : "bg-blue-600 hover:bg-blue-700"
+                                ? "cursor-not-allowed bg-gray-400"
+                                : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 active:scale-[0.98]"
                         }`}
                     >
-                        {isLocked ? `Locked (${remainingSeconds}s)` : "Login"}
+                        {isLocked ? `Locked (${remainingSeconds}s)` : "Sign in"}
                     </button>
                 </form>
 
-                {attempts > 0 && attempts < 3 && (
-                    <p className="mt-4 text-center text-sm text-orange-600">
-                        {3 - attempts} attempt(s) remaining
+                {/* Attempts */}
+                {attempts > 0 && attempts < 3 && !isLocked && (
+                    <p className="mt-4 text-center text-xs text-amber-600">
+                        {3 - attempts} login attempt{3 - attempts > 1 ? "s" : ""} remaining
                     </p>
+                )}
+
+                {/* Lock warning */}
+                {isLocked && (
+                    <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-center text-xs font-medium text-red-700">
+                        Too many failed attempts. Please wait before trying again.
+                    </div>
                 )}
             </div>
         </div>
     );
+
 }
