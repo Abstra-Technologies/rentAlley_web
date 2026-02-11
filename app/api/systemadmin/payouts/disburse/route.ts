@@ -5,8 +5,8 @@ import { db } from "@/lib/db";
 /* ---------------------------------
    Helpers
 ---------------------------------- */
-function normalizeAccountNumber(value: string) {
-    return value?.trim();
+function normalizeAccountNumber(value: string | null) {
+    return value?.trim() || "";
 }
 
 export async function POST(req: NextRequest) {
@@ -24,8 +24,9 @@ export async function POST(req: NextRequest) {
         }
 
         /* =====================================
-           1. Fetch eligible payments
-              + ACTIVE payout account only
+           1. Fetch VALID payments
+              + ACTIVE payout account
+              + AVAILABLE payout channel
         ====================================== */
         const [rows]: any = await db.query(
             `
@@ -39,7 +40,6 @@ export async function POST(req: NextRequest) {
                 pa.account_name,
                 pa.account_number,
                 pa.bank_name,
-                pa.is_active,
 
                 pc.channel_type
 
@@ -49,8 +49,7 @@ export async function POST(req: NextRequest) {
             INNER JOIN Property pr ON pr.property_id = u.property_id
             INNER JOIN Landlord l ON l.landlord_id = pr.landlord_id
 
-            /* ✅ ACTIVE payout account ONLY */
-            INNER JOIN LandlordPayoutAccount pa 
+            INNER JOIN LandlordPayoutAccount pa
                 ON pa.landlord_id = l.landlord_id
                AND pa.is_active = 1
 
@@ -65,20 +64,19 @@ export async function POST(req: NextRequest) {
             [payment_ids]
         );
 
+        console.log("📊 [DISBURSE] DB ROWS:", rows);
+
         if (!rows || rows.length === 0) {
             return NextResponse.json(
-                {
-                    error:
-                        "No valid payments found or landlord has no active payout account",
-                },
+                { error: "No valid payments found for disbursement" },
                 { status: 400 }
             );
         }
 
         /* =====================================
-           2. Group payments by landlord
+           2. Group payments by LANDLORD (string key)
         ====================================== */
-        const grouped: Record<number, any> = {};
+        const grouped: Record<string, any> = {};
 
         for (const row of rows) {
             const landlordId = row.landlord_id;
@@ -100,14 +98,21 @@ export async function POST(req: NextRequest) {
             grouped[landlordId].total_amount += Number(row.amount_paid);
         }
 
-        /* =====================================
-           3. Process payout per landlord
-        ====================================== */
-        for (const landlordId of Object.keys(grouped)) {
-            const payout = grouped[Number(landlordId)];
+        console.log("🧮 [DISBURSE] GROUPED PAYOUTS:", grouped);
 
-            const external_id = `payout-${Date.now()}-${landlordId}`;
+        /* =====================================
+           3. Disburse PER landlord (v2/payouts)
+        ====================================== */
+        for (const landlordKey of Object.keys(grouped)) {
+            const payout = grouped[landlordKey]; // ✅ string-safe
+
+            if (!payout || payout.total_amount <= 0) {
+                console.error("❌ Invalid payout group:", payout);
+                continue;
+            }
+
             const amount = Number(payout.total_amount.toFixed(2));
+            const external_id = `payout-${Date.now()}-${payout.landlord_id}`;
 
             if (amount < 50) {
                 return NextResponse.json(
@@ -116,76 +121,41 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            let xenditResponse: any;
-
-            /* ---------- EWALLET (Payouts v2) ---------- */
-            if (payout.channel_type === "EWALLET") {
-                const walletPayload = {
-                    reference_id: external_id,
-                    channel_code: payout.channel_code,
-                    channel_properties: {
-                        account_number: payout.account_number,
-                        account_holder_name: payout.account_name,
-                    },
-                    amount,
-                    description: "Rental payout",
-                    currency: "PHP",
-                    metadata: {
-                        landlord_id: landlordId,
-                        payment_ids: payout.payment_ids,
-                    },
-                };
-
-                console.log("📤 [XENDIT EWALLET] PAYLOAD:", walletPayload);
-
-                xenditResponse = await axios.post(
-                    "https://api.xendit.co/v2/payouts",
-                    walletPayload,
-                    {
-                        headers: {
-                            "Idempotency-key": external_id,
-                        },
-                        auth: {
-                            username:
-                                process.env.XENDIT_DISBURSE_SECRET_KEY!,
-                            password: "",
-                        },
-                    }
-                );
-            }
-
-            /* ---------- BANK (Disbursements) ---------- */
-            else if (payout.channel_type === "BANK") {
-                const bankPayload = {
-                    external_id,
-                    amount,
-                    bank_code: payout.channel_code,
-                    account_holder_name: payout.account_name,
+            /* ---------- XENDIT PAYOUTS v2 (BANK + EWALLET) ---------- */
+            const payoutPayload = {
+                reference_id: external_id,
+                channel_code: payout.channel_code,
+                channel_properties: {
                     account_number: payout.account_number,
-                    description: "Rental payout",
-                };
+                    account_holder_name: payout.account_name,
+                },
+                amount,
+                description: "Rental payout",
+                currency: "PHP",
+                metadata: {
+                    landlord_id: payout.landlord_id,
+                    payment_ids: payout.payment_ids,
+                },
+            };
 
-                console.log("📤 [XENDIT BANK] PAYLOAD:", bankPayload);
+            console.log("📤 [XENDIT PAYOUT v2] PAYLOAD:", payoutPayload);
 
-                xenditResponse = await axios.post(
-                    "https://api.xendit.co/disbursements",
-                    bankPayload,
-                    {
-                        auth: {
-                            username:
-                                process.env.XENDIT_DISBURSE_SECRET_KEY!,
-                            password: "",
-                        },
-                    }
-                );
-            } else {
-                throw new Error(
-                    `Unsupported channel type: ${payout.channel_type}`
-                );
-            }
+            const xenditResponse = await axios.post(
+                "https://api.xendit.co/v2/payouts",
+                payoutPayload,
+                {
+                    headers: {
+                        "Idempotency-key": external_id,
+                    },
+                    auth: {
+                        username: process.env.XENDIT_DISBURSE_SECRET_KEY!,
+                        password: "",
+                    },
+                }
+            );
 
             /* =====================================
-               4. Save payout history
+               4. Save payout history (Xendit-aligned)
             ====================================== */
             await db.query(
                 `
@@ -203,11 +173,11 @@ export async function POST(req: NextRequest) {
                     external_id,
                     xendit_disbursement_id
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'processing', ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACCEPTED', ?, ?)
                 `,
                 [
-                    landlordId,
-                    payout.total_amount,
+                    payout.landlord_id,
+                    amount,
                     JSON.stringify(payout.payment_ids),
                     payout.channel_type,
                     payout.channel_code,
@@ -220,7 +190,7 @@ export async function POST(req: NextRequest) {
             );
 
             /* =====================================
-               5. Update payment payout status
+               5. Mark payments as IN_PAYOUT
             ====================================== */
             await db.query(
                 `
@@ -235,8 +205,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
             {
                 success: true,
-                message:
-                    "Disbursement initiated successfully (active payout accounts only)",
+                message: "Disbursement initiated successfully",
             },
             { status: 200 }
         );

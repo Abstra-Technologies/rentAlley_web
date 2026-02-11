@@ -33,53 +33,60 @@ export async function GET(req: NextRequest) {
 
         const paymentIds = paymentIdsParam
             .split(",")
-            .map((id) => id.trim())
+            .map((id) => Number(id.trim()))
             .filter(Boolean);
 
         if (paymentIds.length === 0) {
-            return NextResponse.json({ landlords: [] });
+            return NextResponse.json({ success: true, landlords: [] });
         }
 
         /* =====================================
-           FETCH PAYMENTS FOR REVIEW (NOT EXEC)
+           PAYMENT-CENTRIC REVIEW QUERY
+           (1 ROW = 1 PAYMENT, GUARANTEED)
         ====================================== */
         const sql = `
-      SELECT
-        p.payment_id,
-        p.payment_type,
-        p.net_amount,
-        p.payment_status,
-        p.payout_status,
+        SELECT
+            p.payment_id,
+            p.payment_type,
+            p.net_amount,
+            p.payment_status,
+            p.payout_status,
 
-        l.landlord_id,
-        u_landlord.firstName AS landlord_firstName,
-        u_landlord.lastName AS landlord_lastName,
+            l.landlord_id,
+            u_landlord.firstName AS landlord_firstName,
+            u_landlord.lastName  AS landlord_lastName,
 
-        pa.account_name,
-        pa.account_number,
-        pa.bank_name,
-        pa.channel_code,
+            -- payout account is METADATA ONLY
+            MAX(pa.account_name)   AS account_name,
+            MAX(pa.account_number) AS account_number,
+            MAX(pa.bank_name)      AS bank_name,
+            MAX(pa.channel_code)   AS channel_code,
 
-        pc.channel_type,
-        pc.is_available AS channel_available
+            MAX(pc.channel_type)   AS channel_type,
+            MAX(pc.is_available)   AS channel_available
 
-      FROM Payment p
-      INNER JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
-      INNER JOIN Unit u ON la.unit_id = u.unit_id
-      INNER JOIN Property pr ON pr.property_id = u.property_id
-      INNER JOIN Landlord l ON l.landlord_id = pr.landlord_id
-      INNER JOIN User u_landlord ON l.user_id = u_landlord.user_id
-      INNER JOIN LandlordPayoutAccount pa ON pa.landlord_id = l.landlord_id
+        FROM Payment p
+        INNER JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
+        INNER JOIN Unit u ON la.unit_id = u.unit_id
+        INNER JOIN Property pr ON pr.property_id = u.property_id
+        INNER JOIN Landlord l ON l.landlord_id = pr.landlord_id
+        INNER JOIN User u_landlord ON l.user_id = u_landlord.user_id
 
-      -- IMPORTANT: LEFT JOIN (review must still show disabled channels)
-      LEFT JOIN payout_channels pc
-        ON pc.channel_code = pa.channel_code
+        -- payout account is OPTIONAL, not a driver
+        LEFT JOIN LandlordPayoutAccount pa
+            ON pa.landlord_id = l.landlord_id
 
-      WHERE p.payment_id IN (?)
-        AND p.payment_status IN ('confirmed', 'paid')
-        AND (p.payout_status IS NULL OR p.payout_status = 'unpaid')
-        AND p.net_amount IS NOT NULL
-    `;
+        LEFT JOIN payout_channels pc
+            ON pc.channel_code = pa.channel_code
+
+        WHERE p.payment_id IN (?)
+          AND p.payment_status IN ('confirmed', 'paid')
+          AND (p.payout_status IS NULL OR p.payout_status = 'unpaid')
+          AND p.net_amount IS NOT NULL
+
+        -- 🔒 ABSOLUTE GUARANTEE: 1 ROW = 1 PAYMENT
+        GROUP BY p.payment_id
+        `;
 
         const [rows]: any = await db.query(sql, [paymentIds]);
 
