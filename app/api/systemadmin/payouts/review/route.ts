@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
 
+/* ---------------------------------
+   Safe decrypt helper
+---------------------------------- */
 async function safeDecrypt(value: string | null) {
     try {
         if (value && value.startsWith("{")) {
@@ -28,31 +31,37 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        const paymentIds = paymentIdsParam.split(",");
+        const paymentIds = paymentIdsParam
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean);
 
         if (paymentIds.length === 0) {
             return NextResponse.json({ landlords: [] });
         }
 
-        /* ===============================
-           FETCH PAYMENTS FOR REVIEW
-        ================================ */
+        /* =====================================
+           FETCH PAYMENTS FOR REVIEW (NOT EXEC)
+        ====================================== */
         const sql = `
       SELECT
         p.payment_id,
         p.payment_type,
         p.net_amount,
+        p.payment_status,
+        p.payout_status,
 
-        -- Landlord
         l.landlord_id,
         u_landlord.firstName AS landlord_firstName,
         u_landlord.lastName AS landlord_lastName,
 
-        -- Payout account
-        pa.payout_method,
         pa.account_name,
         pa.account_number,
-        pa.bank_name
+        pa.bank_name,
+        pa.channel_code,
+
+        pc.channel_type,
+        pc.is_available AS channel_available
 
       FROM Payment p
       INNER JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
@@ -62,21 +71,28 @@ export async function GET(req: NextRequest) {
       INNER JOIN User u_landlord ON l.user_id = u_landlord.user_id
       INNER JOIN LandlordPayoutAccount pa ON pa.landlord_id = l.landlord_id
 
+      -- IMPORTANT: LEFT JOIN (review must still show disabled channels)
+      LEFT JOIN payout_channels pc
+        ON pc.channel_code = pa.channel_code
+
       WHERE p.payment_id IN (?)
-        AND p.payment_status = 'confirmed'
-        AND p.payout_status = 'unpaid'
+        AND p.payment_status IN ('confirmed', 'paid')
+        AND (p.payout_status IS NULL OR p.payout_status = 'unpaid')
         AND p.net_amount IS NOT NULL
     `;
 
         const [rows]: any = await db.query(sql, [paymentIds]);
 
         if (!rows || rows.length === 0) {
-            return NextResponse.json({ landlords: [] });
+            return NextResponse.json(
+                { success: true, landlords: [] },
+                { status: 200 }
+            );
         }
 
-        /* ===============================
-           GROUP BY LANDLORD (NET AMOUNT)
-        ================================ */
+        /* =====================================
+           GROUP PAYMENTS BY LANDLORD
+        ====================================== */
         const grouped: Record<string, any> = {};
 
         for (const row of rows) {
@@ -90,12 +106,19 @@ export async function GET(req: NextRequest) {
                     landlord_id: landlordId,
                     landlord_name: `${first} ${last}`.trim(),
 
-                    payout_method: row.payout_method,
+                    payout_channel: row.channel_code
+                        ? {
+                            channel_code: row.channel_code,
+                            channel_type: row.channel_type,
+                            bank_name: row.bank_name,
+                            is_available: Boolean(row.channel_available),
+                        }
+                        : null,
+
                     account_name: row.account_name,
                     account_number: row.account_number,
-                    bank_name: row.bank_name ?? "",
 
-                    total_amount: 0, // NET TOTAL
+                    total_amount: 0,
                     payments: [],
                 };
             }
@@ -117,7 +140,7 @@ export async function GET(req: NextRequest) {
             { status: 200 }
         );
     } catch (err) {
-        console.error("❌ Error in payouts/review:", err);
+        console.error("❌ [PAYOUT REVIEW] ERROR:", err);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }

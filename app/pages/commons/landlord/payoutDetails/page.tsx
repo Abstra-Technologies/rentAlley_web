@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import Swal from "sweetalert2";
 import useAuthStore from "@/zustand/authStore";
@@ -13,6 +13,8 @@ import {
     Pencil,
     Trash2,
     Shield,
+    Plus,
+    CheckCircle,
 } from "lucide-react";
 
 /* =====================
@@ -43,15 +45,26 @@ export default function PayoutDetails() {
 
     const [loading, setLoading] = useState(true);
     const [accounts, setAccounts] = useState<any[]>([]);
+    const [channels, setChannels] = useState<any[]>([]);
 
+    /* ADD */
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [channelSearch, setChannelSearch] = useState("");
+    const [showChannels, setShowChannels] = useState(false);
+    const [selectedChannel, setSelectedChannel] = useState<any>(null);
+    const [addForm, setAddForm] = useState({
+        account_name: "",
+        account_number: "",
+    });
+
+    /* EDIT */
     const [editingId, setEditingId] = useState<number | null>(null);
-    const [saving, setSaving] = useState(false);
-
     const [editForm, setEditForm] = useState({
         account_name: "",
         account_number: "",
     });
 
+    const [saving, setSaving] = useState(false);
     const [visibleNumbers, setVisibleNumbers] = useState<Record<number, boolean>>(
         {},
     );
@@ -63,23 +76,27 @@ export default function PayoutDetails() {
         if (!user) fetchSession();
         if (!user?.landlord_id) return;
 
-        async function loadAccounts() {
-            const res = await axios.get("/api/landlord/payout/getAllAccount", {
-                params: { landlord_id },
-            });
+        async function loadAll() {
+            const [accRes, chRes] = await Promise.all([
+                axios.get("/api/landlord/payout/getAllAccount", {
+                    params: { landlord_id },
+                }),
+                axios.get("/api/payment/payoutChannels"),
+            ]);
 
             const normalized =
-                res.data.accounts?.map((a: any) => ({
+                accRes.data.accounts?.map((a: any) => ({
                     ...a,
                     bank_name: normalizeText(a.bank_name),
                     account_name: normalizeText(a.account_name),
                 })) || [];
 
             setAccounts(normalized);
+            setChannels(chRes.data || []);
             setLoading(false);
         }
 
-        loadAccounts();
+        loadAll();
     }, [user]);
 
     const activeAccount = useMemo(
@@ -110,6 +127,37 @@ export default function PayoutDetails() {
     };
 
     /* =====================
+       ADD ACCOUNT
+    ===================== */
+    const handleAdd = async () => {
+        if (
+            !selectedChannel ||
+            !addForm.account_name ||
+            !addForm.account_number
+        ) {
+            Swal.fire("Missing fields", "Complete all required fields", "warning");
+            return;
+        }
+
+        setSaving(true);
+
+        try {
+            await axios.post("/api/landlord/payout/AddAccount", {
+                landlord_id,
+                channel_code: selectedChannel.code,
+                bank_name: selectedChannel.name,
+                account_name: addForm.account_name,
+                account_number: addForm.account_number,
+            });
+
+            Swal.fire("Saved", "New payout account added", "success");
+            window.location.reload();
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    /* =====================
        EDIT
     ===================== */
     const startEdit = (acc: any) => {
@@ -136,20 +184,13 @@ export default function PayoutDetails() {
         try {
             await axios.put("/api/landlord/payout/updateAccount", {
                 payout_id,
-                account_name: editForm.account_name,
-                account_number: editForm.account_number,
-                landlord_id:user?.landlord_id
+                landlord_id,
+                ...editForm,
             });
 
             setAccounts((prev) =>
                 prev.map((a) =>
-                    a.payout_id === payout_id
-                        ? {
-                            ...a,
-                            account_name: editForm.account_name,
-                            account_number: editForm.account_number,
-                        }
-                        : a,
+                    a.payout_id === payout_id ? { ...a, ...editForm } : a,
                 ),
             );
 
@@ -184,10 +225,12 @@ export default function PayoutDetails() {
         if (!confirm.isConfirmed) return;
 
         await axios.delete("/api/landlord/payout/deleteAccount", {
-            data: { payout_id: acc.payout_id, landlord_id: user?.landlord_id },
+            data: { payout_id: acc.payout_id, landlord_id },
         });
 
-        setAccounts((prev) => prev.filter((a) => a.payout_id !== acc.payout_id));
+        setAccounts((prev) =>
+            prev.filter((a) => a.payout_id !== acc.payout_id),
+        );
     };
 
     if (loading) return null;
@@ -206,46 +249,29 @@ export default function PayoutDetails() {
                 variants={fadeUp}
                 initial="hidden"
                 animate="visible"
-                whileHover={{ y: -4, scale: 1.015 }}
-                transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                className={`relative overflow-hidden rounded-2xl p-4 space-y-2 group ${
+                className={`rounded-2xl p-4 space-y-2 ${
                     isActive
-                        ? "bg-gradient-to-br from-blue-600 to-emerald-600 text-white shadow-xl"
-                        : "bg-white border border-gray-200 hover:shadow-lg"
+                        ? "bg-gradient-to-br from-blue-600 to-emerald-600 text-white"
+                        : "bg-white border"
                 }`}
             >
-                {isActive && (
-                    <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/10 via-white/20 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                )}
-
-                {/* HEADER */}
-                <div className="flex justify-between items-start relative z-10">
+                <div className="flex justify-between">
                     <div>
-                        {acc.bank_name && (
-                            <p className="font-semibold">{acc.bank_name}</p>
-                        )}
-
+                        <p className="font-semibold">{acc.bank_name}</p>
                         {isActive && (
-                            <span className="inline-block mt-0.5 text-[10px] font-bold tracking-wide text-white/90">
-                                ACTIVE PAYOUT
-                            </span>
+                            <span className="text-xs flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" /> ACTIVE
+              </span>
                         )}
                     </div>
 
                     {!isEditing && (
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                                onClick={() => startEdit(acc)}
-                                className="p-1 rounded-lg hover:bg-black/10"
-                            >
+                        <div className="flex gap-2">
+                            <button onClick={() => startEdit(acc)}>
                                 <Pencil className="w-4 h-4" />
                             </button>
-
                             {!isActive && (
-                                <button
-                                    onClick={() => handleDelete(acc)}
-                                    className="p-1 rounded-lg hover:bg-red-100"
-                                >
+                                <button onClick={() => handleDelete(acc)}>
                                     <Trash2 className="w-4 h-4 text-red-500" />
                                 </button>
                             )}
@@ -253,75 +279,41 @@ export default function PayoutDetails() {
                     )}
                 </div>
 
-                {/* CONTENT */}
                 {isEditing ? (
                     <>
                         <input
-                            className="w-full border rounded-xl px-3 py-2 text-sm text-gray-900"
+                            className="w-full border rounded-xl px-3 py-2 text-sm"
                             value={editForm.account_name}
                             onChange={(e) =>
-                                setEditForm({
-                                    ...editForm,
-                                    account_name: e.target.value,
-                                })
+                                setEditForm({ ...editForm, account_name: e.target.value })
                             }
                         />
-
                         <input
-                            className="w-full border rounded-xl px-3 py-2 text-sm font-mono text-gray-900"
+                            className="w-full border rounded-xl px-3 py-2 text-sm"
                             value={editForm.account_number}
                             onChange={(e) =>
-                                setEditForm({
-                                    ...editForm,
-                                    account_number: e.target.value,
-                                })
+                                setEditForm({ ...editForm, account_number: e.target.value })
                             }
                         />
-
-                        <div className="flex gap-2 pt-2">
+                        <div className="flex gap-2">
                             <button
                                 onClick={() => saveEdit(acc.payout_id)}
-                                disabled={saving}
-                                className="flex-1 py-2 rounded-xl bg-black/80 text-white text-sm"
+                                className="flex-1 py-2 bg-black text-white rounded-xl"
                             >
                                 Save
                             </button>
-
-                            <button
-                                onClick={cancelEdit}
-                                className="flex-1 py-2 rounded-xl border text-sm"
-                            >
+                            <button onClick={cancelEdit} className="flex-1 py-2 border rounded-xl">
                                 Cancel
                             </button>
                         </div>
                     </>
                 ) : (
                     <>
-                        {acc.account_name && (
-                            <p
-                                className={`text-sm ${
-                                    isActive
-                                        ? "text-white/90"
-                                        : "text-gray-700"
-                                }`}
-                            >
-                                {acc.account_name}
+                        <p className="text-sm">{acc.account_name}</p>
+                        <div className="flex justify-between items-center">
+                            <p className="font-mono">
+                                {showNumber ? acc.account_number : maskNumber(acc.account_number)}
                             </p>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                            <p
-                                className={`text-sm font-mono ${
-                                    isActive
-                                        ? "text-white"
-                                        : "text-gray-800"
-                                }`}
-                            >
-                                {showNumber
-                                    ? acc.account_number
-                                    : maskNumber(acc.account_number)}
-                            </p>
-
                             <button
                                 onClick={() =>
                                     setVisibleNumbers((v) => ({
@@ -329,20 +321,15 @@ export default function PayoutDetails() {
                                         [acc.payout_id]: !v[acc.payout_id],
                                     }))
                                 }
-                                className="p-1 rounded-lg hover:bg-black/10"
                             >
-                                {showNumber ? (
-                                    <EyeOff className="w-4 h-4" />
-                                ) : (
-                                    <Eye className="w-4 h-4" />
-                                )}
+                                {showNumber ? <EyeOff /> : <Eye />}
                             </button>
                         </div>
 
                         {!isActive && (
                             <button
                                 onClick={() => setActive(acc.payout_id)}
-                                className="w-full mt-2 py-2 rounded-xl bg-blue-600 text-white text-sm"
+                                className="w-full py-2 bg-blue-600 text-white rounded-xl"
                             >
                                 Set Active
                             </button>
@@ -359,26 +346,107 @@ export default function PayoutDetails() {
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="bg-white border-b px-4 py-4">
-                <BackButton label="Back" />
-                <div className="mt-3 flex items-center gap-3">
+                <BackButton />
+                <div className="flex gap-3 mt-3 items-center">
                     <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                        <Wallet className="text-white w-5 h-5" />
+                        <Wallet className="text-white" />
                     </div>
                     <div>
                         <h1 className="text-lg font-bold">Payout Accounts</h1>
                         <p className="text-xs text-gray-500">
-                            Manage and switch payout destinations
+                            Manage where you receive your income
                         </p>
                     </div>
                 </div>
             </div>
 
-            <div className="px-4 py-6 space-y-4 max-w-xl mx-auto">
+            <div className="px-4 py-6 max-w-xl mx-auto space-y-4">
                 {activeAccount && renderCard(activeAccount)}
                 {otherAccounts.map(renderCard)}
 
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 mt-4">
-                    <Shield className="w-5 h-5 text-amber-600" />
+                {/* ADD ACCOUNT */}
+                <div className="bg-white border rounded-2xl p-4">
+                    <button
+                        onClick={() => setShowAddForm(!showAddForm)}
+                        className="w-full flex justify-between font-semibold"
+                    >
+                        Add New Payout Account <Plus />
+                    </button>
+
+                    <AnimatePresence>
+                        {showAddForm && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="mt-4 space-y-3"
+                            >
+                                <input
+                                    value={channelSearch}
+                                    onChange={(e) => {
+                                        setChannelSearch(e.target.value);
+                                        setShowChannels(true);
+                                    }}
+                                    placeholder="Search payout partner"
+                                    className="w-full border rounded-xl px-4 py-2"
+                                />
+
+                                {showChannels && (
+                                    <div className="border rounded-xl max-h-40 overflow-auto">
+                                        {channels
+                                            .filter((c) =>
+                                                c.name
+                                                    .toLowerCase()
+                                                    .includes(channelSearch.toLowerCase()),
+                                            )
+                                            .map((c) => (
+                                                <div
+                                                    key={c.code}
+                                                    onClick={() => {
+                                                        setSelectedChannel(c);
+                                                        setChannelSearch(c.name);
+                                                        setShowChannels(false);
+                                                    }}
+                                                    className="px-4 py-2 hover:bg-blue-50 cursor-pointer"
+                                                >
+                                                    {c.name}
+                                                </div>
+                                            ))}
+                                    </div>
+                                )}
+
+                                <input
+                                    placeholder="Account name"
+                                    className="w-full border rounded-xl px-4 py-2"
+                                    value={addForm.account_name}
+                                    onChange={(e) =>
+                                        setAddForm({ ...addForm, account_name: e.target.value })
+                                    }
+                                />
+
+                                <input
+                                    placeholder="Account / Mobile number"
+                                    className="w-full border rounded-xl px-4 py-2"
+                                    value={addForm.account_number}
+                                    onChange={(e) =>
+                                        setAddForm({ ...addForm, account_number: e.target.value })
+                                    }
+                                />
+
+                                <button
+                                    onClick={handleAdd}
+                                    disabled={saving}
+                                    className="w-full py-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl"
+                                >
+                                    {saving ? "Saving..." : "Add Payout Account"}
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+                    <Shield className="text-amber-600" />
                     <p className="text-xs text-amber-700">
                         Your payout information is encrypted and securely stored.
                     </p>

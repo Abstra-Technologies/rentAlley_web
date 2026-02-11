@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
-import { ArrowLeft, Send, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Send, AlertTriangle, CreditCard } from "lucide-react";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -13,7 +13,7 @@ function ReviewPayoutContent() {
     const searchParams = useSearchParams();
 
     const paymentIds = searchParams.get("payment_ids");
-    const ids = paymentIds ? paymentIds.split(",") : [];
+    const ids = paymentIds ? paymentIds.split(",").filter(Boolean) : [];
 
     const { data, error, isLoading } = useSWR(
         ids.length
@@ -25,8 +25,14 @@ function ReviewPayoutContent() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const landlords = data?.landlords || [];
 
+    // ✅ CORRECT BLOCK CONDITION
+    const hasInvalidChannel = landlords.some(
+        (l: any) =>
+            !l.payout_channel || l.payout_channel.is_available === false
+    );
+
     const handleConfirmDisbursement = async () => {
-        if (ids.length === 0) return;
+        if (!ids.length || hasInvalidChannel) return;
 
         const confirmed = confirm(
             "Are you sure you want to disburse these payments? This action cannot be undone."
@@ -40,7 +46,7 @@ function ReviewPayoutContent() {
             });
 
             alert("Disbursement initiated successfully.");
-            router.push("/pages/systemadmin/payouts");
+            router.push("/pages/system_admin/payouts/payments_list");
         } catch (err) {
             console.error(err);
             alert("Failed to initiate disbursement.");
@@ -93,22 +99,47 @@ function ReviewPayoutContent() {
                         0
                     );
 
+                    const channel = l.payout_channel;
+
                     return (
                         <div
                             key={l.landlord_id}
                             className="bg-white rounded-xl shadow border mb-6"
                         >
-                            {/* LANDLORD HEADER */}
-                            <div className="p-4 border-b bg-gray-50">
+                            <div className="p-4 border-b bg-gray-50 space-y-1">
                                 <h2 className="font-semibold text-gray-800">
                                     {l.landlord_name}
                                 </h2>
-                                <p className="text-sm text-gray-500">
-                                    Payout Method: {l.payout_method.toUpperCase()}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                    Account: {l.account_name} • {l.account_number}
-                                </p>
+
+                                {channel ? (
+                                    <>
+                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                            <CreditCard className="w-4 h-4" />
+                                            <span className="font-medium">
+                        {channel.bank_name}
+                      </span>
+
+                                            <span
+                                                className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                                    channel.is_available
+                                                        ? "bg-blue-100 text-blue-700"
+                                                        : "bg-red-100 text-red-700"
+                                                }`}
+                                            >
+                        {channel.channel_type}
+                                                {!channel.is_available && " (Disabled)"}
+                      </span>
+                                        </div>
+
+                                        <p className="text-sm text-gray-500">
+                                            Account: {l.account_name} • {l.account_number}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-red-600 font-semibold">
+                                        ⚠ No payout account configured
+                                    </p>
+                                )}
                             </div>
 
                             {/* PAYMENTS */}
@@ -139,7 +170,6 @@ function ReviewPayoutContent() {
                                     </tbody>
                                 </table>
 
-                                {/* TOTAL NET */}
                                 <div className="flex justify-end mt-4">
                   <span className="text-sm font-semibold text-gray-700">
                     Total Net Payout:{" "}
@@ -153,13 +183,24 @@ function ReviewPayoutContent() {
                     );
                 })}
 
-            {/* WARNING */}
-            {!isLoading && landlords.length > 0 && (
+            {/* BLOCKING WARNING */}
+            {!isLoading && hasInvalidChannel && (
+                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl mb-6">
+                    <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                    <p className="text-sm text-red-800 font-medium">
+                        One or more landlords do not have an active payout channel.
+                        Disbursement is blocked until this is resolved.
+                    </p>
+                </div>
+            )}
+
+            {/* NORMAL WARNING */}
+            {!isLoading && landlords.length > 0 && !hasInvalidChannel && (
                 <div className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl mb-6">
                     <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
                     <p className="text-sm text-yellow-800">
                         Please review all payout details carefully. Once confirmed,
-                        payouts will be sent to the landlords and cannot be reversed.
+                        payouts will be sent using each landlord’s active payout channel.
                     </p>
                 </div>
             )}
@@ -175,8 +216,10 @@ function ReviewPayoutContent() {
 
                 <button
                     onClick={handleConfirmDisbursement}
-                    disabled={isSubmitting || landlords.length === 0}
-                    className="px-5 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 flex items-center gap-2 disabled:opacity-50"
+                    disabled={
+                        isSubmitting || landlords.length === 0 || hasInvalidChannel
+                    }
+                    className="px-5 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Send className="w-4 h-4" />
                     {isSubmitting ? "Processing…" : "Confirm Disbursement"}
