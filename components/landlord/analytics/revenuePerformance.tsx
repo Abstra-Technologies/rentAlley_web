@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import useSWR from "swr";
-import { Calendar, DollarSign } from "lucide-react";
+import { Calendar, DollarSign, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
     CARD_CONTAINER_INTERACTIVE,
@@ -47,7 +47,7 @@ interface Props {
 export default function RevenuePerformanceChart({ landlord_id }: Props) {
     const router = useRouter();
 
-    /* ---------------- YEARS (FROM API) ---------------- */
+    /* ---------------- YEARS ---------------- */
     const { data: yearsData } = useSWR<YearsApiResponse>(
         landlord_id
             ? `/api/landlord/payments/years?landlord_id=${landlord_id}`
@@ -69,7 +69,7 @@ export default function RevenuePerformanceChart({ landlord_id }: Props) {
 
     useEffect(() => {
         if (!selectedYear && years.length) {
-            setSelectedYear(years[0]); // latest year
+            setSelectedYear(years[0]);
         }
     }, [years, selectedYear]);
 
@@ -79,10 +79,7 @@ export default function RevenuePerformanceChart({ landlord_id }: Props) {
             ? `/api/analytics/landlord/getRevenuePerformance?landlordId=${landlord_id}&year=${selectedYear}`
             : null,
         fetcher,
-        {
-            revalidateOnFocus: false,
-            keepPreviousData: true,
-        }
+        { revalidateOnFocus: false, keepPreviousData: true }
     );
 
     /* ---------------- NORMALIZE MONTHS ---------------- */
@@ -110,10 +107,7 @@ export default function RevenuePerformanceChart({ landlord_id }: Props) {
     ];
 
     const baseOptions = {
-        chart: {
-            toolbar: { show: false },
-            zoom: { enabled: false },
-        },
+        chart: { toolbar: { show: false }, zoom: { enabled: false } },
         xaxis: {
             categories: ALL_MONTHS,
             labels: { style: { fontSize: "12px", colors: "#6b7280" } },
@@ -135,14 +129,16 @@ export default function RevenuePerformanceChart({ landlord_id }: Props) {
             onClick={() =>
                 router.push("/pages/landlord/analytics/detailed/revenue")
             }
-            className={CARD_CONTAINER_INTERACTIVE}
+            className={`${CARD_CONTAINER_INTERACTIVE} group relative`}
         >
             {/* ================= HEADER ================= */}
             <div className="flex items-center justify-between mb-6">
                 <div className={SECTION_HEADER}>
                     <span className={GRADIENT_DOT} />
                     <div>
-                        <h2 className={SECTION_TITLE}>Revenue Performance</h2>
+                        <h2 className={SECTION_TITLE}>
+                            Overall Revenue Performance
+                        </h2>
                         <p className="text-xs text-gray-500">
                             Monthly revenue · {selectedYear ?? ""}
                         </p>
@@ -158,7 +154,9 @@ export default function RevenuePerformanceChart({ landlord_id }: Props) {
                         <Calendar className="w-4 h-4 text-gray-500" />
                         <select
                             value={selectedYear}
-                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                            onChange={(e) =>
+                                setSelectedYear(Number(e.target.value))
+                            }
                             className="text-sm font-medium bg-transparent focus:outline-none cursor-pointer"
                         >
                             {years.map((year) => (
@@ -179,10 +177,7 @@ export default function RevenuePerformanceChart({ landlord_id }: Props) {
                 options={{
                     ...baseOptions,
                     plotOptions: {
-                        bar: {
-                            columnWidth: "50%",
-                            borderRadius: 8,
-                        },
+                        bar: { columnWidth: "50%", borderRadius: 8 },
                     },
                 }}
             />
@@ -201,6 +196,28 @@ export default function RevenuePerformanceChart({ landlord_id }: Props) {
                     </p>
                 </div>
             )}
+
+            {/* ================= HOVER REDIRECT LABEL ================= */}
+            <div className="
+        pointer-events-none
+        absolute bottom-4 right-4
+        opacity-0 translate-y-2
+        group-hover:opacity-100 group-hover:translate-y-0
+        transition-all duration-200
+      ">
+                <div className="
+          flex items-center gap-1.5
+          text-xs font-medium
+          text-gray-700
+          bg-white/90 backdrop-blur
+          px-3 py-1.5
+          rounded-full
+          shadow-md border
+        ">
+                    View detailed revenue
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                </div>
+            </div>
         </div>
     );
 }
