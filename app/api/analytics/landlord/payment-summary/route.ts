@@ -50,17 +50,22 @@ export async function GET(req: NextRequest) {
         ================================ */
         const [[pending]]: any = await db.query(
             `
-            SELECT COALESCE(SUM(amount), 0) AS pendingPayouts
-            FROM LandlordPayoutHistory
-            WHERE landlord_id = ?
-              AND status IN (
-                'ACCEPTED',
-                'REQUESTED',
-                'PENDING_COMPLIANCE_ASSESSMENT'
-              )
+                SELECT
+                    COALESCE(SUM(net_amount), 0) AS pendingPayouts
+                FROM Payment
+                WHERE agreement_id IN (
+                    SELECT la.agreement_id
+                    FROM LeaseAgreement la
+                             INNER JOIN Unit u ON u.unit_id = la.unit_id
+                             INNER JOIN Property p ON p.property_id = u.property_id
+                    WHERE p.landlord_id = ?
+                )
+                  AND payment_status = 'confirmed'
+                  AND payout_status IN ('unpaid', 'in_payout')
             `,
             [landlord_id]
         );
+
 
         return NextResponse.json({
             success: true,
