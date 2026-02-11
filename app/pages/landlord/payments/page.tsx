@@ -12,7 +12,7 @@ import {
     Wallet,
     Download,
 } from "lucide-react";
-import { PaymentSummaryGrid } from "@/components/landlord/analytics/PaymentSummaryGrid";
+import  PaymentSummaryGrid  from "@/components/landlord/analytics/PaymentSummaryGrid";
 import Link from "next/link";
 import PaymentReportModal from "@/components/landlord/payments/PaymentReportModal";
 import axios from "axios";
