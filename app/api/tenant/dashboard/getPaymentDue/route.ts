@@ -1,3 +1,9 @@
+/*USE CASE
+*
+* components/tenant/analytics-insights/paymentDue.tsx
+* */
+
+
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
@@ -57,7 +63,7 @@ export async function GET(req: NextRequest) {
         SELECT payment_id
         FROM Payment
         WHERE agreement_id = ?
-          AND payment_type = 'billing'
+          AND payment_type = 'monthly_billing'
           AND payment_status = 'confirmed'
         LIMIT 1
         `,

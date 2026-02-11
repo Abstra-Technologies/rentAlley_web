@@ -44,14 +44,15 @@ const getTenantActiveLeases = unstable_cache(
         usr.firstName AS enc_first_name,
         usr.lastName AS enc_last_name,
 
-        -- PHOTOS
-        GROUP_CONCAT(up.photo_url ORDER BY up.id ASC) AS unit_photos
+        -- UNIT PHOTOS
+        GROUP_CONCAT(up.photo_url ORDER BY up.id ASC SEPARATOR '||') AS unit_photos
 
       FROM LeaseAgreement la
       INNER JOIN Unit u ON la.unit_id = u.unit_id
       INNER JOIN Property p ON u.property_id = p.property_id
       INNER JOIN Landlord l ON p.landlord_id = l.landlord_id
       INNER JOIN User usr ON l.user_id = usr.user_id
+
       LEFT JOIN LeaseSignature ls ON la.agreement_id = ls.agreement_id
       LEFT JOIN UnitPhoto up ON u.unit_id = up.unit_id
 
@@ -97,10 +98,10 @@ const getTenantActiveLeases = unstable_cache(
             --------------------------- */
             const unit_photos =
                 row.unit_photos
-                    ?.split(",")
-                    .map((p: string) => {
+                    ?.split("||")
+                    .map((photo: string) => {
                         try {
-                            return decryptData(JSON.parse(p), SECRET_KEY);
+                            return decryptData(JSON.parse(photo), SECRET_KEY);
                         } catch {
                             return null;
                         }
@@ -109,7 +110,6 @@ const getTenantActiveLeases = unstable_cache(
 
             return {
                 agreement_id: row.agreement_id,
-
                 lease_status: row.lease_status,
                 leaseSignature,
 
@@ -173,6 +173,7 @@ export async function GET(req: NextRequest) {
         }
 
         return NextResponse.json(leases, { status: 200 });
+
     } catch (error) {
         console.error("TENANT ACTIVE LEASE API ERROR:", error);
         return NextResponse.json(
