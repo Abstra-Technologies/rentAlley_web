@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import useSWR from "swr";
@@ -12,7 +12,6 @@ import {
     SECTION_HEADER,
     GRADIENT_DOT,
     SECTION_TITLE,
-    GRADIENT_TEXT,
 } from "@/constant/design-constants";
 
 /* --------------------------------------------------
@@ -31,10 +30,8 @@ const Chart = dynamic(() => import("react-apexcharts"), {
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 /* --------------------------------------------------
-   Colors
+   Types (MATCH API)
 -------------------------------------------------- */
-const COLORS = ["#10b981", "#3b82f6", "#f97316"];
-
 type Tenant = {
     tenant_id: number;
     profilePicture: string | null;
@@ -42,13 +39,59 @@ type Tenant = {
     lastName: string;
 };
 
+type PropertyUnit = {
+    unit_id: number;
+    unit_name: string;
+    unit_status: string;
+    rent_amount: number;
+};
+
+type Property = {
+    property_id: string;
+    property_name: string;
+    city: string;
+    province: string;
+    units: PropertyUnit[];
+};
+
+type PropertyApiResponse = {
+    success: boolean;
+    data: Property[];
+};
+
 interface Props {
     landlord_id: string;
     onClick?: () => void;
 }
 
-export default function PaymentSummaryCard({ landlord_id, onClick }: Props) {
+/* --------------------------------------------------
+   Component
+-------------------------------------------------- */
+export default function PaymentSummaryCard({
+                                               landlord_id,
+                                               onClick,
+                                           }: Props) {
+    /* ---------------- Property Filter ---------------- */
+    const [selectedPropertyId, setSelectedPropertyId] = useState<
+        string | "all"
+    >("all");
+
+    /* ---------------- Properties ---------------- */
+    const { data: propertyResponse, isLoading: propertiesLoading } =
+        useSWR<PropertyApiResponse>(
+            `/api/landlord/${landlord_id}/properties`,
+            fetcher,
+            { revalidateOnFocus: false }
+        );
+
+    const properties = propertyResponse?.data ?? [];
+
     /* ---------------- Stats ---------------- */
+    const statsUrl =
+        selectedPropertyId === "all"
+            ? `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}`
+            : `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}&property_id=${selectedPropertyId}`;
+
     const {
         data: stats = {
             total_collected: 0,
@@ -56,17 +99,21 @@ export default function PaymentSummaryCard({ landlord_id, onClick }: Props) {
             total_overdue: 0,
         },
         isLoading: statsLoading,
-    } = useSWR(
-        `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}`,
-        fetcher,
-        { revalidateOnFocus: false, dedupingInterval: 60_000 }
-    );
+    } = useSWR(statsUrl, fetcher, {
+        revalidateOnFocus: false,
+        dedupingInterval: 60_000,
+    });
 
     /* ---------------- Tenants ---------------- */
+    const tenantsUrl =
+        selectedPropertyId === "all"
+            ? `/api/landlord/properties/getCurrentTenants?landlord_id=${landlord_id}`
+            : `/api/landlord/properties/getCurrentTenants?landlord_id=${landlord_id}&property_id=${selectedPropertyId}`;
+
     const { data: tenants = [], isLoading: tenantsLoading } = useSWR<Tenant[]>(
-        `/api/landlord/properties/getCurrentTenants?landlord_id=${landlord_id}`,
+        tenantsUrl,
         fetcher,
-        { revalidateOnFocus: false, dedupingInterval: 120_000 }
+        { revalidateOnFocus: false }
     );
 
     /* ---------------- Computed ---------------- */
@@ -89,31 +136,29 @@ export default function PaymentSummaryCard({ landlord_id, onClick }: Props) {
         [collected, pending, overdue]
     );
 
-    const options = useMemo(
+    const chartOptions = useMemo(
         () => ({
             chart: { type: "donut", animations: { enabled: !statsLoading } },
-            labels: ["Collected", "Upcoming", "Overdue"],
-            colors: COLORS,
+            labels: ["Paid", "Upcoming", "Overdue"],
+            colors: ["#10b981", "#3b82f6", "#f97316"],
             legend: { show: false },
             stroke: { width: 2, colors: ["#fff"] },
             dataLabels: { enabled: false },
             plotOptions: {
                 pie: {
                     donut: {
-                        size: "68%", // thinner ring → looks bigger
+                        size: "68%",
                         labels: {
                             show: true,
                             value: {
                                 fontSize: "18px",
                                 fontWeight: 700,
-                                color: "#374151",
                                 formatter: () => `₱${total.toLocaleString()}`,
                             },
                             total: {
                                 show: true,
-                                label: "Total",
+                                label: "Total Due",
                                 fontSize: "12px",
-                                color: "#6b7280",
                                 formatter: () => `₱${total.toLocaleString()}`,
                             },
                         },
@@ -129,6 +174,7 @@ export default function PaymentSummaryCard({ landlord_id, onClick }: Props) {
         [total, statsLoading]
     );
 
+    /* ---------------- Render ---------------- */
     return (
         <div
             onClick={onClick}
@@ -138,22 +184,64 @@ export default function PaymentSummaryCard({ landlord_id, onClick }: Props) {
             <div className="mb-4">
                 <div className={SECTION_HEADER}>
                     <span className={GRADIENT_DOT} />
-                    <h2 className={SECTION_TITLE}>Collections and Payment</h2>
+                    <h2 className={SECTION_TITLE}>
+                        Tenant Payments for {monthLabel}
+                    </h2>
                 </div>
 
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                    Payments for the month of{" "}
-                    <span className={`font-semibold ${GRADIENT_TEXT}`}>
-            {monthLabel}
+                {/* Property Selector */}
+                <div
+                    className="mt-2 flex items-center gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                >
+          <span className="text-xs text-gray-500 font-medium">
+            Property
           </span>
-                </p>
+
+                    <select
+                        value={selectedPropertyId}
+                        onChange={(e) => setSelectedPropertyId(e.target.value)}
+                        disabled={propertiesLoading}
+                        className="text-xs sm:text-sm px-2 py-1.5 border border-gray-200 rounded-md bg-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    >
+                        <option value="all">All Properties</option>
+
+                        {properties.map((property) => (
+                            <option
+                                key={property.property_id}
+                                value={property.property_id}
+                            >
+                                {property.property_name}
+                                {property.city && ` • ${property.city}`}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {/* ================= STATS ================= */}
             <div className="grid grid-cols-3 gap-3 mb-4">
-                <Stat icon={<TrendingUp className="w-4 h-4" />} label="Upcoming" value={pending} color="blue" loading={statsLoading} />
-                <Stat icon={<AlertCircle className="w-4 h-4" />} label="Overdue" value={overdue} color="orange" loading={statsLoading} />
-                <Stat icon={<CheckCircle className="w-4 h-4" />} label="Collected" value={collected} color="emerald" loading={statsLoading} />
+                <Stat
+                    icon={<TrendingUp className="w-4 h-4" />}
+                    label="Upcoming"
+                    value={pending}
+                    color="blue"
+                    loading={statsLoading}
+                />
+                <Stat
+                    icon={<AlertCircle className="w-4 h-4" />}
+                    label="Overdue"
+                    value={overdue}
+                    color="orange"
+                    loading={statsLoading}
+                />
+                <Stat
+                    icon={<CheckCircle className="w-4 h-4" />}
+                    label="Paid"
+                    value={collected}
+                    color="emerald"
+                    loading={statsLoading}
+                />
             </div>
 
             {/* ================= DONUT ================= */}
@@ -162,7 +250,7 @@ export default function PaymentSummaryCard({ landlord_id, onClick }: Props) {
                     <div className="w-[180px] h-[180px] rounded-full bg-gray-100 animate-pulse" />
                 ) : (
                     <Chart
-                        options={options}
+                        options={chartOptions}
                         series={total > 0 ? series : [1]}
                         type="donut"
                         width={180}
@@ -176,7 +264,10 @@ export default function PaymentSummaryCard({ landlord_id, onClick }: Props) {
                 {tenantsLoading ? (
                     <div className="flex gap-2">
                         {[...Array(5)].map((_, i) => (
-                            <div key={i} className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+                            <div
+                                key={i}
+                                className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"
+                            />
                         ))}
                     </div>
                 ) : tenants.length > 0 ? (
@@ -216,7 +307,9 @@ export default function PaymentSummaryCard({ landlord_id, onClick }: Props) {
                         </div>
                     </>
                 ) : (
-                    <p className="text-xs text-gray-500 text-center">No tenants yet</p>
+                    <p className="text-xs text-gray-500 text-center">
+                        No tenants for this property
+                    </p>
                 )}
             </div>
         </div>
@@ -224,7 +317,7 @@ export default function PaymentSummaryCard({ landlord_id, onClick }: Props) {
 }
 
 /* --------------------------------------------------
-   Stat (Compact)
+   Stat Component
 -------------------------------------------------- */
 function Stat({
                   icon,
@@ -246,7 +339,9 @@ function Stat({
     };
 
     return (
-        <div className={`p-2 rounded-lg border ${colorMap[color]} flex flex-col items-center`}>
+        <div
+            className={`p-2 rounded-lg border ${colorMap[color]} flex flex-col items-center`}
+        >
             {icon}
             <p className="text-[11px] mt-1 text-gray-600">{label}</p>
             <p className="font-bold text-sm mt-0.5">

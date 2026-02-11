@@ -1,47 +1,70 @@
+/*
+* USE CASES
+* components/landlord/analytics/PaymentSummaryCard.tsx
+* */
+
+
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 
 /* --------------------------------------------------
-   CACHED DB QUERY (per landlord)
+   CACHED DB QUERY
+   - landlord only
+   - OR landlord + property
 -------------------------------------------------- */
 const getReceivablesSummary = unstable_cache(
-    async (landlord_id: string) => {
+    async (landlord_id: string, property_id?: string | null) => {
+        const params: any[] = [landlord_id];
+
+        let propertyFilter = "";
+        if (property_id) {
+            propertyFilter = "AND pr.property_id = ?";
+            params.push(property_id);
+        }
+
         const [rows]: any = await db.query(
             `
       SELECT 
-        SUM(
-          CASE 
-            WHEN b.status = 'paid'
-            THEN b.total_amount_due
-            ELSE 0
-          END
+        COALESCE(
+          SUM(
+            CASE 
+              WHEN b.status = 'paid'
+              THEN b.total_amount_due
+              ELSE 0
+            END
+          ), 0
         ) AS total_collected,
 
-        SUM(
-          CASE 
-            WHEN b.status = 'unpaid'
-             AND b.due_date >= CURDATE()
-            THEN b.total_amount_due
-            ELSE 0
-          END
+        COALESCE(
+          SUM(
+            CASE 
+              WHEN b.status = 'unpaid'
+               AND b.due_date >= CURDATE()
+              THEN b.total_amount_due
+              ELSE 0
+            END
+          ), 0
         ) AS total_pending,
 
-        SUM(
-          CASE 
-            WHEN b.status = 'unpaid'
-             AND b.due_date < CURDATE()
-            THEN b.total_amount_due
-            ELSE 0
-          END
+        COALESCE(
+          SUM(
+            CASE 
+              WHEN b.status = 'unpaid'
+               AND b.due_date < CURDATE()
+              THEN b.total_amount_due
+              ELSE 0
+            END
+          ), 0
         ) AS total_overdue
 
       FROM Billing b
       JOIN Unit u ON b.unit_id = u.unit_id
       JOIN Property pr ON u.property_id = pr.property_id
       WHERE pr.landlord_id = ?
+      ${propertyFilter}
       `,
-            [landlord_id]
+            params
         );
 
         return (
@@ -53,10 +76,14 @@ const getReceivablesSummary = unstable_cache(
         );
     },
 
-    /* 🔑 Cache key */
-    (landlord_id: string) => [`receivables-summary`, landlord_id],
+    /* 🔑 CACHE KEY */
+    (landlord_id: string, property_id?: string | null) => [
+        "receivables-summary",
+        landlord_id,
+        property_id ?? "all",
+    ],
 
-    /* ⏱ Cache config */
+    /* ⏱ CACHE CONFIG */
     {
         revalidate: 60, // 1 minute
         tags: ["receivables-summary"],
@@ -68,7 +95,9 @@ const getReceivablesSummary = unstable_cache(
 -------------------------------------------------- */
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
+
     const landlord_id = searchParams.get("landlord_id");
+    const property_id = searchParams.get("property_id"); // 👈 OPTIONAL
 
     if (!landlord_id) {
         return NextResponse.json(
@@ -78,7 +107,10 @@ export async function GET(req: Request) {
     }
 
     try {
-        const result = await getReceivablesSummary(landlord_id);
+        const result = await getReceivablesSummary(
+            landlord_id,
+            property_id
+        );
 
         return NextResponse.json(result, { status: 200 });
     } catch (error) {

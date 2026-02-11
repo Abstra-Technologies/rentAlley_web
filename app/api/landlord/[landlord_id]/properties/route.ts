@@ -2,6 +2,13 @@
 import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/lib/db";
 
+/*
+USE CASES
+
+components/landlord/analytics/PaymentSummaryCard.tsx
+
+* */
+
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ landlord_id: string }> }
