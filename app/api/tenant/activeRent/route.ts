@@ -3,184 +3,147 @@ import { decryptData } from "@/crypto/encrypt";
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 
-//  Used in My Unit Page.
-//  to ve simplified.
-
 const SECRET_KEY = process.env.ENCRYPTION_SECRET!;
 
 const getTenantActiveLeases = unstable_cache(
     async (tenantId: string) => {
-        /* -------------------------------------------------
-           FETCH LEASE AGREEMENTS
-        ------------------------------------------------- */
-        const [leases]: any = await db.query(
+        const [rows]: any = await db.query(
             `
-                SELECT
-                    agreement_id,
-                    tenant_id,
-                    unit_id,
-                    start_date,
-                    end_date,
-                    status,
-                    updated_at
-                FROM LeaseAgreement
-                WHERE tenant_id = ?
-                  AND status IN ('draft', 'active', 'expired', 'pending_signature')
-                ORDER BY updated_at DESC
-            `,
+      SELECT
+        la.agreement_id,
+        la.status AS lease_status,
+        la.start_date,
+        la.end_date,
+        la.updated_at,
+
+        -- SIGNATURE STATUS
+        MAX(CASE WHEN ls.role = 'landlord' THEN ls.status END) AS landlord_sig,
+        MAX(CASE WHEN ls.role = 'tenant' THEN ls.status END) AS tenant_sig,
+
+        -- UNIT
+        u.unit_id,
+        u.unit_name,
+        u.unit_size,
+        u.unit_style,
+        u.rent_amount,
+        u.furnish,
+        u.status AS unit_status,
+
+        -- PROPERTY
+        p.property_id,
+        p.property_name,
+        p.property_type,
+        p.street,
+        p.brgy_district,
+        p.city,
+        p.province,
+        p.zip_code,
+
+        -- LANDLORD
+        l.user_id AS landlord_user_id,
+        usr.firstName AS enc_first_name,
+        usr.lastName AS enc_last_name,
+
+        -- PHOTOS
+        GROUP_CONCAT(up.photo_url ORDER BY up.id ASC) AS unit_photos
+
+      FROM LeaseAgreement la
+      INNER JOIN Unit u ON la.unit_id = u.unit_id
+      INNER JOIN Property p ON u.property_id = p.property_id
+      INNER JOIN Landlord l ON p.landlord_id = l.landlord_id
+      INNER JOIN User usr ON l.user_id = usr.user_id
+      LEFT JOIN LeaseSignature ls ON la.agreement_id = ls.agreement_id
+      LEFT JOIN UnitPhoto up ON u.unit_id = up.unit_id
+
+      WHERE la.tenant_id = ?
+        AND la.status IN ('draft', 'active', 'expired', 'pending_signature')
+
+      GROUP BY la.agreement_id
+      ORDER BY la.updated_at DESC
+      `,
             [tenantId]
         );
 
-        if (!leases?.length) return [];
+        if (!rows?.length) return [];
 
-        const results = [];
-
-        for (const lease of leases) {
-            /* -------------------------------------------------
+        return rows.map((row: any) => {
+            /* ---------------------------
                SIGNATURE STATUS
-            ------------------------------------------------- */
-            const [signatures]: any = await db.query(
-                `
-                SELECT role, status
-                FROM LeaseSignature
-                WHERE agreement_id = ?
-                `,
-                [lease.agreement_id]
-            );
+            --------------------------- */
+            let leaseSignature = "pending";
 
-            let landlordSig = "pending";
-            let tenantSig = "pending";
-
-            for (const sig of signatures || []) {
-                if (sig.role === "landlord") landlordSig = sig.status;
-                if (sig.role === "tenant") tenantSig = sig.status;
+            if (row.lease_status === "active") {
+                leaseSignature = "active";
+            } else if (row.landlord_sig === "signed" && row.tenant_sig === "signed") {
+                leaseSignature = "completed";
+            } else if (row.landlord_sig === "signed") {
+                leaseSignature = "landlord_signed";
+            } else if (row.tenant_sig === "signed") {
+                leaseSignature = "tenant_signed";
             }
 
-            let leaseSignature = "pending";
-            if (landlordSig === "signed" && tenantSig === "signed")
-                leaseSignature = "completed";
-            else if (landlordSig === "signed")
-                leaseSignature = "landlord_signed";
-            else if (tenantSig === "signed")
-                leaseSignature = "tenant_signed";
-
-            if (lease.status === "active") leaseSignature = "active";
-
-            /* -------------------------------------------------
-               UNIT + PROPERTY + LANDLORD
-            ------------------------------------------------- */
-            const [unitRows]: any = await db.query(
-                `
-                SELECT
-                    u.unit_id,
-                    u.unit_name,
-                    u.unit_size,
-                    u.unit_style,
-                    u.rent_amount,
-                    u.furnish,
-                    u.status AS unit_status,
-
-                    p.property_id,
-                    p.property_name,
-                    p.property_type,
-                    p.street,
-                    p.brgy_district,
-                    p.city,
-                    p.province,
-                    p.zip_code,
-
-                    l.user_id AS landlord_user_id,
-                    usr.firstName AS enc_first_name,
-                    usr.lastName  AS enc_last_name
-                FROM Unit u
-                INNER JOIN Property p ON u.property_id = p.property_id
-                INNER JOIN Landlord l ON p.landlord_id = l.landlord_id
-                INNER JOIN User usr ON l.user_id = usr.user_id
-                WHERE u.unit_id = ?
-                LIMIT 1
-                `,
-                [lease.unit_id]
-            );
-
-            if (!unitRows?.length) continue;
-            const unit = unitRows[0];
-
-            /* -------------------------------------------------
+            /* ---------------------------
                DECRYPT LANDLORD NAME
-            ------------------------------------------------- */
+            --------------------------- */
             let landlord_name = "Landlord";
             try {
-                const first = decryptData(JSON.parse(unit.enc_first_name), SECRET_KEY);
-                const last = decryptData(JSON.parse(unit.enc_last_name), SECRET_KEY);
+                const first = decryptData(JSON.parse(row.enc_first_name), SECRET_KEY);
+                const last = decryptData(JSON.parse(row.enc_last_name), SECRET_KEY);
                 landlord_name = `${first} ${last}`;
             } catch {}
 
-            /* -------------------------------------------------
-               UNIT PHOTOS
-            ------------------------------------------------- */
-            const [photos]: any = await db.query(
-                `
-                SELECT photo_url
-                FROM UnitPhoto
-                WHERE unit_id = ?
-                ORDER BY id ASC
-                `,
-                [lease.unit_id]
-            );
-
+            /* ---------------------------
+               DECRYPT PHOTOS
+            --------------------------- */
             const unit_photos =
-                photos
-                    ?.map((p: any) => {
+                row.unit_photos
+                    ?.split(",")
+                    .map((p: string) => {
                         try {
-                            return decryptData(JSON.parse(p.photo_url), SECRET_KEY);
+                            return decryptData(JSON.parse(p), SECRET_KEY);
                         } catch {
                             return null;
                         }
                     })
                     .filter(Boolean) || [];
 
-            /* -------------------------------------------------
-               FINAL MERGED OBJECT
-            ------------------------------------------------- */
-            results.push({
-                agreement_id: lease.agreement_id,
+            return {
+                agreement_id: row.agreement_id,
 
-                lease_status: lease.status,
+                lease_status: row.lease_status,
                 leaseSignature,
 
-                start_date: lease.start_date,
-                end_date: lease.end_date,
+                start_date: row.start_date,
+                end_date: row.end_date,
 
-                unit_id: unit.unit_id,
-                unit_name: unit.unit_name,
-                unit_size: unit.unit_size,
-                unit_style: unit.unit_style,
-                rent_amount: unit.rent_amount,
-                furnish: unit.furnish,
-                unit_status: unit.unit_status,
+                unit_id: row.unit_id,
+                unit_name: row.unit_name,
+                unit_size: row.unit_size,
+                unit_style: row.unit_style,
+                rent_amount: row.rent_amount,
+                furnish: row.furnish,
+                unit_status: row.unit_status,
 
-                property_id: unit.property_id,
-                property_name: unit.property_name,
-                property_type: unit.property_type,
+                property_id: row.property_id,
+                property_name: row.property_name,
+                property_type: row.property_type,
 
-                street: unit.street,
-                brgy_district: unit.brgy_district,
-                city: unit.city,
-                province: unit.province,
-                zip_code: unit.zip_code,
+                street: row.street,
+                brgy_district: row.brgy_district,
+                city: row.city,
+                province: row.province,
+                zip_code: row.zip_code,
 
-                landlord_user_id: unit.landlord_user_id,
+                landlord_user_id: row.landlord_user_id,
                 landlord_name,
 
                 unit_photos,
-            });
-        }
-
-        return results;
+            };
+        });
     },
-    (tenantId: string) => [`tenant-active-leases`, tenantId],
+    (tenantId: string) => ["tenant-active-leases", tenantId],
     {
-        revalidate: 60, // seconds
+        revalidate: 60,
         tags: ["tenant-leases"],
     }
 );
@@ -210,7 +173,6 @@ export async function GET(req: NextRequest) {
         }
 
         return NextResponse.json(leases, { status: 200 });
-
     } catch (error) {
         console.error("TENANT ACTIVE LEASE API ERROR:", error);
         return NextResponse.json(
