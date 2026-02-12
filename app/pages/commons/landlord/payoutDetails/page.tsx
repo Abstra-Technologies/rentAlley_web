@@ -70,6 +70,15 @@ export default function PayoutDetails() {
     );
 
     /* =====================
+   OTP STATES
+===================== */
+    const [showOtpModal, setShowOtpModal] = useState(false);
+    const [otpValue, setOtpValue] = useState("");
+    const [pendingPayoutId, setPendingPayoutId] = useState<number | null>(null);
+    const [otpLoading, setOtpLoading] = useState(false);
+
+
+    /* =====================
        LOAD DATA
     ===================== */
     useEffect(() => {
@@ -110,21 +119,68 @@ export default function PayoutDetails() {
     );
 
     /* =====================
-       SET ACTIVE
+       SET ACTIVE OTP REQUEST FIRST
     ===================== */
     const setActive = async (payout_id: number) => {
-        await axios.post("/api/landlord/payout/setActive", {
-            landlord_id,
-            payout_id,
-        });
+        try {
+            // Request OTP first
+            await axios.post("/api/landlord/payout/otp/request-otp", {
+                landlord_id,
+                payout_id,
+                phone_number: user?.phoneNumber,
+            });
 
-        setAccounts((prev) =>
-            prev.map((a) => ({
-                ...a,
-                is_active: a.payout_id === payout_id ? 1 : 0,
-            })),
-        );
+            setPendingPayoutId(payout_id);
+            setShowOtpModal(true);
+
+            await Swal.fire("OTP Sent", "Check your SMS for the verification code.", "info");
+
+        } catch (error) {
+            await Swal.fire("Error", "Failed to send OTP.", "error");
+        }
     };
+
+
+    const verifyOtpAndActivate = async () => {
+        if (!otpValue || !pendingPayoutId) {
+            Swal.fire("Missing OTP", "Enter the verification code.", "warning");
+            return;
+        }
+
+        setOtpLoading(true);
+
+        try {
+            await axios.post("/api/landlord/payout/setActive", {
+                landlord_id,
+                payout_id: pendingPayoutId,
+                otp: otpValue,
+            });
+
+            setAccounts((prev) =>
+                prev.map((a) => ({
+                    ...a,
+                    is_active: a.payout_id === pendingPayoutId ? 1 : 0,
+                }))
+            );
+
+            setShowOtpModal(false);
+            setOtpValue("");
+            setPendingPayoutId(null);
+
+            Swal.fire("Success", "Payout account activated.", "success");
+
+        } catch (error: any) {
+            Swal.fire(
+                "Invalid OTP",
+                error?.response?.data?.error || "Verification failed.",
+                "error"
+            );
+        } finally {
+            setOtpLoading(false);
+        }
+    };
+
+
 
     /* =====================
        ADD ACCOUNT
@@ -452,6 +508,56 @@ export default function PayoutDetails() {
                     </p>
                 </div>
             </div>
+
+
+            <AnimatePresence>
+                {showOtpModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.9 }}
+                            className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4"
+                        >
+                            <h2 className="text-lg font-bold">Verify OTP</h2>
+                            <p className="text-sm text-gray-500">
+                                Enter the 6-digit code sent to your mobile number.
+                            </p>
+
+                            <input
+                                value={otpValue}
+                                onChange={(e) => setOtpValue(e.target.value)}
+                                maxLength={6}
+                                className="w-full border rounded-xl px-4 py-3 text-center text-lg tracking-widest"
+                            />
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowOtpModal(false)}
+                                    className="flex-1 py-2 border rounded-xl"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    onClick={verifyOtpAndActivate}
+                                    disabled={otpLoading}
+                                    className="flex-1 py-2 bg-blue-600 text-white rounded-xl"
+                                >
+                                    {otpLoading ? "Verifying..." : "Confirm"}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+
         </div>
     );
 }
