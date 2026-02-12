@@ -29,16 +29,6 @@ export default function LandlordBetaBanner() {
     const isBetaActive = data?.plan_code === "BETA";
     const endDate = data?.end_date;
 
-    /* ================= DISMISS ================= */
-    useEffect(() => {
-        const wasDismissed = localStorage.getItem("beta_banner_dismissed");
-        if (wasDismissed === "true") setDismissed(true);
-    }, []);
-
-    const handleDismiss = () => {
-        setDismissed(true);
-        localStorage.setItem("beta_banner_dismissed", "true");
-    };
 
     /* ================= COUNTDOWN ================= */
     const remainingDays = useMemo(() => {
@@ -84,12 +74,7 @@ export default function LandlordBetaBanner() {
                             </p>
                         </div>
 
-                        <button
-                            onClick={handleDismiss}
-                            className="p-1.5 rounded-lg hover:bg-white/20"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
+
                     </div>
                 </div>
             </div>
