@@ -11,7 +11,41 @@ import mammoth from "mammoth";
 const OPENROUTER_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY!;
 const MODEL = process.env.OPENROUTER_UNIT_IMPORT_MODEL!;
 
+async function extractPDFText(buffer: Buffer): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const PDFParser = require("pdf2json");
+        const pdfParser = new PDFParser();
+
+        let extractedText = "";
+
+        pdfParser.on("pdfParser_dataError", (errData: any) => {
+            reject(errData.parserError);
+        });
+
+        pdfParser.on("pdfParser_dataReady", (pdfData: any) => {
+            try {
+                pdfData.Pages.forEach((page: any) => {
+                    page.Texts.forEach((textItem: any) => {
+                        textItem.R.forEach((run: any) => {
+                            extractedText += decodeURIComponent(run.T) + " ";
+                        });
+                    });
+                    extractedText += "\n";
+                });
+
+                resolve(extractedText);
+            } catch (err) {
+                reject(err);
+            }
+        });
+
+        pdfParser.parseBuffer(buffer);
+    });
+}
+
 export async function POST(req: Request) {
+    let connection: any;
+
     try {
         if (!OPENROUTER_KEY || !MODEL) {
             throw new Error("OpenRouter environment variables not configured.");
@@ -48,11 +82,9 @@ export async function POST(req: Request) {
             rawText = JSON.stringify(rawRows);
         }
 
-        // PDF (dynamic require to avoid Turbopack build failure)
+        // PDF (Using pdf2json — Turbopack Safe)
         else if (mimeType === "application/pdf") {
-            const pdfParse = require("pdf-parse-new");
-            const pdfData = await pdfParse(buffer);
-            rawText = pdfData.text;
+            rawText = await extractPDFText(buffer);
         }
 
         // DOCX
@@ -91,13 +123,13 @@ export async function POST(req: Request) {
                         {
                             role: "system",
                             content: `
-Extract rental unit data from the document.
+Extract rental unit data.
 
 Return ONLY a valid JSON array.
-Do NOT include markdown.
-Do NOT include explanation.
+No markdown.
+No explanation.
 
-Each object must follow this structure exactly:
+Each object must follow:
 
 {
   "unit_name": "",
@@ -120,7 +152,6 @@ Each object must follow this structure exactly:
         );
 
         const aiJson = await aiResponse.json();
-        console.log("AI RESPONSE:", aiJson);
 
         if (!aiResponse.ok) {
             throw new Error(
@@ -128,21 +159,20 @@ Each object must follow this structure exactly:
             );
         }
 
-        if (!aiJson.choices || !aiJson.choices.length) {
+        if (!aiJson.choices?.length) {
             throw new Error("AI returned empty response");
         }
 
-        let content = aiJson.choices[0].message.content;
-
-        // Clean possible markdown wrapping
-        content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+        let content = aiJson.choices[0].message.content
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
 
         let units: any[];
 
         try {
             units = JSON.parse(content);
         } catch {
-            console.error("Invalid AI JSON:", content);
             throw new Error("AI returned invalid JSON");
         }
 
@@ -154,7 +184,7 @@ Each object must follow this structure exactly:
         // 3️⃣ INSERT INTO DATABASE
         // =====================================================
 
-        const connection = await db.getConnection();
+        connection = await db.getConnection();
         await connection.beginTransaction();
 
         const validStyles = [
@@ -179,7 +209,6 @@ Each object must follow this structure exactly:
         for (const unit of units) {
             let unit_id = generateUnitId();
 
-            // Ensure unique ID
             let unique = false;
             while (!unique) {
                 const [rows]: any = await connection.query(
@@ -224,7 +253,13 @@ Each object must follow this structure exactly:
         );
 
     } catch (error: any) {
+        if (connection) {
+            await connection.rollback();
+            connection.release();
+        }
+
         console.error("Bulk Upload Error:", error);
+
         return NextResponse.json(
             { error: error.message || "Bulk upload failed." },
             { status: 500 }
