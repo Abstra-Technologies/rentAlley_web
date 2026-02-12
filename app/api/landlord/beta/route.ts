@@ -2,113 +2,124 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
+    const connection = await db.getConnection();
+
     try {
-        const body = await req.json();
+        /* ===============================
+           1️⃣ Parse body safely
+        ================================ */
+        let body: any = {};
+        try {
+            body = await req.json();
+        } catch {
+            body = {};
+        }
 
-        const {
-            user_id,
-            fullName,
-            email,
-            propertiesCount,
-            avgUnitsPerProperty,
-            region,
-            province,
-            city,
-        } = body;
+        const { user_id } = body;
 
-        /* =============================
-           Basic validation
-        ============================== */
-        if (
-            !user_id ||
-            !fullName ||
-            !email ||
-            !propertiesCount ||
-            !avgUnitsPerProperty ||
-            !region ||
-            !province ||
-            !city
-        ) {
+        if (!user_id) {
             return NextResponse.json(
-                { error: "Missing required fields" },
+                { error: "Missing user_id" },
                 { status: 400 }
             );
         }
 
-        /* =============================
-           Resolve landlord_id
-        ============================== */
-        const [landlordRows]: any = await db.query(
-            `SELECT landlord_id FROM Landlord WHERE user_id = ? LIMIT 1`,
+        await connection.beginTransaction();
+
+        /* ===============================
+           2️⃣ Resolve landlord_id
+        ================================ */
+        const [landlordRows]: any = await connection.query(
+            `SELECT landlord_id 
+             FROM rentalley_db.Landlord 
+             WHERE user_id = ? 
+             LIMIT 1`,
             [user_id]
         );
 
         if (!landlordRows.length) {
-            return NextResponse.json(
-                { error: "Landlord not found" },
-                { status: 404 }
-            );
+            throw new Error("Landlord not found");
         }
 
         const landlord_id = landlordRows[0].landlord_id;
 
-        /* =============================
-           Prevent duplicate application
-        ============================== */
-        const [existing]: any = await db.query(
-            `SELECT beta_id, status FROM BetaUsers WHERE landlord_id = ? LIMIT 1`,
+        /* ===============================
+           3️⃣ CHECK IF ANY SUBSCRIPTION EXISTS
+           (ACTIVE OR TRIAL OR PAID)
+        ================================ */
+
+        const [existingSubs]: any = await connection.query(
+            `
+            SELECT subscription_id 
+            FROM rentalley_db.Subscription
+            WHERE landlord_id = ?
+            LIMIT 1
+            `,
             [landlord_id]
         );
 
-        if (existing.length) {
-            return NextResponse.json(
-                {
-                    error: "Beta application already exists",
-                    status: existing[0].status,
-                },
-                { status: 409 }
+        if (existingSubs.length > 0) {
+            throw new Error(
+                "You already have a subscription. Beta is only available for new landlords."
             );
         }
 
-        /* =============================
-           Insert Beta User
-        ============================== */
-        await db.query(
+        /* ===============================
+           4️⃣ CREATE BETA SUBSCRIPTION
+        ================================ */
+
+        await connection.query(
             `
-      INSERT INTO BetaUsers (
-        landlord_id,
-        full_name,
-        email,
-        properties_count,
-        avg_units_per_property,
-        region,
-        province,
-        city,
-        status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
-      `,
-            [
+            INSERT INTO rentalley_db.Subscription (
                 landlord_id,
-                fullName,
-                email,
-                propertiesCount,
-                avgUnitsPerProperty,
-                region,
-                province,
-                city,
-            ]
+                plan_name,
+                plan_code,
+                start_date,
+                end_date,
+                payment_status,
+                request_reference_number,
+                is_trial,
+                amount_paid,
+                is_active
+            ) VALUES (
+                ?,
+                'Beta Program',
+                'BETA',
+                CURDATE(),
+                DATE_ADD(CURDATE(), INTERVAL 60 DAY),
+                'paid',
+                CONCAT('BETA-', UUID()),
+                1,
+                0.00,
+                1
+            )
+            `,
+            [landlord_id]
         );
 
+        await connection.commit();
+
         return NextResponse.json(
-            { message: "Beta application submitted successfully" },
+            {
+                success: true,
+                message:
+                    "Beta activated successfully. Your 60-day access starts today.",
+            },
             { status: 201 }
         );
+    } catch (error: any) {
+        await connection.rollback();
+        console.error("[BETA_AUTO_ACTIVATE_ERROR]", error);
 
-    } catch (error) {
-        console.error("[BETA_JOIN_ERROR]", error);
         return NextResponse.json(
-            { error: "Internal server error" },
-            { status: 500 }
+            {
+                error:
+                    error.message ||
+                    "Failed to activate beta program",
+            },
+            { status: 400 }
         );
+    } finally {
+        connection.release();
     }
 }
