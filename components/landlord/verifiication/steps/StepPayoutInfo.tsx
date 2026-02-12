@@ -5,8 +5,10 @@ import {
     FiCreditCard,
     FiInfo,
     FiAlertTriangle,
+    FiSearch,
 } from "react-icons/fi";
 import axios from "axios";
+import useAuthStore from "@/zustand/authStore";
 
 type Channel = {
     name: string;
@@ -43,11 +45,12 @@ export default function StepPayoutInfo({
     const [methodSearch, setMethodSearch] = useState("");
     const [showMethods, setShowMethods] = useState(false);
     const [showPartnersModal, setShowPartnersModal] = useState(false);
+    const { user, loading, fetchSession } = useAuthStore();
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    /* ================= LOAD PAYOUT CHANNELS ================= */
+    /* ================= LOAD CHANNELS ================= */
     useEffect(() => {
         async function loadChannels() {
             try {
@@ -60,16 +63,11 @@ export default function StepPayoutInfo({
         loadChannels();
     }, []);
 
-    /* ================= FILTER (SEARCH ONLY) ================= */
-    const filteredChannels = channels.filter(c =>
+    const filteredChannels = channels.filter((c) =>
         c.name.toLowerCase().includes(methodSearch.toLowerCase())
     );
 
-    /* ================= VALIDATION ================= */
-    const isValid =
-        payoutMethod &&
-        accountName &&
-        accountNumber;
+    const isValid = payoutMethod && accountName && accountNumber;
 
     /* ================= SAVE ================= */
     async function handleSave() {
@@ -78,18 +76,16 @@ export default function StepPayoutInfo({
         setSaving(true);
         setError(null);
 
-        const selectedChannel = channels.find(c => c.code === payoutMethod);
+        const selectedChannel = channels.find(
+            (c) => c.code === payoutMethod
+        );
 
         try {
             await axios.post("/api/landlord/payout/saveAccount", {
                 landlord_id: landlordId,
-
-                // NEW: canonical identifier
+                business_email:user?.email,
                 channel_code: payoutMethod,
-
-                // still useful for UI / reporting
                 bank_name: selectedChannel?.name || null,
-
                 account_name: accountName,
                 account_number: accountNumber,
             });
@@ -97,54 +93,61 @@ export default function StepPayoutInfo({
             onSaved?.();
         } catch (err) {
             console.error(err);
-            setError("Failed to save payout information.");
+            setError("Unable to save payout information. Please try again.");
         } finally {
             setSaving(false);
         }
     }
 
+    /* ================= UI ================= */
     return (
-        <section className="space-y-6">
+        <section className="space-y-8">
+
             {/* Header */}
-            <div className="flex items-center mb-6">
-                <FiCreditCard className="w-6 h-6 text-blue-500 mr-3" />
-                <h2 className="text-2xl font-bold text-gray-900">
-                    Payout Information
-                </h2>
+            <div className="flex items-center gap-3">
+                <div className="bg-blue-100 p-3 rounded-xl">
+                    <FiCreditCard className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                        Set Up Payout
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                        Connect your bank or e-wallet to receive rental income.
+                    </p>
+                </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-                {/* Searchable Payout Channel */}
-                <div className="md:col-span-2 relative">
-                    <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-gray-700">
-                            Search Payout Method
-                        </label>
+            {/* Method Selection */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-700">
+                        Payout Partner
+                    </label>
+                    <button
+                        type="button"
+                        onClick={() => setShowPartnersModal(true)}
+                        className="text-xs text-blue-600 hover:underline"
+                    >
+                        View all
+                    </button>
+                </div>
 
-                        <button
-                            type="button"
-                            onClick={() => setShowPartnersModal(true)}
-                            className="text-xs text-blue-600 hover:text-blue-700 underline"
-                        >
-                            View available partners
-                        </button>
-                    </div>
-
+                <div className="relative">
+                    <FiSearch className="absolute left-3 top-3.5 text-gray-400" />
                     <input
                         value={methodSearch}
                         onChange={(e) => {
                             setMethodSearch(e.target.value);
                             setShowMethods(true);
                         }}
-                        onFocus={() => setShowMethods(true)}
-                        onBlur={() => setTimeout(() => setShowMethods(false), 150)}
-                        placeholder="Search payout partner"
-                        className="w-full px-4 py-3 border rounded-xl bg-gray-50"
+                        placeholder="Search bank or e-wallet"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
 
                     {showMethods && methodSearch && (
-                        <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-xl border bg-white shadow">
-                            {filteredChannels.map(channel => (
+                        <ul className="absolute z-20 mt-2 w-full max-h-52 overflow-auto rounded-xl border bg-white shadow-lg">
+                            {filteredChannels.map((channel) => (
                                 <li
                                     key={channel.code}
                                     onClick={() => {
@@ -153,108 +156,119 @@ export default function StepPayoutInfo({
                                         setBankName(channel.name);
                                         setShowMethods(false);
                                     }}
-                                    className="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50"
+                                    className="px-4 py-3 text-sm cursor-pointer hover:bg-blue-50"
                                 >
-                                    {channel.name}
-                                    <span className="ml-2 text-xs text-gray-400">
-                    ({channel.type})
-                  </span>
+                                    <div className="flex justify-between">
+                                        <span>{channel.name}</span>
+                                        <span className="text-xs text-gray-400">
+                                            {channel.type}
+                                        </span>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
                     )}
                 </div>
+            </div>
 
-                {/* Account Name */}
+            {/* Account Inputs */}
+            <div className="space-y-5">
                 <div>
                     <label className="text-sm font-medium text-gray-700">
                         Account Name
                     </label>
                     <input
                         value={accountName}
-                        onChange={(e) => setAccountName(e.target.value)}
-                        className="w-full px-4 py-3 border rounded-xl bg-gray-50"
+                        onChange={(e) =>
+                            setAccountName(e.target.value)
+                        }
+                        placeholder="Full name on account"
+                        className="w-full mt-1 px-4 py-3 rounded-xl border bg-gray-50 focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
 
-                {/* Account Number */}
                 <div>
                     <label className="text-sm font-medium text-gray-700">
                         Account / Mobile Number
                     </label>
                     <input
                         value={accountNumber}
-                        onChange={(e) => setAccountNumber(e.target.value)}
-                        className="w-full px-4 py-3 border rounded-xl bg-gray-50"
+                        onChange={(e) =>
+                            setAccountNumber(e.target.value)
+                        }
+                        placeholder="Enter account number"
+                        className="w-full mt-1 px-4 py-3 rounded-xl border bg-gray-50 focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
             </div>
 
-            {/* Info */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
-                <div className="flex items-start">
-                    <FiInfo className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
-                    <p className="text-blue-700 text-sm">
-                        Your payout details are required so Upkyp can securely send your rental income.
+            {/* Info Box */}
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700 space-y-3">
+                <div className="flex items-start gap-3">
+                    <FiInfo className="mt-1" />
+                    <p>
+                        Double-check your payout details. Incorrect
+                        information may delay transfers.
                     </p>
                 </div>
-
-                <div className="flex items-start">
-                    <FiAlertTriangle className="w-5 h-5 text-orange-500 mr-3 mt-0.5" />
-                    <p className="text-orange-700 text-sm">
-                        Please double-check all details to avoid payout delays.
+                <div className="flex items-start gap-3">
+                    <FiAlertTriangle className="mt-1 text-orange-500" />
+                    <p>
+                        Ensure the account name matches your
+                        verification details.
                     </p>
                 </div>
             </div>
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && (
+                <p className="text-sm text-red-600">{error}</p>
+            )}
 
-            <div className="flex justify-end">
+            {/* Sticky Save Button */}
+            <div className="pt-4">
                 <button
                     onClick={handleSave}
                     disabled={!isValid || saving}
-                    className={`rounded-lg px-6 py-2 text-sm font-semibold text-white ${
+                    className={`w-full sm:w-auto px-6 py-3 rounded-xl text-sm font-semibold text-white transition ${
                         !isValid || saving
                             ? "bg-gray-400 cursor-not-allowed"
                             : "bg-blue-600 hover:bg-blue-700"
                     }`}
                 >
-                    {saving ? "Saving..." : "Save Payout Info"}
+                    {saving ? "Saving..." : "Save Payout Information"}
                 </button>
             </div>
 
             {/* Partners Modal */}
             {showPartnersModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-                    <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden">
-                        <div className="flex items-center justify-between px-6 py-4 border-b">
-                            <h3 className="text-lg font-bold text-gray-800">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+                    <div className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto">
+
+                        <div className="px-6 py-4 border-b">
+                            <h3 className="font-bold text-gray-800">
                                 Available Payout Partners
                             </h3>
-                            <button
-                                onClick={() => setShowPartnersModal(false)}
-                                className="text-gray-400 hover:text-gray-600 text-xl"
-                            >
-                                ×
-                            </button>
                         </div>
 
-                        <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
-                            <ul className="space-y-1">
-                                {channels.map(c => (
-                                    <li key={c.code} className="text-sm text-gray-600">
-                                        • {c.name}
-                                    </li>
-                                ))}
-                            </ul>
+                        <div className="px-6 py-4 space-y-2">
+                            {channels.map((c) => (
+                                <div
+                                    key={c.code}
+                                    className="text-sm text-gray-600 py-2 border-b last:border-none"
+                                >
+                                    {c.name}
+                                </div>
+                            ))}
                         </div>
 
-                        <div className="px-6 py-4 border-t bg-gray-50 flex justify-end">
+                        <div className="px-6 py-4 border-t flex justify-end">
                             <button
-                                onClick={() => setShowPartnersModal(false)}
-                                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                                onClick={() =>
+                                    setShowPartnersModal(false)
+                                }
+                                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm"
                             >
-                                Got it
+                                Close
                             </button>
                         </div>
                     </div>
