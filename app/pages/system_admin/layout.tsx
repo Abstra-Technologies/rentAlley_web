@@ -43,9 +43,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ],
         },
         {
-            title: "Beta Programs",
+            title: "Subscription Programs",
             items: [
                 { label: "Beta Users List", href: "/pages/system_admin/beta_programs", icon: Users },
+                { label: "Plan List", href: "/pages/system_admin/subscription_plans", icon: Users },
 
             ],
         },

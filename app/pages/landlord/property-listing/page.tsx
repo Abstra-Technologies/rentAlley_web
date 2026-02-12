@@ -6,6 +6,7 @@ import { Building2, Plus, Search, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import usePropertyListingPage from "@/hooks/landlord/usePropertyListingPage";
+
 import PropertyCard from "@/components/landlord/properties/propertyCards";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 import LandlordProfileStatus from "@/components/landlord/profile/LandlordProfileStatus";
@@ -198,7 +199,7 @@ export default function PropertyListingPage() {
             </motion.div>
           )}
 
-          <LandlordProfileStatus landlord_id={user.landlord_id} />
+          <LandlordProfileStatus landlord_id={user?.landlord_id} />
         </div>
 
         {/* Search */}

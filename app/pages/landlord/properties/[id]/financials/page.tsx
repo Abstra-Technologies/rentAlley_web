@@ -37,10 +37,10 @@ ChartJS.register(
 
 import useSubscription from "@/hooks/landlord/useSubscription";
 import useAuthStore from "@/zustand/authStore";
-import { subscriptionConfig } from "@/constant/subscription/limits";
 import Swal from "sweetalert2";
 
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
+const fetcher = (url: string) =>
+    axios.get(url).then((res) => res.data);
 
 export default function FinancialsPage() {
     const { id } = useParams();
@@ -48,31 +48,32 @@ export default function FinancialsPage() {
     const { user } = useAuthStore();
 
     const landlordId = user?.landlord_id;
+
     const { subscription, loadingSubscription } =
         useSubscription(landlordId);
 
     const currentYear = new Date().getFullYear();
     const BASE_HISTORY_YEARS = 3;
 
-    const [selectedYear, setSelectedYear] = useState(currentYear);
-    const [showNOIChart, setShowNOIChart] = useState(false);
-    const [showGrossChart, setShowGrossChart] = useState(false);
+    const [selectedYear, setSelectedYear] =
+        useState(currentYear);
 
-    const planName =
-        subscription?.plan_name as keyof typeof subscriptionConfig;
-    const planConfig = planName
-        ? subscriptionConfig[planName]
-        : null;
+    const [showNOIChart, setShowNOIChart] =
+        useState(false);
+
+    const [showGrossChart, setShowGrossChart] =
+        useState(false);
+
+    /* ===============================
+       SUBSCRIPTION-BASED ACCESS
+    =============================== */
 
     const canUseFinancials =
-        planConfig?.features?.financialInsights === true;
-    const allowedHistoryYears =
-        planConfig?.limits?.financialHistoryYears;
+        subscription?.features?.financialInsights === true;
 
-    /**
-     * Always show current year + previous 3 years,
-     * but trim based on subscription limits
-     */
+    const allowedHistoryYears =
+        subscription?.limits?.financialHistoryYears ?? null;
+
     const baseYears = Array.from(
         { length: BASE_HISTORY_YEARS + 1 },
         (_, i) => currentYear - i
@@ -85,6 +86,10 @@ export default function FinancialsPage() {
                 (year) => currentYear - year < allowedHistoryYears
             );
 
+    /* ===============================
+       FETCH ANALYTICS
+    =============================== */
+
     const { data, isLoading } = useSWR(
         id
             ? `/api/analytics/landlord/revenue-expense-trend?property_id=${id}&year=${selectedYear}`
@@ -94,15 +99,18 @@ export default function FinancialsPage() {
 
     const metrics = data?.metrics || {};
 
-    if (isLoading) return <SkeletonLoader />;
+    if (isLoading || loadingSubscription) {
+        return <SkeletonLoader />;
+    }
 
-    if (!loadingSubscription && !canUseFinancials) {
+    if (subscription && !canUseFinancials) {
         return <UpgradeRequired router={router} />;
     }
 
-    /* ==============================
+    /* ===============================
        CHART CONFIG
     =============================== */
+
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -110,7 +118,8 @@ export default function FinancialsPage() {
         scales: {
             y: {
                 ticks: {
-                    callback: (v: any) => "₱" + v.toLocaleString(),
+                    callback: (v: any) =>
+                        "₱" + Number(v).toLocaleString(),
                 },
             },
         },
@@ -123,7 +132,8 @@ export default function FinancialsPage() {
                 label: "NOI",
                 data: metrics.noiTrend ?? [],
                 borderColor: "#2563eb",
-                backgroundColor: "rgba(37, 99, 235, 0.12)",
+                backgroundColor:
+                    "rgba(37, 99, 235, 0.12)",
                 fill: true,
                 tension: 0.4,
             },
@@ -137,12 +147,17 @@ export default function FinancialsPage() {
                 label: "Gross Operating Income",
                 data: metrics.grossRentTrend ?? [],
                 borderColor: "#10b981",
-                backgroundColor: "rgba(16, 185, 129, 0.12)",
+                backgroundColor:
+                    "rgba(16, 185, 129, 0.12)",
                 fill: true,
                 tension: 0.4,
             },
         ],
     };
+
+    /* ===============================
+       UI
+    =============================== */
 
     return (
         <div className="pb-24 md:pb-6">
@@ -173,7 +188,8 @@ export default function FinancialsPage() {
 
                             if (
                                 allowedHistoryYears !== null &&
-                                currentYear - year >= allowedHistoryYears
+                                currentYear - year >=
+                                allowedHistoryYears
                             ) {
                                 Swal.fire(
                                     "Upgrade Required",
@@ -198,30 +214,44 @@ export default function FinancialsPage() {
                 {/* GOI */}
                 <Section
                     title="Gross Operating Income (GOI)"
-                    icon={<PlusCircle className="w-5 h-5 text-emerald-600" />}
+                    icon={
+                        <PlusCircle className="w-5 h-5 text-emerald-600" />
+                    }
                 >
                     <MetricGrid metrics={metrics.grossRent} />
                     <ChartToggle
                         title="GOI Monthly Trend"
                         open={showGrossChart}
-                        toggle={() => setShowGrossChart(!showGrossChart)}
+                        toggle={() =>
+                            setShowGrossChart(!showGrossChart)
+                        }
                     >
-                        <Line data={grossChart} options={chartOptions} />
+                        <Line
+                            data={grossChart}
+                            options={chartOptions}
+                        />
                     </ChartToggle>
                 </Section>
 
                 {/* NOI */}
                 <Section
                     title="Net Operating Income (NOI)"
-                    icon={<DollarSign className="w-5 h-5 text-blue-600" />}
+                    icon={
+                        <DollarSign className="w-5 h-5 text-blue-600" />
+                    }
                 >
                     <MetricGrid metrics={metrics.noi} />
                     <ChartToggle
                         title="NOI Monthly Trend"
                         open={showNOIChart}
-                        toggle={() => setShowNOIChart(!showNOIChart)}
+                        toggle={() =>
+                            setShowNOIChart(!showNOIChart)
+                        }
                     >
-                        <Line data={noiChart} options={chartOptions} />
+                        <Line
+                            data={noiChart}
+                            options={chartOptions}
+                        />
                     </ChartToggle>
                 </Section>
             </div>
@@ -229,7 +259,7 @@ export default function FinancialsPage() {
     );
 }
 
-/* ==============================
+/* ===============================
    REUSABLE COMPONENTS
 ============================== */
 
@@ -261,12 +291,19 @@ function MetricGrid({ metrics }: any) {
     );
 }
 
-function MetricCard({ label, current, last, variance }: any) {
+function MetricCard({
+                        label,
+                        current,
+                        last,
+                        variance,
+                    }: any) {
     const positive = variance >= 0;
 
     return (
         <div className="bg-white border rounded-lg p-4">
-            <p className="text-xs text-gray-500 mb-1">{label}</p>
+            <p className="text-xs text-gray-500 mb-1">
+                {label}
+            </p>
             <p className="text-2xl font-bold">
                 {formatCurrency(current)}
             </p>
@@ -281,7 +318,9 @@ function MetricCard({ label, current, last, variance }: any) {
                 )}
                 <span
                     className={`text-sm ${
-                        positive ? "text-emerald-600" : "text-red-600"
+                        positive
+                            ? "text-emerald-600"
+                            : "text-red-600"
                     }`}
                 >
           {variance?.toFixed(2)}%
@@ -291,26 +330,37 @@ function MetricCard({ label, current, last, variance }: any) {
     );
 }
 
-function ChartToggle({ title, open, toggle, children }: any) {
+function ChartToggle({
+                         title,
+                         open,
+                         toggle,
+                         children,
+                     }: any) {
     return (
         <div className="bg-white border rounded-lg">
             <button
                 onClick={toggle}
                 className="w-full p-4 flex justify-between items-center"
             >
-                <span className="font-semibold">{title}</span>
+        <span className="font-semibold">
+          {title}
+        </span>
                 <ChevronDown
                     className={`transition ${
                         open ? "rotate-180" : ""
                     }`}
                 />
             </button>
-            {open && <div className="p-4 h-[320px]">{children}</div>}
+            {open && (
+                <div className="p-4 h-[320px]">
+                    {children}
+                </div>
+            )}
         </div>
     );
 }
 
-/* ==============================
+/* ===============================
    FALLBACKS
 ============================== */
 
@@ -325,7 +375,9 @@ function UpgradeRequired({ router }: any) {
         <div className="min-h-screen flex items-center justify-center">
             <button
                 onClick={() =>
-                    router.push("/pages/landlord/subsciption_plan/pricing")
+                    router.push(
+                        "/pages/landlord/subsciption_plan/pricing"
+                    )
                 }
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white"
             >
