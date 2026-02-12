@@ -14,7 +14,7 @@ import {
 import StepPayoutInfo from "@/components/landlord/verifiication/steps/StepPayoutInfo";
 
 /* -------------------------------------------------------------------------- */
-/*                                    Types                                   */
+/* Types */
 /* -------------------------------------------------------------------------- */
 
 type VerificationStatus =
@@ -29,53 +29,36 @@ interface Props {
     landlordId: string;
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                   Utils                                    */
-/* -------------------------------------------------------------------------- */
-
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 /* -------------------------------------------------------------------------- */
-/*                              Main Component                                */
+/* MAIN */
 /* -------------------------------------------------------------------------- */
 
 export default function LandlordSetupBanner({ landlordId }: Props) {
-    /* ---------------- Modal State ---------------- */
     const [showPayoutModal, setShowPayoutModal] = useState(false);
 
-    /* ---------------- Payout Form State ---------------- */
     const [payoutMethod, setPayoutMethod] = useState("");
     const [accountName, setAccountName] = useState("");
     const [accountNumber, setAccountNumber] = useState("");
     const [bankName, setBankName] = useState("");
 
-    /* ---------------- Fetch Verification STATUS ---------------- */
     const { data: verification } = useSWR(
         landlordId ? `/api/landlord/${landlordId}/profileStatus` : null,
         fetcher,
         { revalidateOnFocus: false }
     );
 
-    /* ---------------- Fetch Payout STATUS + setup_completed ---------------- */
     const { data: payoutRes, mutate } = useSWR(
         landlordId ? `/api/landlord/payout/${landlordId}` : null,
         fetcher,
         { revalidateOnFocus: false }
     );
 
-    /* ---------------- Guard ---------------- */
-    if (!verification || !payoutRes) {
-        return null;
-    }
+    if (!verification || !payoutRes) return null;
 
-    /* ---------------------------------------------------------------------- */
-    /* 🔒 PERMANENT HIDE (HIGHEST PRIORITY)                                     */
-    /* ---------------------------------------------------------------------- */
-    if (payoutRes.setup_completed === 1) {
-        return null;
-    }
+    if (payoutRes.setup_completed === 1) return null;
 
-    /* ---------------- Normalize Status ---------------- */
     const verificationStatus: VerificationStatus =
         verification.status ?? "incomplete";
 
@@ -85,36 +68,52 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
     const verificationDone = verificationStatus === "verified";
     const payoutDone = payoutStatus === "completed";
 
-    /* ---------------- Soft hide safety ---------------- */
-    if (verificationDone && payoutDone) {
-        return null;
-    }
+    if (verificationDone && payoutDone) return null;
 
-    /* ---------------------------------------------------------------------- */
-    /*                                Render                                  */
-    /* ---------------------------------------------------------------------- */
+    const activationPercent =
+        (verificationDone ? 50 : 0) + (payoutDone ? 50 : 0);
 
     return (
         <>
-            {/* ================= SETUP BANNER ================= */}
-            <div className="mb-6 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-                <div className="mb-5">
-                    <h2 className="text-lg font-bold text-gray-800">
-                        Landlord Setup Progress
-                    </h2>
-                    <p className="text-sm text-gray-500">
-                        Complete the steps below to fully activate your account
-                    </p>
+            {/* ================== ENTERPRISE CARD ================== */}
+            <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+
+                {/* Header */}
+                <div className="mb-6">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                                Account Activation
+                            </h2>
+                            <p className="text-sm text-gray-500">
+                                Complete required steps to enable payouts
+                            </p>
+                        </div>
+
+                        <div className="text-sm font-medium text-gray-600">
+                            {activationPercent}% Complete
+                        </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mt-3 h-2 w-full rounded-full bg-gray-200">
+                        <div
+                            className="h-2 rounded-full bg-green-500 transition-all duration-500"
+                            style={{ width: `${activationPercent}%` }}
+                        />
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    {/* STEP 1 — VERIFICATION */}
-                    <Step
-                        title="Verification"
+                {/* Steps Container */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    {/* STEP 1 */}
+                    <StepCard
+                        title="Identity Verification"
                         description={getVerificationText(verificationStatus)}
                         status={verificationStatus}
                         icon={getVerificationIcon(verificationStatus)}
-                        disabled={verificationDone} // 🔥 NO CLICK WHEN VERIFIED
+                        disabled={verificationDone}
                         onClick={
                             verificationDone
                                 ? undefined
@@ -124,17 +123,15 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
                         }
                     />
 
-                    <Connector active={verificationDone} />
-
-                    {/* STEP 2 — PAYOUT */}
-                    <Step
+                    {/* STEP 2 */}
+                    <StepCard
                         title="Payout Setup"
                         description={
                             payoutDone
                                 ? "Completed"
                                 : verificationDone
-                                    ? "Set up your payout method"
-                                    : "Locked until verified"
+                                    ? "Set up payout method"
+                                    : "Locked until verification"
                         }
                         status={
                             !verificationDone
@@ -150,20 +147,23 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
                 </div>
             </div>
 
-            {/* ================= PAYOUT MODAL ================= */}
+            {/* ================= MODAL ================= */}
             {showPayoutModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                    <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
+
+                    <div className="w-full sm:max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[95vh] overflow-y-auto">
+
+                        {/* Modal Header */}
                         <div className="flex items-center justify-between border-b px-6 py-4">
                             <h3 className="text-lg font-bold text-gray-800">
-                                Set Up Payout Information
+                                Payout Information
                             </h3>
                             <button onClick={() => setShowPayoutModal(false)}>
                                 <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
                             </button>
                         </div>
 
-                        <div className="px-6 py-5">
+                        <div className="px-6 py-6">
                             <StepPayoutInfo
                                 landlordId={landlordId}
                                 payoutMethod={payoutMethod}
@@ -176,18 +176,9 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
                                 setBankName={setBankName}
                                 onSaved={() => {
                                     setShowPayoutModal(false);
-                                    mutate(); // refresh payout status + setup_completed
+                                    mutate();
                                 }}
                             />
-                        </div>
-
-                        <div className="flex justify-end border-t px-6 py-4">
-                            <button
-                                onClick={() => setShowPayoutModal(false)}
-                                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
-                            >
-                                Cancel
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -197,17 +188,17 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                               Helper Components                             */
+/* STEP CARD */
 /* -------------------------------------------------------------------------- */
 
-function Step({
-                  title,
-                  description,
-                  icon,
-                  status,
-                  disabled = false,
-                  onClick,
-              }: {
+function StepCard({
+                      title,
+                      description,
+                      icon,
+                      status,
+                      disabled = false,
+                      onClick,
+                  }: {
     title: string;
     description: string;
     icon: React.ReactNode;
@@ -222,58 +213,50 @@ function Step({
     onClick?: () => void;
 }) {
     const styles = {
-        verified: "text-green-600 bg-green-50 border-green-300",
-        completed: "text-green-600 bg-green-50 border-green-300",
-        pending: "text-orange-600 bg-orange-50 border-orange-300",
-        rejected: "text-red-600 bg-red-50 border-red-300",
-        incomplete: "text-blue-600 bg-blue-50 border-blue-300",
-        locked: "text-gray-400 bg-gray-100 border-gray-200",
+        verified: "border-green-300 bg-green-50 text-green-700",
+        completed: "border-green-300 bg-green-50 text-green-700",
+        pending: "border-orange-300 bg-orange-50 text-orange-700",
+        rejected: "border-red-300 bg-red-50 text-red-700",
+        incomplete: "border-blue-300 bg-blue-50 text-blue-700",
+        locked: "border-gray-200 bg-gray-100 text-gray-400",
     };
 
     return (
         <button
-            type="button"
             disabled={disabled}
             onClick={onClick}
-            className={`flex-1 rounded-xl border p-4 text-left transition ${
+            className={`w-full rounded-2xl border p-5 text-left transition ${
                 styles[status]
             } ${
                 disabled
-                    ? "cursor-not-allowed opacity-70"
+                    ? "cursor-not-allowed opacity-80"
                     : "hover:shadow-md active:scale-[0.99]"
             }`}
         >
-            <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-white p-2 shadow-sm">{icon}</div>
+            <div className="flex items-start gap-4">
+                <div className="rounded-xl bg-white p-2 shadow-sm">
+                    {icon}
+                </div>
+
                 <div>
                     <p className="font-semibold">{title}</p>
-                    <p className="text-xs opacity-80">{description}</p>
+                    <p className="text-xs opacity-80 mt-1">
+                        {description}
+                    </p>
                 </div>
             </div>
         </button>
     );
 }
 
-function Connector({ active }: { active: boolean }) {
-    return (
-        <div className="hidden sm:flex flex-1 items-center">
-            <div
-                className={`h-[2px] w-full ${
-                    active ? "bg-green-400" : "bg-gray-300"
-                }`}
-            />
-        </div>
-    );
-}
-
 /* -------------------------------------------------------------------------- */
-/*                              Status Utilities                               */
+/* UTILITIES */
 /* -------------------------------------------------------------------------- */
 
 function getVerificationText(status: VerificationStatus) {
     switch (status) {
         case "pending":
-            return "In review";
+            return "Under review";
         case "rejected":
             return "Action required";
         case "verified":
