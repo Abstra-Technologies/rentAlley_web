@@ -6,7 +6,6 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { generateUnitId } from "@/utils/id_generator";
 import * as XLSX from "xlsx";
-import pdfParse from "pdf-parse-new";
 import mammoth from "mammoth";
 
 const OPENROUTER_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY!;
@@ -14,6 +13,10 @@ const MODEL = process.env.OPENROUTER_UNIT_IMPORT_MODEL!;
 
 export async function POST(req: Request) {
     try {
+        if (!OPENROUTER_KEY || !MODEL) {
+            throw new Error("OpenRouter environment variables not configured.");
+        }
+
         const formData = await req.formData();
         const property_id = formData.get("property_id") as string;
         const file = formData.get("file") as File | null;
@@ -27,12 +30,11 @@ export async function POST(req: Request) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
         const mimeType = file.type;
-
         let rawText = "";
 
-        // ====================================================
+        // =====================================================
         // 1️⃣ FILE TYPE HANDLING
-        // ====================================================
+        // =====================================================
 
         // Excel / CSV
         if (
@@ -46,8 +48,9 @@ export async function POST(req: Request) {
             rawText = JSON.stringify(rawRows);
         }
 
-        // PDF (using pdf-parse-new)
+        // PDF (dynamic require to avoid Turbopack build failure)
         else if (mimeType === "application/pdf") {
+            const pdfParse = require("pdf-parse-new");
             const pdfData = await pdfParse(buffer);
             rawText = pdfData.text;
         }
@@ -63,14 +66,14 @@ export async function POST(req: Request) {
 
         else {
             return NextResponse.json(
-                { error: "Unsupported file type" },
+                { error: "Unsupported file type. Use Excel, CSV, PDF, or DOCX." },
                 { status: 400 }
             );
         }
 
-        // ====================================================
+        // =====================================================
         // 2️⃣ SEND TO OPENROUTER
-        // ====================================================
+        // =====================================================
 
         const aiResponse = await fetch(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -91,10 +94,10 @@ export async function POST(req: Request) {
 Extract rental unit data from the document.
 
 Return ONLY a valid JSON array.
-Do not include markdown.
-Do not include explanation.
+Do NOT include markdown.
+Do NOT include explanation.
 
-Each item MUST follow:
+Each object must follow this structure exactly:
 
 {
   "unit_name": "",
@@ -131,7 +134,7 @@ Each item MUST follow:
 
         let content = aiJson.choices[0].message.content;
 
-        // Clean markdown wrapper if exists
+        // Clean possible markdown wrapping
         content = content.replace(/```json/g, "").replace(/```/g, "").trim();
 
         let units: any[];
@@ -147,9 +150,9 @@ Each item MUST follow:
             throw new Error("AI output must be an array");
         }
 
-        // ====================================================
+        // =====================================================
         // 3️⃣ INSERT INTO DATABASE
-        // ====================================================
+        // =====================================================
 
         const connection = await db.getConnection();
         await connection.beginTransaction();
@@ -176,6 +179,7 @@ Each item MUST follow:
         for (const unit of units) {
             let unit_id = generateUnitId();
 
+            // Ensure unique ID
             let unique = false;
             while (!unique) {
                 const [rows]: any = await connection.query(
@@ -222,7 +226,7 @@ Each item MUST follow:
     } catch (error: any) {
         console.error("Bulk Upload Error:", error);
         return NextResponse.json(
-            { error: error.message || "Failed to process bulk upload" },
+            { error: error.message || "Bulk upload failed." },
             { status: 500 }
         );
     }
