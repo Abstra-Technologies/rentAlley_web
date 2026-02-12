@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import axios from "axios";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import Link from "next/link";
 import Image from "next/image";
 import { TrendingUp, AlertCircle, CheckCircle, Users } from "lucide-react";
@@ -14,49 +14,19 @@ import {
     SECTION_TITLE,
 } from "@/constant/design-constants";
 
-/* --------------------------------------------------
-   ApexCharts (lazy)
--------------------------------------------------- */
+/* =========================
+   Lazy ApexChart
+========================= */
 const Chart = dynamic(() => import("react-apexcharts"), {
     ssr: false,
-    loading: () => (
-        <div className="w-[180px] h-[180px] rounded-full bg-gray-100 animate-pulse" />
-    ),
 });
 
-/* --------------------------------------------------
+/* =========================
    Fetcher
--------------------------------------------------- */
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
-
-/* --------------------------------------------------
-   Types (MATCH API)
--------------------------------------------------- */
-type Tenant = {
-    tenant_id: number;
-    profilePicture: string | null;
-    firstName: string;
-    lastName: string;
-};
-
-type PropertyUnit = {
-    unit_id: number;
-    unit_name: string;
-    unit_status: string;
-    rent_amount: number;
-};
-
-type Property = {
-    property_id: string;
-    property_name: string;
-    city: string;
-    province: string;
-    units: PropertyUnit[];
-};
-
-type PropertyApiResponse = {
-    success: boolean;
-    data: Property[];
+========================= */
+const fetcher = async (url: string) => {
+    const res = await axios.get(url);
+    return res.data;
 };
 
 interface Props {
@@ -64,62 +34,83 @@ interface Props {
     onClick?: () => void;
 }
 
-/* --------------------------------------------------
-   Component
--------------------------------------------------- */
 export default function PaymentSummaryCard({
                                                landlord_id,
                                                onClick,
                                            }: Props) {
-    /* ---------------- Property Filter ---------------- */
-    const [selectedPropertyId, setSelectedPropertyId] = useState<
-        string | "all"
-    >("all");
+    const [selectedPropertyId, setSelectedPropertyId] =
+        useState<string>("all");
 
-    /* ---------------- Properties ---------------- */
-    const { data: propertyResponse, isLoading: propertiesLoading } =
-        useSWR<PropertyApiResponse>(
-            `/api/landlord/${landlord_id}/properties`,
-            fetcher,
-            { revalidateOnFocus: false }
-        );
+    /* =========================
+       PROPERTIES
+    ========================= */
+    const {
+        data: propertyResponse,
+        isLoading: propertiesLoading,
+    } = useSWR(
+        landlord_id
+            ? `/api/landlord/${landlord_id}/properties`
+            : null,
+        fetcher,
+        {
+            revalidateOnFocus: true,
+            refreshInterval: 60000,
+        }
+    );
 
     const properties = propertyResponse?.data ?? [];
 
-    /* ---------------- Stats ---------------- */
-    const statsUrl =
-        selectedPropertyId === "all"
+    /* =========================
+       STATS (REALTIME)
+    ========================= */
+    const statsKey = landlord_id
+        ? selectedPropertyId === "all"
             ? `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}`
-            : `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}&property_id=${selectedPropertyId}`;
+            : `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}&property_id=${selectedPropertyId}`
+        : null;
 
     const {
-        data: stats = {
-            total_collected: 0,
-            total_pending: 0,
-            total_overdue: 0,
-        },
+        data: stats,
         isLoading: statsLoading,
-    } = useSWR(statsUrl, fetcher, {
-        revalidateOnFocus: false,
-        dedupingInterval: 60_000,
+        mutate: mutateStats,
+    } = useSWR(statsKey, fetcher, {
+        revalidateOnFocus: true,
+        revalidateOnReconnect: true,
+        refreshInterval: 30000, // 🔥 auto refresh every 30s
     });
 
-    /* ---------------- Tenants ---------------- */
-    const tenantsUrl =
-        selectedPropertyId === "all"
+    /* =========================
+       TENANTS (REALTIME)
+    ========================= */
+    const tenantsKey = landlord_id
+        ? selectedPropertyId === "all"
             ? `/api/landlord/properties/getCurrentTenants?landlord_id=${landlord_id}`
-            : `/api/landlord/properties/getCurrentTenants?landlord_id=${landlord_id}&property_id=${selectedPropertyId}`;
+            : `/api/landlord/properties/getCurrentTenants?landlord_id=${landlord_id}&property_id=${selectedPropertyId}`
+        : null;
 
-    const { data: tenants = [], isLoading: tenantsLoading } = useSWR<Tenant[]>(
-        tenantsUrl,
-        fetcher,
-        { revalidateOnFocus: false }
-    );
+    const {
+        data: tenants = [],
+        isLoading: tenantsLoading,
+        mutate: mutateTenants,
+    } = useSWR(tenantsKey, fetcher, {
+        revalidateOnFocus: true,
+        refreshInterval: 60000,
+    });
 
-    /* ---------------- Computed ---------------- */
-    const collected = Math.round(stats.total_collected || 0);
-    const pending = Math.round(stats.total_pending || 0);
-    const overdue = Math.round(stats.total_overdue || 0);
+    /* =========================
+       Auto refresh when property changes
+    ========================= */
+    useEffect(() => {
+        mutateStats();
+        mutateTenants();
+    }, [selectedPropertyId]);
+
+    /* =========================
+       Derived values
+    ========================= */
+    const collected = Math.round(stats?.total_collected || 0);
+    const pending = Math.round(stats?.total_pending || 0);
+    const overdue = Math.round(stats?.total_overdue || 0);
     const total = collected + pending + overdue;
 
     const monthLabel = useMemo(
@@ -131,56 +122,47 @@ export default function PaymentSummaryCard({
         []
     );
 
-    const series = useMemo(
-        () => [collected, pending, overdue],
-        [collected, pending, overdue]
-    );
-
     const chartOptions = useMemo(
         () => ({
-            chart: { type: "donut", animations: { enabled: !statsLoading } },
+            chart: { type: "donut" },
             labels: ["Paid", "Upcoming", "Overdue"],
             colors: ["#10b981", "#3b82f6", "#f97316"],
             legend: { show: false },
-            stroke: { width: 2, colors: ["#fff"] },
             dataLabels: { enabled: false },
+            stroke: { width: 2, colors: ["#fff"] },
             plotOptions: {
                 pie: {
                     donut: {
                         size: "68%",
                         labels: {
                             show: true,
-                            value: {
-                                fontSize: "18px",
-                                fontWeight: 700,
-                                formatter: () => `₱${total.toLocaleString()}`,
-                            },
                             total: {
                                 show: true,
                                 label: "Total Due",
-                                fontSize: "12px",
                                 formatter: () => `₱${total.toLocaleString()}`,
                             },
                         },
                     },
                 },
             },
-            tooltip: {
-                y: {
-                    formatter: (val: number) => `₱${val.toLocaleString()}`,
-                },
-            },
         }),
-        [total, statsLoading]
+        [total]
     );
 
-    /* ---------------- Render ---------------- */
+    const series = useMemo(
+        () => (total > 0 ? [collected, pending, overdue] : [1]),
+        [collected, pending, overdue, total]
+    );
+
+    /* =========================
+       RENDER
+    ========================= */
     return (
         <div
             onClick={onClick}
             className={`${CARD_CONTAINER_INTERACTIVE} p-4 flex flex-col`}
         >
-            {/* ================= HEADER ================= */}
+            {/* HEADER */}
             <div className="mb-4">
                 <div className={SECTION_HEADER}>
                     <span className={GRADIENT_DOT} />
@@ -189,7 +171,6 @@ export default function PaymentSummaryCard({
                     </h2>
                 </div>
 
-                {/* Property Selector */}
                 <div
                     className="mt-2 flex items-center gap-2"
                     onClick={(e) => e.stopPropagation()}
@@ -202,24 +183,22 @@ export default function PaymentSummaryCard({
                         value={selectedPropertyId}
                         onChange={(e) => setSelectedPropertyId(e.target.value)}
                         disabled={propertiesLoading}
-                        className="text-xs sm:text-sm px-2 py-1.5 border border-gray-200 rounded-md bg-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                        className="text-xs px-2 py-1 border border-gray-200 rounded-md bg-white"
                     >
                         <option value="all">All Properties</option>
-
-                        {properties.map((property) => (
+                        {properties.map((property: any) => (
                             <option
                                 key={property.property_id}
                                 value={property.property_id}
                             >
                                 {property.property_name}
-                                {property.city && ` • ${property.city}`}
                             </option>
                         ))}
                     </select>
                 </div>
             </div>
 
-            {/* ================= STATS ================= */}
+            {/* STATS */}
             <div className="grid grid-cols-3 gap-3 mb-4">
                 <Stat
                     icon={<TrendingUp className="w-4 h-4" />}
@@ -244,14 +223,14 @@ export default function PaymentSummaryCard({
                 />
             </div>
 
-            {/* ================= DONUT ================= */}
+            {/* DONUT */}
             <div className="flex justify-center my-4">
                 {statsLoading ? (
                     <div className="w-[180px] h-[180px] rounded-full bg-gray-100 animate-pulse" />
                 ) : (
                     <Chart
                         options={chartOptions}
-                        series={total > 0 ? series : [1]}
+                        series={series}
                         type="donut"
                         width={180}
                         height={180}
@@ -259,7 +238,7 @@ export default function PaymentSummaryCard({
                 )}
             </div>
 
-            {/* ================= TENANTS ================= */}
+            {/* TENANTS */}
             <div className="mt-4 pt-3 border-t border-gray-100">
                 {tenantsLoading ? (
                     <div className="flex gap-2">
@@ -271,41 +250,27 @@ export default function PaymentSummaryCard({
                         ))}
                     </div>
                 ) : tenants.length > 0 ? (
-                    <>
-                        <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-gray-600">
-                            <Users className="w-4 h-4 text-blue-600" />
-                            Current Tenants ({tenants.length})
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                            {tenants.slice(0, 6).map((tenant) => (
-                                <Link
-                                    key={tenant.tenant_id}
-                                    href={`/pages/landlord/list_of_tenants/${tenant.tenant_id}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <div className="w-8 h-8 rounded-full overflow-hidden border shadow hover:scale-110 transition">
-                                        <Image
-                                            src={
-                                                tenant.profilePicture ||
-                                                "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-                                            }
-                                            alt={`${tenant.firstName} ${tenant.lastName}`}
-                                            width={32}
-                                            height={32}
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                </Link>
-                            ))}
-
-                            {tenants.length > 6 && (
-                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-600 border border-dashed">
-                                    +{tenants.length - 6}
+                    <div className="flex flex-wrap gap-2">
+                        {tenants.slice(0, 6).map((tenant: any) => (
+                            <Link
+                                key={tenant.tenant_id}
+                                href={`/pages/landlord/list_of_tenants/${tenant.tenant_id}`}
+                            >
+                                <div className="w-8 h-8 rounded-full overflow-hidden border shadow hover:scale-110 transition">
+                                    <Image
+                                        src={
+                                            tenant.profilePicture ||
+                                            "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+                                        }
+                                        alt={`${tenant.firstName} ${tenant.lastName}`}
+                                        width={32}
+                                        height={32}
+                                        className="object-cover"
+                                    />
                                 </div>
-                            )}
-                        </div>
-                    </>
+                            </Link>
+                        ))}
+                    </div>
                 ) : (
                     <p className="text-xs text-gray-500 text-center">
                         No tenants for this property
@@ -316,23 +281,17 @@ export default function PaymentSummaryCard({
     );
 }
 
-/* --------------------------------------------------
+/* =========================
    Stat Component
--------------------------------------------------- */
+========================= */
 function Stat({
                   icon,
                   label,
                   value,
                   color,
-                  loading = false,
-              }: {
-    icon: React.ReactNode;
-    label: string;
-    value: number;
-    color: "blue" | "orange" | "emerald";
-    loading?: boolean;
-}) {
-    const colorMap = {
+                  loading,
+              }: any) {
+    const colorMap: any = {
         blue: "bg-blue-50 text-blue-700 border-blue-200",
         orange: "bg-orange-50 text-orange-700 border-orange-200",
         emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
