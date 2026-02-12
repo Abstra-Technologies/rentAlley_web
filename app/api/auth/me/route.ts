@@ -23,6 +23,7 @@ if (!JWT_SECRET) throw new Error("JWT_SECRET is required");
 const safeDecrypt = (value?: string | null): string | null => {
     if (!value) return null;
     try {
+        // @ts-ignore
         return decryptData(JSON.parse(value), ENCRYPTION_SECRET);
     } catch {
         return null;

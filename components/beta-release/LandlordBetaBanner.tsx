@@ -13,14 +13,16 @@ import useSWR, { mutate } from "swr";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
+import { useRouter } from "next/navigation";
 import useAuthStore from "@/zustand/authStore";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function LandlordBetaBanner() {
     const { user } = useAuthStore();
+    const router = useRouter();
+
     const [activating, setActivating] = useState(false);
-    const [applying, setApplying] = useState(false);
     const [dismissed, setDismissed] = useState(false);
 
     const statusKey = user?.user_id
@@ -45,12 +47,14 @@ export default function LandlordBetaBanner() {
         localStorage.setItem("beta_banner_dismissed", "true");
     };
 
-    /* ================= ACTIONS ================= */
+    /* ================= ACTIVATE ================= */
     const handleActivateBeta = async () => {
         if (!user) return;
         try {
             setActivating(true);
-            await axios.post("/api/landlord/beta/activate", { user_id: user.user_id });
+            await axios.post("/api/landlord/beta/activate", {
+                user_id: user.user_id,
+            });
             await mutate(statusKey);
             await Swal.fire({
                 icon: "success",
@@ -69,27 +73,10 @@ export default function LandlordBetaBanner() {
         }
     };
 
-    const handleApplyBeta = async () => {
-        if (!user) return;
-        try {
-            setApplying(true);
-            await axios.post("/api/landlord/beta/apply");
-            await mutate(statusKey);
-            await Swal.fire({
-                icon: "success",
-                title: "Application Sent",
-                timer: 1800,
-                showConfirmButton: false,
-            });
-        } catch (err: any) {
-            await Swal.fire({
-                icon: "error",
-                title: "Request Failed",
-                text: err?.response?.data?.error || "Unable to submit request.",
-            });
-        } finally {
-            setApplying(false);
-        }
+    /* ================= REDIRECT APPLY ================= */
+    const handleRedirectToApply = () => {
+        router.push("/pages/landlord/beta-program/joinForm");
+        // 👆 change this route to wherever your beta form page is
     };
 
     if (isLoading) return null;
@@ -116,9 +103,9 @@ export default function LandlordBetaBanner() {
                             <p className="text-xs sm:text-sm font-medium truncate">
                                 <span className="font-semibold">Beta Active</span>
                                 <span className="hidden sm:inline">
-                  {" "}
+                                    {" "}
                                     — Discounted transaction fees enabled
-                </span>
+                                </span>
                             </p>
                         </div>
                         <button
@@ -163,8 +150,7 @@ export default function LandlordBetaBanner() {
             title: "Join UpKyp Beta 🚀",
             description: "Early access + discounted fees",
             actionLabel: "Apply",
-            actionHandler: handleApplyBeta,
-            loading: applying,
+            actionHandler: handleRedirectToApply,
         },
     };
 
@@ -179,7 +165,6 @@ export default function LandlordBetaBanner() {
                     text-white shadow-md p-4`}
             >
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                    {/* Content */}
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
                             <Icon className="w-5 h-5" />
@@ -194,31 +179,15 @@ export default function LandlordBetaBanner() {
                         </div>
                     </div>
 
-                    {/* Action */}
                     {config.actionLabel && (
                         <button
                             onClick={config.actionHandler}
-                            disabled={config.loading}
-                            className={`w-full sm:w-auto inline-flex items-center justify-center gap-2
-                          text-sm font-bold px-4 py-2.5 rounded-lg
-                          transition-all
-                          ${
-                                config.loading
-                                    ? "bg-white/20 opacity-60 cursor-not-allowed"
-                                    : "bg-white text-gray-900 hover:bg-white/90"
-                            }`}
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2
+                                text-sm font-bold px-4 py-2.5 rounded-lg
+                                bg-white text-gray-900 hover:bg-white/90 transition-all"
                         >
-                            {config.loading ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-gray-900/20 border-t-gray-900 rounded-full animate-spin" />
-                                    Processing…
-                                </>
-                            ) : (
-                                <>
-                                    {config.actionLabel}
-                                    <ArrowRight className="w-4 h-4" />
-                                </>
-                            )}
+                            {config.actionLabel}
+                            <ArrowRight className="w-4 h-4" />
                         </button>
                     )}
                 </div>
