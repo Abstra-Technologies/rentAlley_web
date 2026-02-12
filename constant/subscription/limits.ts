@@ -97,7 +97,7 @@ export const subscriptionConfig = {
         },
     },
 
-    "Beta_Program": {
+    "Beta Program": {
     "limits": {
       "maxProperties": 5,
       "maxUnits": null,          // Unlimited units

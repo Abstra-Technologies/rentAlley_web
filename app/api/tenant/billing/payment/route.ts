@@ -1,35 +1,46 @@
-import { NextRequest, NextResponse } from "next/server";
-import mysql from "mysql2/promise";
-import crypto from "crypto";
-import { createXenditCustomer } from "@/lib/payments/xenditCustomer";
-
-// Applied Rate limit processing.
-
 /* -------------------------------------------------------------------------- */
-/* Runtime Config                                                              */
+/* PAYMENT GATEWAY INITIALIZATION ON XENDIT                                                      */
 /* -------------------------------------------------------------------------- */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /* -------------------------------------------------------------------------- */
-/* Helpers                                                                     */
+/* Imports                                                                    */
 /* -------------------------------------------------------------------------- */
+import { NextRequest, NextResponse } from "next/server";
+import mysql from "mysql2/promise";
+import crypto from "crypto";
+import { createXenditCustomer } from "@/lib/payments/xenditCustomer";
+
+/* -------------------------------------------------------------------------- */
+/* Environment Variables                                                      */
+/* -------------------------------------------------------------------------- */
+const {
+    DB_HOST,
+    DB_USER,
+    DB_PASSWORD,
+    DB_NAME,
+    XENDIT_SECRET_KEY,
+    XENDIT_TEXT_SECRET_KEY
+} = process.env;
+
+/* -------------------------------------------------------------------------- */
+/* Xendit Constants                                                           */
+/* -------------------------------------------------------------------------- */
+const XENDIT_API_URL = "https://api.xendit.co/v2/invoices";
+const CURRENCY = "PHP";
+const MAX_RETRIES = 3;
+const BASE_RETRY_DELAY = 500;
+
+/* -------------------------------------------------------------------------- */
+/* Utility Helpers                                                            */
+/* -------------------------------------------------------------------------- */
+
 function httpError(status: number, message: string, extra?: any) {
     return NextResponse.json(
         { error: message, ...(extra ? { details: extra } : {}) },
         { status }
     );
-}
-
-async function getDbConnection() {
-    const { DB_HOST, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-
-    return mysql.createConnection({
-        host: DB_HOST,
-        user: DB_USER,
-        password: DB_PASSWORD,
-        database: DB_NAME,
-    });
 }
 
 function formatBillingPeriod(date: string | Date) {
@@ -39,9 +50,23 @@ function formatBillingPeriod(date: string | Date) {
     });
 }
 
+async function getDbConnection() {
+    if (!DB_HOST || !DB_USER || !DB_NAME) {
+        throw new Error("Database environment variables not configured.");
+    }
+
+    return mysql.createConnection({
+        host: DB_HOST,
+        user: DB_USER,
+        password: DB_PASSWORD,
+        database: DB_NAME,
+    });
+}
+
 /* -------------------------------------------------------------------------- */
-/* Gateway Logger                                                              */
+/* Gateway Logger                                                             */
 /* -------------------------------------------------------------------------- */
+
 async function logGatewayEvent(event: {
     type: "request" | "response" | "rate_limit" | "error";
     endpoint: string;
@@ -56,24 +81,20 @@ async function logGatewayEvent(event: {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Rate-Limit + Retry + Idempotency Fetch                                      */
+/* Fetch With Retry (Rate-Limit Safe)                                         */
 /* -------------------------------------------------------------------------- */
+
 async function fetchWithRetry(
     url: string,
     options: RequestInit,
-    {
-        maxRetries = 3,
-        baseDelayMs = 500,
-    } = {}
+    maxRetries = MAX_RETRIES
 ) {
     let attempt = 0;
 
     while (true) {
         const response = await fetch(url, options);
 
-        if (response.ok) {
-            return response;
-        }
+        if (response.ok) return response;
 
         if (response.status === 429 && attempt < maxRetries) {
             attempt++;
@@ -81,7 +102,7 @@ async function fetchWithRetry(
             const retryAfter = response.headers.get("retry-after");
             const delayMs = retryAfter
                 ? Number(retryAfter) * 1000
-                : baseDelayMs * Math.pow(2, attempt);
+                : BASE_RETRY_DELAY * Math.pow(2, attempt);
 
             await logGatewayEvent({
                 type: "rate_limit",
@@ -99,50 +120,60 @@ async function fetchWithRetry(
 }
 
 /* -------------------------------------------------------------------------- */
-/* POST: Create Xendit Invoice                                                 */
+/* POST: Create Xendit Invoice                                                */
 /* -------------------------------------------------------------------------- */
+
 export async function POST(req: NextRequest) {
-    let body: any;
     let conn: mysql.Connection | null = null;
 
     try {
-        body = await req.json();
-    } catch {
-        return httpError(400, "Invalid JSON body.");
-    }
+        /* ---------------------------------------------------------------------- */
+        /* Parse Body                                                             */
+        /* ---------------------------------------------------------------------- */
+        let body: any;
 
-    const {
-        amount,
-        billing_id,
-        tenant_id,
-        redirectUrl,
-        firstName,
-        lastName,
-        emailAddress,
-    } = body;
+        try {
+            body = await req.json();
+        } catch {
+            return httpError(400, "Invalid JSON body.");
+        }
 
-    /* ------------------------------------------------------------------------ */
-    /* Validation                                                               */
-    /* ------------------------------------------------------------------------ */
-    if (!amount || !billing_id || !tenant_id) {
-        return httpError(400, "Missing required fields.");
-    }
+        const {
+            amount,
+            billing_id,
+            tenant_id,
+            redirectUrl,
+            firstName,
+            lastName,
+            emailAddress,
+        } = body;
 
-    if (!redirectUrl?.success || !redirectUrl?.failure) {
-        return httpError(400, "Missing redirect URLs.");
-    }
+        /* ---------------------------------------------------------------------- */
+        /* Validation                                                             */
+        /* ---------------------------------------------------------------------- */
 
-    const secretKey = process.env.XENDIT_SECRET_KEY;
-    if (!secretKey) {
-        return httpError(500, "Xendit secret key not configured.");
-    }
+        if (!amount || !billing_id || !tenant_id) {
+            return httpError(400, "Missing required fields.");
+        }
 
-    try {
+        if (!redirectUrl?.success || !redirectUrl?.failure) {
+            return httpError(400, "Missing redirect URLs.");
+        }
+
+        if (!XENDIT_SECRET_KEY || !XENDIT_TEXT_SECRET_KEY) {
+            return httpError(500, "Xendit secret key not configured.");
+        }
+
+        /* ---------------------------------------------------------------------- */
+        /* Database Connection                                                    */
+        /* ---------------------------------------------------------------------- */
+
         conn = await getDbConnection();
 
         /* ---------------------------------------------------------------------- */
-        /* Fetch Billing Context                                                   */
+        /* Fetch Billing Context                                                  */
         /* ---------------------------------------------------------------------- */
+
         const [billingRows]: any = await conn.execute(
             `
       SELECT
@@ -167,8 +198,9 @@ export async function POST(req: NextRequest) {
         const billing = billingRows[0];
 
         /* ---------------------------------------------------------------------- */
-        /* Get or Create Xendit Customer                                           */
+        /* Fetch or Create Xendit Customer                                        */
         /* ---------------------------------------------------------------------- */
+
         const [tenantRows]: any = await conn.execute(
             `SELECT xendit_customer_id FROM Tenant WHERE tenant_id = ? LIMIT 1`,
             [tenant_id]
@@ -182,7 +214,8 @@ export async function POST(req: NextRequest) {
                 firstName,
                 lastName,
                 email: emailAddress,
-                secretKey,
+                secretKey: XENDIT_TEXT_SECRET_KEY,
+
             });
 
             await conn.execute(
@@ -192,16 +225,18 @@ export async function POST(req: NextRequest) {
         }
 
         /* ---------------------------------------------------------------------- */
-        /* Idempotency Key                                                         */
+        /* Idempotency Key                                                        */
         /* ---------------------------------------------------------------------- */
+
         const idempotencyKey = crypto
             .createHash("sha256")
             .update(`billing-${billing.billing_id}`)
             .digest("hex");
 
         /* ---------------------------------------------------------------------- */
-        /* Redirect URLs                                                           */
+        /* Redirect URLs                                                          */
         /* ---------------------------------------------------------------------- */
+
         const successRedirectUrl =
             `${redirectUrl.success}` +
             `?billing_id=${billing.billing_id}` +
@@ -215,12 +250,13 @@ export async function POST(req: NextRequest) {
             `&agreement_id=${billing.agreement_id}`;
 
         /* ---------------------------------------------------------------------- */
-        /* Invoice Payload                                                         */
+        /* Invoice Payload                                                        */
         /* ---------------------------------------------------------------------- */
+
         const invoicePayload = {
             external_id: `billing-${billing.billing_id}`,
             amount: Number(amount),
-            currency: "PHP",
+            currency: CURRENCY,
             description: `Billing for ${billing.property_name} - ${billing.unit_name}
 Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
             customer: {
@@ -243,34 +279,33 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
         };
 
         /* ---------------------------------------------------------------------- */
-        /* Create Invoice via Xendit                                               */
+        /* Create Invoice via Xendit                                              */
         /* ---------------------------------------------------------------------- */
+
         await logGatewayEvent({
             type: "request",
-            endpoint: "/v2/invoices",
+            endpoint: XENDIT_API_URL,
             payload: invoicePayload,
         });
 
-        const invoiceResp = await fetchWithRetry(
-            "https://api.xendit.co/v2/invoices",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization:
-                        "Basic " + Buffer.from(`${secretKey}:`).toString("base64"),
-                    "Idempotency-Key": idempotencyKey,
-                },
-                body: JSON.stringify(invoicePayload),
-            }
-        );
+        const invoiceResp = await fetchWithRetry(XENDIT_API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization:
+                    "Basic " +
+                    Buffer.from(`${XENDIT_TEXT_SECRET_KEY}:`).toString("base64"),
+                "Idempotency-Key": idempotencyKey,
+            },
+            body: JSON.stringify(invoicePayload),
+        });
 
         const invoiceData = await invoiceResp.json();
 
         if (!invoiceResp.ok) {
             await logGatewayEvent({
                 type: "error",
-                endpoint: "/v2/invoices",
+                endpoint: XENDIT_API_URL,
                 statusCode: invoiceResp.status,
                 response: invoiceData,
             });
@@ -282,19 +317,24 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
                 );
             }
 
-            return httpError(500, "Failed to create Xendit invoice.", invoiceData);
+            return httpError(
+                500,
+                "Failed to create Xendit invoice.",
+                invoiceData
+            );
         }
 
         await logGatewayEvent({
             type: "response",
-            endpoint: "/v2/invoices",
+            endpoint: XENDIT_API_URL,
             response: invoiceData,
             statusCode: 200,
         });
 
         /* ---------------------------------------------------------------------- */
-        /* Response                                                               */
+        /* Success Response                                                       */
         /* ---------------------------------------------------------------------- */
+
         return NextResponse.json(
             {
                 message: "Xendit invoice created successfully.",
@@ -305,6 +345,7 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
             },
             { status: 200 }
         );
+
     } catch (err: any) {
         await logGatewayEvent({
             type: "error",
