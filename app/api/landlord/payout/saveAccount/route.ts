@@ -152,10 +152,19 @@ export async function POST(req: NextRequest) {
 
         await connection.query(
             `
+                UPDATE Landlord
+                SET xendit_account_id = ?
+                WHERE landlord_id = ?
+            `,
+            [xenditAccountId, landlord_id]
+        );
+
+        await connection.query(
+            `
             INSERT INTO LandlordPayoutAccount
             (
                 landlord_id,
-                xendit_account_id,
+                
                 channel_code,
                 account_name,
                 account_number,
@@ -163,11 +172,10 @@ export async function POST(req: NextRequest) {
                 is_active,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, 1, NOW())
+            VALUES (?, ?, ?, ?, ?, 1, NOW())
             `,
             [
                 landlord_id,
-                xenditAccountId,
                 channel_code,
                 account_name,
                 account_number,
