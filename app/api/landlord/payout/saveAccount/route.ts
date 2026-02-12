@@ -8,8 +8,8 @@ import { safeDecrypt } from "@/utils/decrypt/safeDecrypt";
 ============================================================ */
 
 const XENDIT_BASE_URL = "https://api.xendit.co/v2/accounts";
-// const XENDIT_SECRET_KEY = process.env.XENDIT_SUB_ACCOUNT_KEY as string;
-const XENDIT_SECRET_KEY = process.env.XENDIT_TEST_SUBACCOUNT_LEY as string;
+const XENDIT_SECRET_KEY = process.env.XENDIT_SUB_ACCOUNT_KEY as string;
+// const XENDIT_SECRET_KEY = process.env.XENDIT_TEST_SUBACCOUNT_LEY as string;
 
 if (!XENDIT_SECRET_KEY) {
     throw new Error("XENDIT_SECRET_KEY is not defined in environment variables.");
