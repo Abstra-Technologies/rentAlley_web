@@ -8,10 +8,12 @@ import {
     Clock,
     Wallet,
     XCircle,
+    FileText,
     X,
 } from "lucide-react";
 
 import StepPayoutInfo from "@/components/landlord/verifiication/steps/StepPayoutInfo";
+import PlatformAgreementModal from "@/components/landlord/platformAgreement/PlatformAgreementModal";
 
 /* -------------------------------------------------------------------------- */
 /* Types */
@@ -37,6 +39,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function LandlordSetupBanner({ landlordId }: Props) {
     const [showPayoutModal, setShowPayoutModal] = useState(false);
+    const [showAgreementModal, setShowAgreementModal] = useState(false);
 
     const [payoutMethod, setPayoutMethod] = useState("");
     const [accountName, setAccountName] = useState("");
@@ -55,9 +58,17 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
         { revalidateOnFocus: false }
     );
 
-    if (!verification || !payoutRes) return null;
+    const { data: agreementRes } = useSWR(
+        landlordId ? `/api/landlord/platformAgreement/${landlordId}` : null,
+        fetcher,
+        { revalidateOnFocus: false }
+    );
 
-    if (payoutRes.setup_completed === 1) return null;
+    if (!verification || !payoutRes || !agreementRes) return null;
+
+    if (payoutRes.setup_completed === 1 && agreementRes.accepted) return null;
+
+    const agreementDone = agreementRes.accepted === true;
 
     const verificationStatus: VerificationStatus =
         verification.status ?? "incomplete";
@@ -68,14 +79,15 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
     const verificationDone = verificationStatus === "verified";
     const payoutDone = payoutStatus === "completed";
 
-    if (verificationDone && payoutDone) return null;
+    if (agreementDone && verificationDone && payoutDone) return null;
 
     const activationPercent =
-        (verificationDone ? 50 : 0) + (payoutDone ? 50 : 0);
+        (agreementDone ? 33 : 0) +
+        (verificationDone ? 33 : 0) +
+        (payoutDone ? 34 : 0);
 
     return (
         <>
-            {/* ================== ENTERPRISE CARD ================== */}
             <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
 
                 {/* Header */}
@@ -95,7 +107,6 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
                         </div>
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="mt-3 h-2 w-full rounded-full bg-gray-200">
                         <div
                             className="h-2 rounded-full bg-green-500 transition-all duration-500"
@@ -105,9 +116,23 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
                 </div>
 
                 {/* Steps Container */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                    {/* STEP 1 */}
+                    {/* NEW STEP 1 - AGREEMENT */}
+                    <StepCard
+                        title="Platform Agreement"
+                        description={
+                            agreementDone
+                                ? "Completed"
+                                : "Review & accept agreement"
+                        }
+                        status={agreementDone ? "completed" : "pending"}
+                        icon={<FileText className="h-5 w-5" />}
+                        disabled={agreementDone}
+                        onClick={() => setShowAgreementModal(true)}
+                    />
+
+                    {/* ORIGINAL STEP 1 */}
                     <StepCard
                         title="Identity Verification"
                         description={getVerificationText(verificationStatus)}
@@ -123,37 +148,37 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
                         }
                     />
 
-                    {/* STEP 2 */}
+                    {/* ORIGINAL STEP 2 */}
                     <StepCard
                         title="Payout Setup"
                         description={
                             payoutDone
                                 ? "Completed"
-                                : verificationDone
-                                    ? "Set up payout method"
-                                    : "Locked until verification"
+                                : "Set up payout method"
                         }
                         status={
-                            !verificationDone
-                                ? "locked"
-                                : payoutDone
-                                    ? "completed"
-                                    : "pending"
+                            payoutDone ? "completed" : "pending"
                         }
                         icon={<Wallet className="h-5 w-5" />}
-                        disabled={!verificationDone}
+                        disabled={false}
                         onClick={() => setShowPayoutModal(true)}
                     />
                 </div>
             </div>
 
-            {/* ================= MODAL ================= */}
+            {/* AGREEMENT MODAL */}
+            {showAgreementModal && (
+                <PlatformAgreementModal
+                    landlordId={landlordId}
+                    onClose={() => setShowAgreementModal(false)}
+                />
+            )}
+
+            {/* ORIGINAL PAYOUT MODAL */}
             {showPayoutModal && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
-
                     <div className="w-full sm:max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[95vh] overflow-y-auto">
 
-                        {/* Modal Header */}
                         <div className="flex items-center justify-between border-b px-6 py-4">
                             <h3 className="text-lg font-bold text-gray-800">
                                 Payout Information
@@ -186,6 +211,7 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
         </>
     );
 }
+
 
 /* -------------------------------------------------------------------------- */
 /* STEP CARD */
