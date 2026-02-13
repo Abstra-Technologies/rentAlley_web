@@ -9,14 +9,11 @@ import { encryptData } from "@/crypto/encrypt";
 import { generateLandlordId, generateTenantId } from "@/utils/id_generator";
 import { EmailTemplate } from "@/components/email-template";
 
-/* --------------------------------------------------
-   CONFIG (UNCHANGED)
--------------------------------------------------- */
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
-/* --------------------------------------------------
-   HELPERS
--------------------------------------------------- */
+/* -------------------------------------------------- */
+/* HELPERS                                            */
+/* -------------------------------------------------- */
 
 function generateOTP() {
     return crypto.randomInt(100000, 999999).toString();
@@ -26,10 +23,12 @@ function hashSHA256(value: string) {
     return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-async function generateUniqueLandlordId() {
+/* ---------- MUST use connection ---------- */
+
+async function generateUniqueLandlordId(connection: any) {
     while (true) {
         const id = generateLandlordId();
-        const [rows]: any = await db.execute(
+        const [rows]: any = await connection.execute(
             "SELECT landlord_id FROM Landlord WHERE landlord_id = ? LIMIT 1",
             [id]
         );
@@ -37,10 +36,10 @@ async function generateUniqueLandlordId() {
     }
 }
 
-async function generateUniqueTenantId() {
+async function generateUniqueTenantId(connection: any) {
     while (true) {
         const id = generateTenantId();
-        const [rows]: any = await db.execute(
+        const [rows]: any = await connection.execute(
             "SELECT tenant_id FROM Tenant WHERE tenant_id = ? LIMIT 1",
             [id]
         );
@@ -48,14 +47,14 @@ async function generateUniqueTenantId() {
     }
 }
 
-async function storeOTP(user_id: string, otp: string) {
-    await db.execute(
+async function storeOTP(connection: any, user_id: string, otp: string) {
+    await connection.execute(
         `DELETE FROM UserToken
          WHERE user_id = ? AND token_type = 'email_verification'`,
         [user_id]
     );
 
-    await db.execute(
+    await connection.execute(
         `INSERT INTO UserToken
          (user_id, token_type, token, created_at, expires_at)
          VALUES (?, 'email_verification', ?, UTC_TIMESTAMP(),
@@ -89,48 +88,55 @@ async function sendOtpEmail(
     });
 }
 
-/* --------------------------------------------------
-   API
--------------------------------------------------- */
+/* -------------------------------------------------- */
+/* API                                                */
+/* -------------------------------------------------- */
 
 export async function POST(req: NextRequest) {
-    const body = await req.json();
-
-    const {
-        email,
-        password,
-        role,
-        timezone = "UTC",
-        firstName = "",
-        lastName = "",
-        google_id = null,
-    } = body;
-
-    if (!email || !role) {
-        return NextResponse.json(
-            { error: "Email and role are required" },
-            { status: 400 }
-        );
-    }
-
-    if (!["tenant", "landlord"].includes(role)) {
-        return NextResponse.json(
-            { error: "Invalid role" },
-            { status: 400 }
-        );
-    }
-
-    const emailLower = email.toLowerCase();
-    const emailHash = hashSHA256(emailLower);
-    const secret = process.env.ENCRYPTION_SECRET!;
-
-    await db.beginTransaction();
+    const connection = await db.getConnection();
 
     try {
+        await connection.beginTransaction();
+
+        const body = await req.json();
+
+        const {
+            email,
+            password,
+            role,
+            timezone = "UTC",
+            firstName = "",
+            lastName = "",
+            google_id = null,
+        } = body;
+
+        if (!email || !role) {
+            await connection.rollback();
+            connection.release();
+            return NextResponse.json(
+                { error: "Email and role are required" },
+                { status: 400 }
+            );
+        }
+
+        if (!["tenant", "landlord"].includes(role)) {
+            await connection.rollback();
+            connection.release();
+            return NextResponse.json(
+                { error: "Invalid role" },
+                { status: 400 }
+            );
+        }
+
+        const emailLower = email.toLowerCase();
+        const emailHash = hashSHA256(emailLower);
+        const secret = process.env.ENCRYPTION_SECRET!;
+
         /* ----------------------------------------
-           1️⃣ CHECK EXISTING USER (IDEMPOTENT)
+           CHECK EXISTING USER
         ---------------------------------------- */
-        const [existingUsers]: any = await db.execute(
+
+        const [existingUsers]: any = await connection.execute(
             "SELECT user_id, emailVerified, google_id FROM User WHERE emailHashed = ? LIMIT 1",
             [emailHash]
         );
@@ -141,36 +147,35 @@ export async function POST(req: NextRequest) {
             const existing = existingUsers[0];
             user_id = existing.user_id;
 
-            // If already verified and not Google upgrade attempt
             if (existing.emailVerified && !google_id) {
-                await db.rollback();
+                await connection.rollback();
+                connection.release();
                 return NextResponse.json(
                     { error: "Account already exists." },
                     { status: 409 }
                 );
             }
 
-            // Google linking upgrade
             if (google_id && !existing.google_id) {
-                await db.execute(
+                await connection.execute(
                     "UPDATE User SET google_id = ?, emailVerified = 1 WHERE user_id = ?",
                     [google_id, user_id]
                 );
             }
 
-            // regenerate OTP if not verified
             if (!existing.emailVerified && !google_id) {
                 const otp = generateOTP();
-                await storeOTP(user_id, otp);
+                await storeOTP(connection, user_id, otp);
                 await sendOtpEmail(emailLower, firstName, otp);
             }
 
         } else {
+
             /* ----------------------------------------
-               2️⃣ CREATE USER (ATOMIC INSERT)
+               CREATE NEW USER
             ---------------------------------------- */
 
-            const [[{ uuid }]]: any = await db.execute(
+            const [[{ uuid }]]: any = await connection.execute(
                 "SELECT UUID() AS uuid"
             );
 
@@ -180,7 +185,7 @@ export async function POST(req: NextRequest) {
                 ? null
                 : await bcrypt.hash(password, 12);
 
-            await db.execute(
+            await connection.execute(
                 `INSERT INTO User
                 (user_id, email, emailHashed, password, userType,
                  createdAt, updatedAt, emailVerified, timezone,
@@ -205,38 +210,33 @@ export async function POST(req: NextRequest) {
                 ]
             );
 
-            /* ----------------------------------------
-               3️⃣ CREATE ROLE RECORD
-            ---------------------------------------- */
+            /* CREATE ROLE RECORD */
 
             if (role === "tenant") {
-                const tenantId = await generateUniqueTenantId();
-                await db.execute(
+                const tenantId = await generateUniqueTenantId(connection);
+                await connection.execute(
                     "INSERT INTO Tenant (tenant_id, user_id, employment_type, monthly_income) VALUES (?, ?, '', '')",
                     [tenantId, user_id]
                 );
             }
 
             if (role === "landlord") {
-                const landlordId = await generateUniqueLandlordId();
-                await db.execute(
+                const landlordId = await generateUniqueLandlordId(connection);
+                await connection.execute(
                     "INSERT INTO Landlord (landlord_id, user_id) VALUES (?, ?)",
                     [landlordId, user_id]
                 );
             }
 
-            /* ----------------------------------------
-               4️⃣ SEND OTP (NON GOOGLE)
-            ---------------------------------------- */
             if (!google_id) {
                 const otp = generateOTP();
-                await storeOTP(user_id, otp);
+                await storeOTP(connection, user_id, otp);
                 await sendOtpEmail(emailLower, firstName, otp);
             }
         }
 
         /* ----------------------------------------
-           5️⃣ ISSUE JWT
+           ISSUE JWT
         ---------------------------------------- */
 
         const token = await new SignJWT({ user_id })
@@ -244,7 +244,8 @@ export async function POST(req: NextRequest) {
             .setExpirationTime("2h")
             .sign(new TextEncoder().encode(process.env.JWT_SECRET!));
 
-        await db.commit();
+        await connection.commit();
+        connection.release();
 
         const response = NextResponse.json(
             {
@@ -266,7 +267,9 @@ export async function POST(req: NextRequest) {
         return response;
 
     } catch (error) {
-        await db.rollback();
+        await connection.rollback();
+        connection.release();
+
         console.error("Registration error:", error);
 
         return NextResponse.json(
