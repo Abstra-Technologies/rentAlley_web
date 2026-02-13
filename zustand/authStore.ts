@@ -140,7 +140,7 @@ const useAuthStore = create<AuthState>()(
 
             /* ============================
                ADMIN LOGOUT (NO BACK BUTTON)
-            ============================ */
+            // ============================ */
             signOutAdmin: async () => {
                 try {
                     await fetch("/api/auth/logout", {

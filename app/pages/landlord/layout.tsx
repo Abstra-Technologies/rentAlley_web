@@ -27,6 +27,7 @@ import {
     AlertCircle,
     Handshake,
 } from "lucide-react";
+import useSubscription from "@/hooks/landlord/useSubscription";
 
 /* ===============================
    LAZY COMPONENTS
@@ -52,6 +53,11 @@ export default function LandlordLayout({
     const router = useRouter();
     const pathname = usePathname();
     const { user, fetchSession, signOut } = useAuthStore();
+    const landlordId = user?.landlord_id;
+    const {
+        subscription,
+        loadingSubscription,
+    } = useSubscription(landlordId);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -193,28 +199,30 @@ export default function LandlordLayout({
 
                                 <p className="text-xs text-gray-500">Landlord</p>
 
-                                {/* SUBSCRIPTION — DO NOT REMOVE */}
+                                {/* SUBSCRIPTION */}
                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-        <span
-            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full
-            ${
-                user.subscription?.plan_name === "pro"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : user.subscription?.plan_name === "enterprise"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-gray-200 text-gray-600"
-            }`}
-        >
-          {user.subscription?.plan_name
-              ? user.subscription.plan_name.toUpperCase()
-              : "-"}
-        </span>
+    <span
+        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full
+        ${
+            subscription?.plan_name === "pro"
+                ? "bg-emerald-100 text-emerald-700"
+                : subscription?.plan_name === "enterprise"
+                    ? "bg-purple-100 text-purple-700"
+                    : "bg-gray-200 text-gray-600"
+        }`}
+    >
+        {loadingSubscription
+            ? "..."
+            : subscription?.plan_name
+                ? subscription.plan_name.toUpperCase()
+                : "-"}
+    </span>
                                 </div>
 
                                 {/* LANDLORD ID — DO NOT REMOVE */}
                                 {user.landlord_id && (
                                     <p className="text-[11px] text-gray-400 truncate mt-0.5">
-                                        ID: {user.landlord_id}
+                                        ID: {user?.landlord_id}
                                     </p>
                                 )}
                             </div>

@@ -1,10 +1,12 @@
 "use client";
 
-import useSWR from "swr";
+import useSWR, { KeyedMutator } from "swr";
 import axios from "axios";
 
-const fetcher = (url: string) =>
-    axios.get(url).then((res) => res.data);
+const fetcher = async (url: string) => {
+    const res = await axios.get(url);
+    return res.data;
+};
 
 export type Subscription = {
     subscription_id: number;
@@ -45,27 +47,73 @@ export type Subscription = {
 export default function useSubscription(
     landlordId?: number | string
 ) {
+    const swrKey = landlordId
+        ? `/api/landlord/subscription/active/${landlordId}`
+        : null;
+
     const {
         data,
         error,
         isLoading,
         mutate,
-    } = useSWR<Subscription>(
-        landlordId
-            ? `/api/landlord/subscription/active/${landlordId}`
-            : null,
-        fetcher,
-        {
-            revalidateOnFocus: false,
-            revalidateIfStale: false,
-            dedupingInterval: 60_000,
-            keepPreviousData: true,
-        }
-    );
+    } = useSWR<Subscription>(swrKey, fetcher, {
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        revalidateIfStale: false,
+        dedupingInterval: 30_000,
+        keepPreviousData: true,
+    });
 
-    // 🔥 Helper: check unlimited
+    /* =========================================
+       Optimistic Plan Upgrade
+    ========================================= */
+    const upgradeSubscriptionOptimistic = async (
+        updatedFields: Partial<Subscription>
+    ) => {
+        if (!data) return;
+
+        // 1️⃣ Snapshot previous data
+        const previous = data;
+
+        // 2️⃣ Optimistically update UI
+        await mutate(
+            { ...data, ...updatedFields },
+            false // do NOT revalidate yet
+        );
+
+        try {
+            // 3️⃣ Background revalidation
+            await mutate();
+        } catch (err) {
+            // 4️⃣ Rollback on failure
+            await mutate(previous, false);
+        }
+    };
+
+    /* =========================================
+       Force Refresh
+    ========================================= */
+    const refreshSubscription = async () => {
+        await mutate();
+    };
+
+    /* =========================================
+       Utility Helpers
+    ========================================= */
     const isUnlimited = (value: number | null | undefined) =>
         value === null || value === undefined;
+
+    const hasFeature = (feature: keyof Subscription["features"]) =>
+        data?.features?.[feature] === true;
+
+    const hasLimitAvailable = (
+        limit: keyof Subscription["limits"],
+        currentCount: number
+    ) => {
+        const max = data?.limits?.[limit];
+        if (isUnlimited(max)) return true;
+        return currentCount < (max ?? 0);
+    };
 
     return {
         subscription: data ?? null,
@@ -77,9 +125,13 @@ export default function useSubscription(
             "Failed to fetch subscription."
             : null,
 
-        refreshSubscription: () => mutate(),
+        refreshSubscription,
+        mutateSubscription: mutate,
 
-        // 🚀 Utility helpers
+        upgradeSubscriptionOptimistic,
+
+        hasFeature,
+        hasLimitAvailable,
         isUnlimited,
     };
 }
