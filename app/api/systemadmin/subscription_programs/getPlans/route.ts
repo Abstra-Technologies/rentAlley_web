@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
             billing_cycle,
             is_active,
             created_at,
+            platform_fee,
+            split_rule_id,
             updated_at
         FROM Plan
         ORDER BY created_at DESC

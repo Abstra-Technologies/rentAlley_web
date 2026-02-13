@@ -9,14 +9,10 @@ import useAuthStore from "@/zustand/authStore";
 interface XenditRedirectUrls {
     success: string;
     failure: string;
-    cancel: string;
 }
 
 interface UseXenditPaymentParams {
     billing_id: string;
-    amount: number | string;
-    agreement_id?: string;
-    payment_method_id?: number;
     redirectUrl?: XenditRedirectUrls;
 }
 
@@ -27,10 +23,13 @@ export function useXenditPayment() {
 
     const payWithXendit = async ({
                                      billing_id,
-                                     amount,
-                                     payment_method_id = 7,
                                      redirectUrl,
                                  }: UseXenditPaymentParams) => {
+        if (!user?.tenant_id) {
+            Swal.fire("Error", "Tenant information missing.", "error");
+            return;
+        }
+
         const confirm = await Swal.fire({
             title: "Pay Billing Now?",
             text: "You will be redirected to Xendit's secure checkout page.",
@@ -46,34 +45,44 @@ export function useXenditPayment() {
         setLoadingPayment(true);
 
         try {
-            const formattedAmount = Number(amount);
+            const res = await axios.post(
+                "/api/tenant/billing/payment",
+                {
+                    billing_id,
+                    tenant_id: user.tenant_id,
 
-            const res = await axios.post("/api/tenant/billing/payment", {
-                amount: formattedAmount,
-                billing_id,
-                tenant_id: user?.tenant_id,
+                    firstName: user?.firstName ?? null,
+                    lastName: user?.lastName ?? null,
+                    emailAddress: user?.email ?? null,
+                    phoneNumber: user?.phoneNumber ?? null,
 
-                firstName: user?.firstName ?? null,
-                lastName: user?.lastName ?? null,
-                emailAddress: user?.email ?? null,
-                phoneNumber: user?.phoneNumber ?? null,
+                    redirectUrl: redirectUrl ?? {
+                        success: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billSuccess`,
+                        failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billFailed`,
+                    },
+                }
+            );
 
-                payment_method_id,
-                redirectUrl: redirectUrl ?? {
-                    success: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billSuccess`,
-                    failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billFailed`,
-                    cancel: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billCancelled`,
-                },
-            });
+            const checkoutUrl = res.data?.checkoutUrl;
 
-            if (res.data?.checkoutUrl) {
-                window.location.href = res.data.checkoutUrl;
+            if (checkoutUrl) {
+                window.location.href = checkoutUrl;
             } else {
-                Swal.fire("Error", "No checkout URL returned.", "error");
+                console.error("No checkout URL returned:", res.data);
+                Swal.fire(
+                    "Error",
+                    "Payment session created but no redirect URL returned.",
+                    "error"
+                );
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error("Xendit payment error:", err);
-            Swal.fire("Error", "Failed to initiate payment.", "error");
+
+            const message =
+                err?.response?.data?.error ||
+                "Failed to initiate payment.";
+
+            Swal.fire("Payment Error", message, "error");
         } finally {
             setLoadingPayment(false);
         }

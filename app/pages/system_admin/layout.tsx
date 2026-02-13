@@ -45,7 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {
             title: "Subscription Programs",
             items: [
-                { label: "Beta Users List", href: "/pages/system_admin/beta_programs", icon: Users },
+                { label: "Split Rules", href: "/pages/system_admin/split_rules", icon: Users },
                 { label: "Plan List", href: "/pages/system_admin/subscription_plans", icon: Users },
 
             ],

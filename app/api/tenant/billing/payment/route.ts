@@ -1,40 +1,33 @@
 /* -------------------------------------------------------------------------- */
-/* PAYMENT GATEWAY INITIALIZATION ON XENDIT                                                      */
+/* PAYMENT GATEWAY INITIALIZATION - XENDIT PLATFORM V3                       */
 /* -------------------------------------------------------------------------- */
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/* -------------------------------------------------------------------------- */
-/* Imports                                                                    */
-/* -------------------------------------------------------------------------- */
 import { NextRequest, NextResponse } from "next/server";
 import mysql from "mysql2/promise";
-import crypto from "crypto";
-import { createXenditCustomer } from "@/lib/payments/xenditCustomer";
 
 /* -------------------------------------------------------------------------- */
-/* Environment Variables                                                      */
+/* ENV                                                                        */
 /* -------------------------------------------------------------------------- */
+
 const {
     DB_HOST,
     DB_USER,
     DB_PASSWORD,
     DB_NAME,
-    XENDIT_SECRET_KEY,
-    XENDIT_TEXT_SECRET_KEY
+    XENDIT_TEXT_SECRET_KEY,
 } = process.env;
 
 /* -------------------------------------------------------------------------- */
-/* Xendit Constants                                                           */
+/* HELPERS                                                                    */
 /* -------------------------------------------------------------------------- */
-const XENDIT_API_URL = "https://api.xendit.co/v2/invoices";
-const CURRENCY = "PHP";
-const MAX_RETRIES = 3;
-const BASE_RETRY_DELAY = 500;
 
-/* -------------------------------------------------------------------------- */
-/* Utility Helpers                                                            */
-/* -------------------------------------------------------------------------- */
+function log(step: string, data?: any) {
+    console.log(`\n========== ${step} ==========\n`);
+    if (data) console.log(JSON.stringify(data, null, 2));
+}
 
 function httpError(status: number, message: string, extra?: any) {
     return NextResponse.json(
@@ -43,18 +36,7 @@ function httpError(status: number, message: string, extra?: any) {
     );
 }
 
-function formatBillingPeriod(date: string | Date) {
-    return new Date(date).toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-    });
-}
-
 async function getDbConnection() {
-    if (!DB_HOST || !DB_USER || !DB_NAME) {
-        throw new Error("Database environment variables not configured.");
-    }
-
     return mysql.createConnection({
         host: DB_HOST,
         user: DB_USER,
@@ -64,297 +46,200 @@ async function getDbConnection() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Gateway Logger                                                             */
-/* -------------------------------------------------------------------------- */
-
-async function logGatewayEvent(event: {
-    type: "request" | "response" | "rate_limit" | "error";
-    endpoint: string;
-    payload?: any;
-    response?: any;
-    statusCode?: number;
-}) {
-    console.log(
-        `[XENDIT][${event.type.toUpperCase()}]`,
-        JSON.stringify(event, null, 2)
-    );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Fetch With Retry (Rate-Limit Safe)                                         */
-/* -------------------------------------------------------------------------- */
-
-async function fetchWithRetry(
-    url: string,
-    options: RequestInit,
-    maxRetries = MAX_RETRIES
-) {
-    let attempt = 0;
-
-    while (true) {
-        const response = await fetch(url, options);
-
-        if (response.ok) return response;
-
-        if (response.status === 429 && attempt < maxRetries) {
-            attempt++;
-
-            const retryAfter = response.headers.get("retry-after");
-            const delayMs = retryAfter
-                ? Number(retryAfter) * 1000
-                : BASE_RETRY_DELAY * Math.pow(2, attempt);
-
-            await logGatewayEvent({
-                type: "rate_limit",
-                endpoint: url,
-                statusCode: 429,
-                response: { retryAfter, attempt },
-            });
-
-            await new Promise((res) => setTimeout(res, delayMs));
-            continue;
-        }
-
-        return response;
-    }
-}
-
-/* -------------------------------------------------------------------------- */
-/* POST: Create Xendit Invoice                                                */
+/* POST                                                                       */
 /* -------------------------------------------------------------------------- */
 
 export async function POST(req: NextRequest) {
     let conn: mysql.Connection | null = null;
 
     try {
-        /* ---------------------------------------------------------------------- */
-        /* Parse Body                                                             */
-        /* ---------------------------------------------------------------------- */
-        let body: any;
+        log("START PAYMENT INIT");
 
-        try {
-            body = await req.json();
-        } catch {
-            return httpError(400, "Invalid JSON body.");
-        }
+        const body = await req.json();
+        const { billing_id, redirectUrl } = body;
 
-        const {
-            amount,
-            billing_id,
-            tenant_id,
-            redirectUrl,
-            firstName,
-            lastName,
-            emailAddress,
-        } = body;
-
-        /* ---------------------------------------------------------------------- */
-        /* Validation                                                             */
-        /* ---------------------------------------------------------------------- */
-
-        if (!amount || !billing_id || !tenant_id) {
-            return httpError(400, "Missing required fields.");
+        if (!billing_id) {
+            return httpError(400, "Missing billing_id");
         }
 
         if (!redirectUrl?.success || !redirectUrl?.failure) {
-            return httpError(400, "Missing redirect URLs.");
+            return httpError(400, "Missing redirect URLs");
         }
 
-        if (!XENDIT_SECRET_KEY || !XENDIT_TEXT_SECRET_KEY) {
-            return httpError(500, "Xendit secret key not configured.");
+        if (!XENDIT_TEXT_SECRET_KEY) {
+            return httpError(500, "Missing Xendit Secret Key");
         }
-
-        /* ---------------------------------------------------------------------- */
-        /* Database Connection                                                    */
-        /* ---------------------------------------------------------------------- */
 
         conn = await getDbConnection();
 
-        /* ---------------------------------------------------------------------- */
-        /* Fetch Billing Context                                                  */
-        /* ---------------------------------------------------------------------- */
+        /* ------------------------------------------------------------------ */
+        /* FETCH BILLING + SUBACCOUNT + SPLIT RULE                            */
+        /* ------------------------------------------------------------------ */
 
-        const [billingRows]: any = await conn.execute(
+        const [rows]: any = await conn.execute(
             `
-      SELECT
+      SELECT 
         b.billing_id,
-        b.lease_id AS agreement_id,
-        b.billing_period,
-        u.unit_name,
-        p.property_name
+        b.total_amount_due,
+        la.agreement_id,
+        l.landlord_id,
+        l.xendit_account_id,
+        s.plan_code,
+        s.is_active,
+        pl.split_rule_id
       FROM Billing b
-      JOIN Unit u ON b.unit_id = u.unit_id
+      JOIN LeaseAgreement la ON b.lease_id = la.agreement_id
+      JOIN Unit u ON la.unit_id = u.unit_id
       JOIN Property p ON u.property_id = p.property_id
+      JOIN Landlord l ON p.landlord_id = l.landlord_id
+      LEFT JOIN Subscription s 
+          ON s.landlord_id = l.landlord_id 
+          AND s.is_active = 1
+      LEFT JOIN Plan pl 
+          ON pl.plan_code = s.plan_code
       WHERE b.billing_id = ?
       LIMIT 1
       `,
             [billing_id]
         );
 
-        if (!billingRows.length) {
-            return httpError(404, "Billing not found.");
+        if (!rows.length) {
+            return httpError(404, "Billing not found");
         }
 
-        const billing = billingRows[0];
+        const data = rows[0];
+        log("DATABASE RESULT", data);
 
-        /* ---------------------------------------------------------------------- */
-        /* Fetch or Create Xendit Customer                                        */
-        /* ---------------------------------------------------------------------- */
-
-        const [tenantRows]: any = await conn.execute(
-            `SELECT xendit_customer_id FROM Tenant WHERE tenant_id = ? LIMIT 1`,
-            [tenant_id]
-        );
-
-        let xenditCustomerId = tenantRows?.[0]?.xendit_customer_id ?? null;
-
-        if (!xenditCustomerId) {
-            xenditCustomerId = await createXenditCustomer({
-                referenceId: `tenant-${tenant_id}`,
-                firstName,
-                lastName,
-                email: emailAddress,
-                secretKey: XENDIT_TEXT_SECRET_KEY,
-
-            });
-
-            await conn.execute(
-                `UPDATE Tenant SET xendit_customer_id = ? WHERE tenant_id = ?`,
-                [xenditCustomerId, tenant_id]
-            );
+        if (!data.xendit_account_id) {
+            return httpError(400, "Landlord sub-account not configured");
         }
 
-        /* ---------------------------------------------------------------------- */
-        /* Idempotency Key                                                        */
-        /* ---------------------------------------------------------------------- */
+        if (!data.is_active) {
+            return httpError(400, "No active subscription");
+        }
 
-        const idempotencyKey = crypto
-            .createHash("sha256")
-            .update(`billing-${billing.billing_id}`)
-            .digest("hex");
+        if (!data.split_rule_id) {
+            return httpError(400, "Split rule missing in plan");
+        }
 
-        /* ---------------------------------------------------------------------- */
-        /* Redirect URLs                                                          */
-        /* ---------------------------------------------------------------------- */
+        const grossAmount = Number(data.total_amount_due);
 
-        const successRedirectUrl =
-            `${redirectUrl.success}` +
-            `?billing_id=${billing.billing_id}` +
-            `&agreement_id=${billing.agreement_id}` +
-            `&tenant_id=${tenant_id}` +
-            `&amount=${Number(amount)}`;
+        /* ------------------------------------------------------------------ */
+        /* BUILD V3 PAYMENT REQUEST BODY (NO SPLIT RULE HERE)                */
+        /* ------------------------------------------------------------------ */
 
-        const failureRedirectUrl =
-            `${redirectUrl.failure}` +
-            `?billing_id=${billing.billing_id}` +
-            `&agreement_id=${billing.agreement_id}`;
+        const paymentPayload = {
+            reference_id: `billing-${data.billing_id}-${Date.now()}`,
+            type: "PAY",
+            country: "PH",
+            currency: "PHP",
+            request_amount: grossAmount,
+            capture_method: "AUTOMATIC",
+            channel_code: "GCASH",
 
-        /* ---------------------------------------------------------------------- */
-        /* Invoice Payload                                                        */
-        /* ---------------------------------------------------------------------- */
-
-        const invoicePayload = {
-            external_id: `billing-${billing.billing_id}`,
-            amount: Number(amount),
-            currency: CURRENCY,
-            description: `Billing for ${billing.property_name} - ${billing.unit_name}
-Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
-            customer: {
-                customer_id: xenditCustomerId,
+            channel_properties: {
+                success_return_url:
+                    `${redirectUrl.success}?billing_id=${data.billing_id}`,
+                failure_return_url:
+                    `${redirectUrl.failure}?billing_id=${data.billing_id}`,
             },
+
             metadata: {
-                billing_id: billing.billing_id,
-                agreement_id: billing.agreement_id,
-                tenant_id,
+                billing_id: data.billing_id,
+                landlord_id: data.landlord_id,
+                agreement_id: data.agreement_id,
+                plan_code: data.plan_code,
             },
-            items: [
-                {
-                    name: `Monthly Billing – ${billing.unit_name}`,
-                    quantity: 1,
-                    price: Number(amount),
-                },
-            ],
-            success_redirect_url: successRedirectUrl,
-            failure_redirect_url: failureRedirectUrl,
         };
 
-        /* ---------------------------------------------------------------------- */
-        /* Create Invoice via Xendit                                              */
-        /* ---------------------------------------------------------------------- */
+        log("XENDIT REQUEST BODY", paymentPayload);
 
-        await logGatewayEvent({
-            type: "request",
-            endpoint: XENDIT_API_URL,
-            payload: invoicePayload,
-        });
+        /* ------------------------------------------------------------------ */
+        /* CALL XENDIT (V3 CORRECT HEADERS)                                  */
+        /* ------------------------------------------------------------------ */
 
-        const invoiceResp = await fetchWithRetry(XENDIT_API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization:
-                    "Basic " +
-                    Buffer.from(`${XENDIT_TEXT_SECRET_KEY}:`).toString("base64"),
-                "Idempotency-Key": idempotencyKey,
-            },
-            body: JSON.stringify(invoicePayload),
-        });
-
-        const invoiceData = await invoiceResp.json();
-
-        if (!invoiceResp.ok) {
-            await logGatewayEvent({
-                type: "error",
-                endpoint: XENDIT_API_URL,
-                statusCode: invoiceResp.status,
-                response: invoiceData,
-            });
-
-            if (invoiceResp.status === 429) {
-                return httpError(
-                    503,
-                    "Payment service is temporarily busy. Please try again shortly."
-                );
-            }
-
-            return httpError(
-                500,
-                "Failed to create Xendit invoice.",
-                invoiceData
-            );
-        }
-
-        await logGatewayEvent({
-            type: "response",
-            endpoint: XENDIT_API_URL,
-            response: invoiceData,
-            statusCode: 200,
-        });
-
-        /* ---------------------------------------------------------------------- */
-        /* Success Response                                                       */
-        /* ---------------------------------------------------------------------- */
-
-        return NextResponse.json(
+        const response = await fetch(
+            "https://api.xendit.co/v3/payment_requests",
             {
-                message: "Xendit invoice created successfully.",
-                checkoutUrl: invoiceData.invoice_url,
-                invoiceId: invoiceData.id,
-                billing_id: billing.billing_id,
-                agreement_id: billing.agreement_id,
-            },
-            { status: 200 }
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "api-version": "2024-11-11",
+                    Authorization:
+                        "Basic " +
+                        Buffer.from(`${XENDIT_TEXT_SECRET_KEY}:`).toString("base64"),
+
+                    // 🔥 CORRECT V3 HEADERS
+                    "for-user-id": data.xendit_account_id,
+                    "with-split-rule": data.split_rule_id,
+                },
+                body: JSON.stringify(paymentPayload),
+            }
         );
 
-    } catch (err: any) {
-        await logGatewayEvent({
-            type: "error",
-            endpoint: "create-invoice",
-            response: err?.message,
+        const result = await response.json();
+        log("XENDIT RESPONSE", result);
+
+        if (!response.ok) {
+            return httpError(500, "Xendit API Error", result);
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* STORE PAYMENT INIT RECORD                                          */
+        /* ------------------------------------------------------------------ */
+
+        await conn.execute(
+            `
+      INSERT INTO Payment (
+        bill_id,
+        agreement_id,
+        payment_type,
+        amount_paid,
+        payment_method_id,
+        payment_status,
+        gross_amount,
+        gateway_transaction_ref,
+        raw_gateway_payload
+      )
+      VALUES (?, ?, 'monthly_billing', ?, 'xendit', 'pending', ?, ?, ?)
+      `,
+            [
+                data.billing_id,
+                data.agreement_id,
+                grossAmount,
+                grossAmount,
+                result.payment_request_id, // ✅ correct field
+                JSON.stringify(result),
+            ]
+        );
+
+        log("PAYMENT INIT STORED");
+
+        /* ------------------------------------------------------------------ */
+        /* EXTRACT CHECKOUT URL                                               */
+        /* ------------------------------------------------------------------ */
+
+        let checkoutUrl = null;
+
+        if (result.actions) {
+            const redirect = result.actions.find(
+                (a: any) =>
+                    a.type === "REDIRECT_CUSTOMER" &&
+                    a.descriptor === "WEB_URL"
+            );
+            checkoutUrl = redirect?.value || null;
+        }
+
+        return NextResponse.json({
+            success: true,
+            paymentRequestId: result.payment_request_id,
+            checkoutUrl,
         });
 
-        return httpError(500, "Failed to initiate Xendit payment.", err?.message);
+    } catch (error: any) {
+        log("FATAL ERROR", error);
+        return httpError(500, "Payment initialization failed", error.message);
     } finally {
-        if (conn) await conn.end().catch(() => {});
+        if (conn) await conn.end();
     }
 }
