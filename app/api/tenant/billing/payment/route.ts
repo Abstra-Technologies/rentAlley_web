@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
             return httpError(400, "Missing redirect URLs.");
         }
 
-        if (!XENDIT_SECRET_KEY || !XENDIT_TEXT_SECRET_KEY) {
+        if (!XENDIT_SECRET_KEY) {
             return httpError(500, "Xendit secret key not configured.");
         }
 
@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
                 firstName,
                 lastName,
                 email: emailAddress,
-                secretKey: XENDIT_TEXT_SECRET_KEY,
+                secretKey: XENDIT_SECRET_KEY,
 
             });
 
@@ -294,7 +294,7 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
                 "Content-Type": "application/json",
                 Authorization:
                     "Basic " +
-                    Buffer.from(`${XENDIT_TEXT_SECRET_KEY}:`).toString("base64"),
+                    Buffer.from(`${XENDIT_SECRET_KEY}:`).toString("base64"),
                 "Idempotency-Key": idempotencyKey,
             },
             body: JSON.stringify(invoicePayload),
