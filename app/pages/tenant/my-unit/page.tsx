@@ -12,6 +12,7 @@ import {
 
 import useAuthStore from "@/zustand/authStore";
 import { useChatStore } from "@/zustand/chatStore";
+import useSWR from "swr";
 
 // Components
 import UnitCard from "@/components/tenant/currentRent/unitCard/activeRentCards";
@@ -59,39 +60,33 @@ const sortActiveFirst = (a: Unit, b: Unit) => {
 /* =====================================================
    FETCH UNIT DATA
 ===================================================== */
+const fetcher = (url: string) =>
+    axios.get(url).then((res) => res.data);
+
 const useUnits = (tenantId?: string) => {
-    const [units, setUnits] = useState<Unit[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const fetchUnits = useCallback(async () => {
-        if (!tenantId) {
-            setLoading(false);
-            return;
+    const {
+        data,
+        error,
+        isLoading,
+        mutate,
+    } = useSWR<Unit[]>(
+        tenantId
+            ? `/api/tenant/activeRent?tenantId=${tenantId}`
+            : null,
+        fetcher,
+        {
+            revalidateOnFocus: false,
+            keepPreviousData: true,
         }
+    );
 
-        try {
-            setLoading(true);
-            setError(null);
-            const res = await axios.get(
-                `/api/tenant/activeRent?tenantId=${tenantId}`
-            );
-            setUnits(res.data || []);
-        } catch (err: any) {
-            setError(err.response?.data?.message || "Failed to load units");
-            setUnits([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [tenantId]);
-
-    useEffect(() => {
-        fetchUnits();
-    }, [fetchUnits]);
-
-    return { units, loading, error, refetch: fetchUnits };
+    return {
+        units: data ?? [],
+        loading: isLoading,
+        error,
+        mutateUnits: mutate,
+    };
 };
-
 /* =====================================================
    PAGE
 ===================================================== */
@@ -108,9 +103,13 @@ export default function MyUnit() {
     const [loadingRenewal, setLoadingRenewal] = useState(false);
 
     const itemsPerPage = 9;
-    const { units, loading, error, refetch } = useUnits(
-        user?.tenant_id
-    );
+    const {
+        units,
+        loading,
+        error,
+        mutateUnits,
+    } = useUnits(user?.tenant_id);
+
 
     /* SESSION */
     useEffect(() => {
@@ -159,9 +158,10 @@ export default function MyUnit() {
 
     const handleRefresh = async () => {
         setIsRefetching(true);
-        await refetch();
+        await mutateUnits();
         setIsRefetching(false);
     };
+
 
     const handleContactLandlord = () => {
         const unit = units[0];
@@ -230,6 +230,13 @@ export default function MyUnit() {
                         confirmButtonColor: "#10B981",
                     });
 
+                    mutateUnits(
+                        (prev) =>
+                            prev?.filter((u) => u.unit_id !== unitId) ?? [],
+                        false
+                    );
+
+
                     router.push(`/pages/tenant/feedback?agreement_id=${agreementId}`);
                 } else {
                     await Swal.fire({
@@ -250,7 +257,7 @@ export default function MyUnit() {
                 });
             }
         },
-        [user?.tenant_id, refetch, router]
+        [user?.tenant_id, router]
     );
 
     /* LOADING (UNCHANGED SKELETON) */
