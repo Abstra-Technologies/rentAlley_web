@@ -58,11 +58,12 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
         { revalidateOnFocus: false }
     );
 
-    const { data: agreementRes } = useSWR(
+    const { data: agreementRes, mutate: mutateAgreement } = useSWR(
         landlordId ? `/api/landlord/platformAgreement/${landlordId}` : null,
         fetcher,
         { revalidateOnFocus: false }
     );
+
 
     if (!verification || !payoutRes || !agreementRes) return null;
 
@@ -171,8 +172,12 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
                 <PlatformAgreementModal
                     landlordId={landlordId}
                     onClose={() => setShowAgreementModal(false)}
+                    onAccepted={() => {
+                        mutateAgreement(); // 🔥 revalidate agreement
+                    }}
                 />
             )}
+
 
             {/* ORIGINAL PAYOUT MODAL */}
             {showPayoutModal && (

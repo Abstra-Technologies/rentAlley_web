@@ -8,9 +8,13 @@ import Swal from "sweetalert2";
 export default function PlatformAgreementModal({
                                                    landlordId,
                                                    onClose,
+                                                   onAccepted
+
                                                }: {
     landlordId: string;
     onClose: () => void;
+    onAccepted: () => void;
+
 }) {
     const [agreed, setAgreed] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -50,7 +54,7 @@ export default function PlatformAgreementModal({
                 icon: "success",
                 confirmButtonColor: "#2563eb",
             });
-
+            onAccepted?.();
             onClose();
 
         } catch (error: any) {
