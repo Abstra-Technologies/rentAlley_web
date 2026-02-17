@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
             payouts,
             pending_payments: pendingPayments,
             pending_total: pendingPayments.reduce(
-                (sum: number, p: any) => sum + Number(p.amount_paid || 0),
+                (sum: number, p: any) => sum + Number(p.net_amount || 0),
                 0
             ),
         });
