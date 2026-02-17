@@ -1,16 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import { db } from "@/lib/db";
+import { safeDecrypt } from "@/utils/decrypt/safeDecrypt";
 
-/* ---------------------------------
-   Helpers
----------------------------------- */
+export const runtime = "nodejs";
+
+/* -------------------------------------------------------------------------- */
+/* CONFIG                                                                     */
+/* -------------------------------------------------------------------------- */
+
+const MASTER_NOTIFICATION_EMAIL = process.env.MASTER_NOTIFICATION_EMAIL;
+
+/* -------------------------------------------------------------------------- */
+/* HELPERS                                                                    */
+/* -------------------------------------------------------------------------- */
+
 function normalizeAccountNumber(value: string | null) {
     return value?.trim() || "";
 }
 
+function log(stage: string, data?: any) {
+    console.log(`\n========== ${stage} ==========\n`);
+    if (data) console.log(JSON.stringify(data, null, 2));
+}
+
+/* -------------------------------------------------------------------------- */
+/* DISBURSE API (SUB-ACCOUNT + EMAIL DECRYPTION)                             */
+/* -------------------------------------------------------------------------- */
+
 export async function POST(req: NextRequest) {
-    console.log("🚀 [DISBURSE] API HIT");
+
+    log("🚀 DISBURSE API HIT");
 
     try {
         const body = await req.json();
@@ -23,48 +43,51 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        /* =====================================
-           1. Fetch VALID payments
-              + ACTIVE payout account
-              + AVAILABLE payout channel
-        ====================================== */
+        /* =========================================================
+           1️⃣ Fetch Payments + Encrypted Email
+        ========================================================== */
+
         const [rows]: any = await db.query(
             `
-            SELECT
-                p.payment_id,
-                p.amount_paid,
+                SELECT
+                    p.payment_id,
+                    p.net_amount,
 
-                l.landlord_id,
+                    l.landlord_id,
+                    l.xendit_account_id,
 
-                pa.channel_code,
-                pa.account_name,
-                pa.account_number,
-                pa.bank_name,
+                    u.email AS encrypted_email,
 
-                pc.channel_type
+                    pa.channel_code,
+                    pa.account_name,
+                    pa.account_number,
+                    pa.bank_name,
 
-            FROM Payment p
-            INNER JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
-            INNER JOIN Unit u ON la.unit_id = u.unit_id
-            INNER JOIN Property pr ON pr.property_id = u.property_id
-            INNER JOIN Landlord l ON l.landlord_id = pr.landlord_id
+                    pc.channel_type
 
-            INNER JOIN LandlordPayoutAccount pa
-                ON pa.landlord_id = l.landlord_id
-               AND pa.is_active = 1
+                FROM Payment p
+                         INNER JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
+                         INNER JOIN Unit u2 ON la.unit_id = u2.unit_id
+                         INNER JOIN Property pr ON pr.property_id = u2.property_id
+                         INNER JOIN Landlord l ON l.landlord_id = pr.landlord_id
+                         INNER JOIN User u ON u.user_id = l.user_id
 
-            INNER JOIN payout_channels pc
-                ON pc.channel_code = pa.channel_code
-               AND pc.is_available = 1
+                         INNER JOIN LandlordPayoutAccount pa
+                                    ON pa.landlord_id = l.landlord_id
+                                        AND pa.is_active = 1
 
-            WHERE p.payment_id IN (?)
-              AND p.payment_status = 'confirmed'
-              AND p.payout_status = 'unpaid'
+                         INNER JOIN payout_channels pc
+                                    ON pc.channel_code = pa.channel_code
+                                        AND pc.is_available = 1
+
+                WHERE p.payment_id IN (?)
+                  AND p.payment_status = 'confirmed'
+                  AND p.payout_status = 'unpaid'
             `,
             [payment_ids]
         );
 
-        console.log("📊 [DISBURSE] DB ROWS:", rows);
+        log("📊 DB RESULT", rows);
 
         if (!rows || rows.length === 0) {
             return NextResponse.json(
@@ -73,19 +96,32 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        /* =====================================
-           2. Group payments by LANDLORD (string key)
-        ====================================== */
+        /* =========================================================
+           2️⃣ Group by Landlord
+        ========================================================== */
+
         const grouped: Record<string, any> = {};
 
         for (const row of rows) {
+
             const landlordId = row.landlord_id;
 
             if (!grouped[landlordId]) {
+
+                const decryptedEmail = safeDecrypt(row.encrypted_email);
+
+                if (!decryptedEmail) {
+                    throw new Error(
+                        `Failed to decrypt email for landlord ${landlordId}`
+                    );
+                }
+
                 grouped[landlordId] = {
                     landlord_id: landlordId,
+                    xendit_account_id: row.xendit_account_id,
+                    landlord_email: decryptedEmail,
                     channel_code: row.channel_code,
-                    channel_type: row.channel_type, // BANK | EWALLET
+                    channel_type: row.channel_type,
                     account_name: row.account_name,
                     account_number: normalizeAccountNumber(row.account_number),
                     bank_name: row.bank_name,
@@ -95,21 +131,20 @@ export async function POST(req: NextRequest) {
             }
 
             grouped[landlordId].payment_ids.push(row.payment_id);
-            grouped[landlordId].total_amount += Number(row.amount_paid);
+            grouped[landlordId].total_amount += Number(row.net_amount);
         }
 
-        console.log("🧮 [DISBURSE] GROUPED PAYOUTS:", grouped);
+        log("🧮 GROUPED PAYOUTS", grouped);
 
-        /* =====================================
-           3. Disburse PER landlord (v2/payouts)
-        ====================================== */
+        /* =========================================================
+           3️⃣ Execute Sub-account Payout
+        ========================================================== */
+
         for (const landlordKey of Object.keys(grouped)) {
-            const payout = grouped[landlordKey]; // ✅ string-safe
 
-            if (!payout || payout.total_amount <= 0) {
-                console.error("❌ Invalid payout group:", payout);
-                continue;
-            }
+            const payout = grouped[landlordKey];
+
+            if (!payout || payout.total_amount <= 0) continue;
 
             const amount = Number(payout.total_amount.toFixed(2));
             const external_id = `payout-${Date.now()}-${payout.landlord_id}`;
@@ -121,7 +156,6 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            /* ---------- XENDIT PAYOUTS v2 (BANK + EWALLET) ---------- */
             const payoutPayload = {
                 reference_id: external_id,
                 channel_code: payout.channel_code,
@@ -132,13 +166,22 @@ export async function POST(req: NextRequest) {
                 amount,
                 description: "Rental payout",
                 currency: "PHP",
+
+                /* 🔥 RECEIPT EMAIL */
+                receipt_notification: {
+                    email_to: [payout.landlord_email],
+                    email_cc: MASTER_NOTIFICATION_EMAIL
+                        ? [MASTER_NOTIFICATION_EMAIL]
+                        : [],
+                },
+
                 metadata: {
                     landlord_id: payout.landlord_id,
                     payment_ids: payout.payment_ids,
                 },
             };
 
-            console.log("📤 [XENDIT PAYOUT v2] PAYLOAD:", payoutPayload);
+            log("📤 PAYOUT PAYLOAD", payoutPayload);
 
             const xenditResponse = await axios.post(
                 "https://api.xendit.co/v2/payouts",
@@ -146,34 +189,38 @@ export async function POST(req: NextRequest) {
                 {
                     headers: {
                         "Idempotency-key": external_id,
+                        "for-user-id": payout.xendit_account_id,
                     },
                     auth: {
-                        username: process.env.XENDIT_DISBURSE_SECRET_KEY!,
+                        username: process.env.XENDIT_TEXT_DISBURSE_KEY!,
                         password: "",
                     },
                 }
             );
 
-            /* =====================================
-               4. Save payout history (Xendit-aligned)
-            ====================================== */
+            log("✅ XENDIT RESPONSE", xenditResponse.data);
+
+            /* =========================================================
+               4️⃣ Save payout history
+            ========================================================== */
+
             await db.query(
                 `
-                INSERT INTO LandlordPayoutHistory
-                (
-                    landlord_id,
-                    amount,
-                    included_payments,
-                    payout_method,
-                    channel_code,
-                    account_name,
-                    account_number,
-                    bank_name,
-                    status,
-                    external_id,
-                    xendit_disbursement_id
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACCEPTED', ?, ?)
+                    INSERT INTO LandlordPayoutHistory
+                    (
+                        landlord_id,
+                        amount,
+                        included_payments,
+                        payout_method,
+                        channel_code,
+                        account_name,
+                        account_number,
+                        bank_name,
+                        status,
+                        external_id,
+                        xendit_disbursement_id
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACCEPTED', ?, ?)
                 `,
                 [
                     payout.landlord_id,
@@ -189,28 +236,29 @@ export async function POST(req: NextRequest) {
                 ]
             );
 
-            /* =====================================
-               5. Mark payments as IN_PAYOUT
-            ====================================== */
+            /* =========================================================
+               5️⃣ Mark payments as IN_PAYOUT
+            ========================================================== */
+
             await db.query(
                 `
-                UPDATE Payment
-                SET payout_status = 'in_payout'
-                WHERE payment_id IN (?)
+                    UPDATE Payment
+                    SET payout_status = 'in_payout'
+                    WHERE payment_id IN (?)
                 `,
                 [payout.payment_ids]
             );
         }
 
-        return NextResponse.json(
-            {
-                success: true,
-                message: "Disbursement initiated successfully",
-            },
-            { status: 200 }
-        );
+        return NextResponse.json({
+            success: true,
+            message: "Sub-account disbursement initiated successfully",
+        });
+
     } catch (err: any) {
-        console.error("🔥 [DISBURSE] ERROR:", err?.response?.data || err);
+
+        console.error("🔥 DISBURSE ERROR:", err?.response?.data || err);
+
         return NextResponse.json(
             {
                 error: "Failed to initiate disbursement",
