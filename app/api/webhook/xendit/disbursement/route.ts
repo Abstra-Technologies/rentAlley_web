@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
         const callbackToken = req.headers.get("x-callback-token");
         console.log("🔐 CALLBACK TOKEN:", callbackToken);
 
-        if (callbackToken !== process.env.XENDIT_TEXT_WEBHOOK_TOKEN) {
+        if (callbackToken !== process.env.XENDIT_WEBHOOK_TOKEN) {
             console.error("❌ INVALID TOKEN");s
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }

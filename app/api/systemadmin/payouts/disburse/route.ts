@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
                         "for-user-id": payout.xendit_account_id,
                     },
                     auth: {
-                        username: process.env.XENDIT_TEXT_DISBURSE_KEY!,
+                        username: process.env.XENDIT_DISBURSE_SECRET_KEY!,
                         password: "",
                     },
                 }

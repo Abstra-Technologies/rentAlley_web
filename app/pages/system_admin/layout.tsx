@@ -43,6 +43,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ],
         },
         {
+            title: "Payments & Payouts",
+            items: [
+                { label: "Payment Channels", href: "/pages/system_admin/payouts/payment_channels", icon: Banknote },
+                { label: "Payments List", href: "/pages/system_admin/payouts/payments_list", icon: Banknote },
+                { label: "Payout History", href: "/pages/system_admin/payouts/history", icon: History },
+            ],
+        },
+        {
             title: "Subscription Programs",
             items: [
                 { label: "Beta Users List", href: "/pages/system_admin/beta_programs", icon: Users },
@@ -83,15 +91,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             title: "Announcements",
             items: [
                 { label: "Announcements", href: "/pages/system_admin/annoucement", icon: ScrollText },
-            ],
-        },
-
-        {
-            title: "Payments & Payouts",
-            items: [
-                { label: "Payment Channels", href: "/pages/system_admin/payouts/payment_channels", icon: Banknote },
-                { label: "Payments List", href: "/pages/system_admin/payouts/payments_list", icon: Banknote },
-                { label: "Payout History", href: "/pages/system_admin/payouts/history", icon: History },
             ],
         },
     ];
