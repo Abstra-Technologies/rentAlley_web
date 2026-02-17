@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/microfrontends.json",
+  "applications": {
+    "rent-alley-web": {
+      "development": {
+        "fallback": "www.upkyp.com"
+      }
+    }
+  }
+}
