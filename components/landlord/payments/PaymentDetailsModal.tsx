@@ -43,8 +43,7 @@ export default function PaymentDetailsModal({
         <AnimatePresence>
             {open && (
                 <motion.div
-                    className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm
-                     flex items-center justify-center p-3 sm:p-4"
+                    className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -53,16 +52,12 @@ export default function PaymentDetailsModal({
                         initial={{ scale: 0.95, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.95, opacity: 0 }}
-                        className="
-              bg-white w-full
-              max-w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl
-              rounded-2xl shadow-2xl overflow-hidden
-            "
+                        className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden"
                     >
                         {/* ================= HEADER ================= */}
-                        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b">
-                            <h3 className="text-lg sm:text-xl font-bold text-gray-900">
-                                Payment Details
+                        <div className="flex items-center justify-between px-6 py-4 border-b">
+                            <h3 className="text-xl font-bold text-gray-900">
+                                Payment Receipt
                             </h3>
                             <button
                                 onClick={onClose}
@@ -72,127 +67,104 @@ export default function PaymentDetailsModal({
                             </button>
                         </div>
 
-                        {/* ================= CONTENT ================= */}
-                        <div className="px-4 sm:px-6 py-5 space-y-6 text-sm overflow-y-auto max-h-[75vh]">
-                            {/* ================= RECEIPT ================= */}
+                        {/* ================= RECEIPT ================= */}
+                        <div className="px-6 py-6 overflow-y-auto max-h-[75vh] text-sm">
                             <div
                                 ref={receiptRef}
-                                className="border border-gray-200 rounded-2xl overflow-hidden bg-white"
+                                className="border border-gray-200 rounded-2xl overflow-hidden"
                             >
-                                {/* UPKYP HEADER */}
-                                <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-5 py-4">
-                                    <h4 className="text-white font-extrabold text-base sm:text-lg tracking-wide">
+                                {/* BRAND HEADER */}
+                                <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-6 py-5 text-white">
+                                    <h2 className="text-lg font-extrabold tracking-wide">
                                         UPKYP
-                                    </h4>
-                                    <p className="text-xs text-blue-100">
-                                        Official Payment Receipt
+                                    </h2>
+                                    <p className="text-xs opacity-90">
+                                        Official Digital Payment Receipt
                                     </p>
                                 </div>
 
-                                {/* BODY */}
-                                <div className="p-4 sm:p-6 space-y-8">
-                                    {/* PAYMENT + BILLING GRID */}
-                                    <div className="space-y-8 lg:grid lg:grid-cols-2 lg:gap-10 lg:space-y-0">
-                                        <Section title="Payment Information">
-                                            <Detail label="Payment ID" value={payment.payment_id} />
-                                            <Detail
-                                                label="Payment Type"
-                                                value={payment.payment_type.replaceAll("_", " ")}
-                                                capitalize
-                                            />
-                                            <Detail
-                                                label="Amount Paid"
-                                                value={formatCurrency(payment.amount_paid)}
-                                                highlight
-                                            />
-                                            <Detail
-                                                label="Payment Method"
-                                                value={payment.payment_method_id}
-                                            />
-                                            <Detail
-                                                label="Payment Status"
-                                                value={payment.payment_status}
-                                                badge
-                                            />
-                                            <Detail
-                                                label="Payout Status"
-                                                value={payment.payout_status}
-                                                badge
-                                            />
-                                            <Detail
-                                                label="Payment Date"
-                                                value={new Date(
-                                                    payment.payment_date
-                                                ).toLocaleString()}
-                                            />
-                                            {payment.receipt_reference && (
-                                                <Detail
-                                                    label="Receipt Reference"
-                                                    value={payment.receipt_reference}
-                                                />
-                                            )}
-                                        </Section>
-
-                                        {payment.bill_id && (
-                                            <Section title="Billing Information">
-                                                <Detail label="Billing ID" value={payment.bill_id} />
-                                                <Detail
-                                                    label="Billing Period"
-                                                    value={new Date(
-                                                        payment.billing_period
-                                                    ).toLocaleDateString("en-US", {
-                                                        month: "long",
-                                                        year: "numeric",
-                                                    })}
-                                                />
-                                                <Detail
-                                                    label="Water Charges"
-                                                    value={formatCurrency(
-                                                        payment.total_water_amount
-                                                    )}
-                                                />
-                                                <Detail
-                                                    label="Electricity Charges"
-                                                    value={formatCurrency(
-                                                        payment.total_electricity_amount
-                                                    )}
-                                                />
-                                                <Detail
-                                                    label="Total Amount Due"
-                                                    value={formatCurrency(
-                                                        payment.total_amount_due
-                                                    )}
-                                                />
-                                                <Detail
-                                                    label="Billing Status"
-                                                    value={payment.billing_status}
-                                                    badge
-                                                />
-                                                <Detail
-                                                    label="Due Date"
-                                                    value={new Date(
-                                                        payment.due_date
-                                                    ).toLocaleDateString()}
-                                                />
-                                                {payment.paid_at && (
-                                                    <Detail
-                                                        label="Paid At"
-                                                        value={new Date(
-                                                            payment.paid_at
-                                                        ).toLocaleString()}
-                                                    />
-                                                )}
-                                            </Section>
-                                        )}
-                                    </div>
-
-                                    {/* LEASE / UNIT */}
-                                    <Section title="Lease & Unit">
-                                        <Detail label="Lease ID" value={payment.agreement_id} />
-                                        <Detail label="Unit ID" value={payment.unit_id} />
+                                <div className="p-6 space-y-8">
+                                    {/* ================= CORE PAYMENT ================= */}
+                                    <Section title="Payment Information">
+                                        <Detail label="Payment ID" value={payment.payment_id} />
+                                        <Detail
+                                            label="Payment Type"
+                                            value={payment.payment_type.replaceAll("_", " ")}
+                                            capitalize
+                                        />
+                                        <Detail
+                                            label="Payment Status"
+                                            value={payment.payment_status}
+                                            badge
+                                        />
+                                        <Detail
+                                            label="Payout Status"
+                                            value={payment.payout_status}
+                                            badge
+                                        />
+                                        <Detail
+                                            label="Payment Method"
+                                            value={payment.payment_method_id}
+                                        />
+                                        <Detail
+                                            label="Gateway Ref"
+                                            value={payment.gateway_transaction_ref || "—"}
+                                        />
+                                        <Detail
+                                            label="Receipt Ref"
+                                            value={payment.receipt_reference || "—"}
+                                        />
+                                        <Detail
+                                            label="Payment Date"
+                                            value={new Date(
+                                                payment.payment_date
+                                            ).toLocaleString()}
+                                        />
                                     </Section>
 
-                                    <p className="text-center text-[11px] text-gray-400 pt-4">
+                                    {/* ================= FINANCIAL BREAKDOWN ================= */}
+                                    <Section title="Financial Breakdown">
+                                        <Detail
+                                            label="Gross Amount (Tenant Paid)"
+                                            value={formatCurrency(payment.gross_amount)}
+                                        />
+
+                                        <Detail
+                                            label="Gateway Fee"
+                                            value={formatCurrency(payment.gateway_fee || 0)}
+                                        />
+
+                                        <Detail
+                                            label="Gateway VAT"
+                                            value={formatCurrency(payment.gateway_vat || 0)}
+                                        />
+
+                                        <Detail
+                                            label="Platform Fee"
+                                            value={formatCurrency(payment.platform_fee || 0)}
+                                        />
+
+                                        <hr className="my-2" />
+
+                                        <Detail
+                                            label="Net Amount (After Fees)"
+                                            value={formatCurrency(payment.net_amount)}
+                                            highlight
+                                        />
+                                    </Section>
+
+                                    {/* ================= BILLING INFO ================= */}
+                                    {payment.bill_id && (
+                                        <Section title="Billing Information">
+                                            <Detail label="Billing ID" value={payment.bill_id} />
+                                            <Detail
+                                                label="Agreement ID"
+                                                value={payment.agreement_id}
+                                            />
+                                        </Section>
+                                    )}
+
+                                    <p className="text-center text-xs text-gray-400 pt-4">
                                         Generated by UPKYP • {new Date().toLocaleString()}
                                     </p>
                                 </div>
@@ -200,19 +172,10 @@ export default function PaymentDetailsModal({
                         </div>
 
                         {/* ================= FOOTER ================= */}
-                        <div
-                            className="px-4 sm:px-6 py-4 border-t
-                         flex flex-col sm:flex-row gap-3
-                         sm:justify-between sm:items-center"
-                        >
+                        <div className="px-6 py-4 border-t flex justify-between items-center">
                             <button
                                 onClick={handleDownloadReceipt}
-                                className="
-                  inline-flex items-center justify-center gap-2
-                  px-4 py-2 text-sm font-semibold rounded-xl
-                  bg-gradient-to-r from-blue-600 to-emerald-600
-                  text-white hover:shadow-lg transition-all
-                "
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-lg transition-all"
                             >
                                 <Download className="w-4 h-4" />
                                 Download Receipt
@@ -220,8 +183,7 @@ export default function PaymentDetailsModal({
 
                             <button
                                 onClick={onClose}
-                                className="px-4 py-2 text-sm font-semibold rounded-xl
-                           bg-gray-100 hover:bg-gray-200 transition"
+                                className="px-4 py-2 text-sm font-semibold rounded-xl bg-gray-100 hover:bg-gray-200 transition"
                             >
                                 Close
                             </button>
@@ -234,8 +196,8 @@ export default function PaymentDetailsModal({
 }
 
 /* =========================
-    HELPERS
-========================== */
+   HELPERS
+========================= */
 
 function Section({
                      title,
@@ -277,7 +239,7 @@ function Detail({
         }[String(value)] || "bg-gray-100 text-gray-700 border-gray-200";
 
     return (
-        <div className="flex justify-between gap-4">
+        <div className="flex justify-between items-center gap-4">
             <span className="text-gray-500">{label}</span>
 
             {badge ? (

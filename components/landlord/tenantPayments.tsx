@@ -147,15 +147,16 @@ export default function PaymentList({
     return (
         <>
             {/* =========================
-            DESKTOP TABLE
-      ========================== */}
+        DESKTOP TABLE
+    ========================== */}
             <div className="hidden lg:block">
-                <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700 px-6 py-4">
-                    <div>Date</div>
+                <div className="grid grid-cols-8 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700 px-6 py-4">
+                    <div>Date Paid</div>
                     <div>Tenant</div>
                     <div>Property / Unit</div>
                     <div>Type</div>
-                    <div className="text-right">Amount</div>
+                    <div className="text-right">Gross</div>
+                    <div className="text-right">Net</div>
                     <div className="text-center">Status</div>
                     <div className="text-center">Action</div>
                 </div>
@@ -170,32 +171,56 @@ export default function PaymentList({
                         <motion.div
                             key={payment.payment_id}
                             variants={fadeInUp}
-                            className="grid grid-cols-7 items-center px-6 py-4 text-sm
-                         hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-emerald-50/50 transition-colors"
+                            className="grid grid-cols-8 items-center px-6 py-4 text-sm
+            hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-emerald-50/50 transition-colors"
                         >
-                            <div className="text-gray-600">
-                                {new Date(payment.payment_date).toLocaleDateString()}
+                            {/* Date */}
+                            <div>
+                                <p className="text-gray-700 font-medium">
+                                    {new Date(payment.payment_date).toLocaleDateString()}
+                                </p>
+                                {/*<p className="text-[11px] text-gray-400">*/}
+                                {/*   {payment.created_at}*/}
+                                {/*</p>*/}
                             </div>
 
+
+                            {/* Tenant */}
                             <div className="font-semibold text-gray-900">
                                 {payment.tenant_name || "—"}
                             </div>
 
+                            {/* Property / Unit */}
                             <div className="text-gray-600">
                                 {payment.property_name} •{" "}
                                 <span className="text-gray-500">{payment.unit_name}</span>
                             </div>
 
+                            {/* Type */}
                             <PaymentTypeBadge type={payment.payment_type} />
 
-                            <div className="text-right font-semibold text-emerald-600">
-                                {formatCurrency(payment.amount_paid)}
+                            {/* Gross Amount (Tenant Paid) */}
+                            <div className="text-right font-semibold text-gray-900">
+                                {formatCurrency(payment.gross_amount || payment.amount_paid)}
+                                <p className="text-[11px] text-gray-400 font-normal">
+                                    Tenant Paid
+                                </p>
                             </div>
 
+                            {/* Net Amount (Landlord Receives) */}
+                            <div className="text-right font-bold text-emerald-600">
+                                {formatCurrency(payment.net_amount || payment.amount_paid)}
+                                <p className="text-[11px] text-gray-400 font-normal">
+                                    After Fees
+                                </p>
+                            </div>
+
+                            {/* Status */}
                             <div className="text-center">
                                 <StatusBadge status={payment.payment_status} />
                             </div>
 
+                            {/* Action */}
                             <div className="text-center">
                                 <button
                                     onClick={() => openDetails(payment)}
@@ -210,8 +235,8 @@ export default function PaymentList({
             </div>
 
             {/* =========================
-            MOBILE CARDS
-      ========================== */}
+        MOBILE CARDS
+    ========================== */}
             <motion.div
                 variants={staggerContainer}
                 initial="hidden"
@@ -239,6 +264,7 @@ export default function PaymentList({
                                     </p>
                                 </div>
                             </div>
+
                             <StatusBadge status={payment.payment_status} />
                         </div>
 
@@ -247,18 +273,29 @@ export default function PaymentList({
                             {payment.property_name} • {payment.unit_name}
                         </p>
 
-                        <div className="flex items-center justify-between border-t pt-3">
+                        {/* Financial Breakdown */}
+                        <div className="grid grid-cols-2 gap-4 border-t pt-3">
                             <div>
-                                <p className="text-xs text-gray-500">Amount</p>
-                                <p className="text-lg font-bold text-emerald-600">
-                                    {formatCurrency(payment.amount_paid)}
+                                <p className="text-xs text-gray-500">Tenant Paid</p>
+                                <p className="text-base font-semibold text-gray-900">
+                                    {formatCurrency(payment.gross_amount || payment.amount_paid)}
                                 </p>
                             </div>
+
+                            <div className="text-right">
+                                <p className="text-xs text-gray-500">Landlord Receives</p>
+                                <p className="text-lg font-bold text-emerald-600">
+                                    {formatCurrency(payment.net_amount || payment.amount_paid)}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 flex justify-end">
                             <button
                                 onClick={() => openDetails(payment)}
                                 className="flex items-center gap-2 px-4 py-2
-                           bg-gradient-to-r from-blue-600 to-emerald-600
-                           text-white text-sm font-semibold rounded-xl"
+              bg-gradient-to-r from-blue-600 to-emerald-600
+              text-white text-sm font-semibold rounded-xl"
                             >
                                 View
                                 <ArrowRight className="w-4 h-4" />
@@ -269,8 +306,8 @@ export default function PaymentList({
             </motion.div>
 
             {/* =========================
-            MODAL
-      ========================== */}
+        MODAL
+    ========================== */}
             <PaymentDetailsModal
                 open={openModal}
                 payment={selectedPayment}
@@ -278,6 +315,7 @@ export default function PaymentList({
             />
         </>
     );
+
 }
 
 /* =========================

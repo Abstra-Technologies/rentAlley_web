@@ -35,6 +35,13 @@ const getPaymentsCached = unstable_cache(
         p.receipt_reference,
         p.payment_date,
         p.proof_of_payment,
+        
+        p.gross_amount,
+        p.platform_fee,
+        p.gateway_vat,
+        p.net_amount,
+        p.gateway_fee,
+        p.created_at,
 
         /* ================= BILLING ================= */
         b.billing_id,

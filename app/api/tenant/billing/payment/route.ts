@@ -510,6 +510,7 @@ export async function POST(req: NextRequest) {
 
         /* ---------------- FETCH / CREATE XENDIT CUSTOMER ------------------ */
 
+
         const [tenantRows]: any = await conn.execute(
             `SELECT xendit_customer_id FROM Tenant WHERE tenant_id = ? LIMIT 1`,
             [tenant_id]
@@ -523,7 +524,7 @@ export async function POST(req: NextRequest) {
                 firstName,
                 lastName,
                 email: emailAddress,
-                secretKey: XENDIT_SECRET_KEY,
+                secretKey: XENDIT_TEXT_SECRET_KEY,
             });
 
             await conn.execute(
@@ -584,7 +585,7 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
                 "Content-Type": "application/json",
                 Authorization:
                     "Basic " +
-                    Buffer.from(`${XENDIT_SECRET_KEY}:`).toString("base64"),
+                    Buffer.from(`${XENDIT_TEXT_SECRET_KEY}:`).toString("base64"),
 
                 // 🔥 xenPlatform headers
                 "for-user-id": billing.xendit_account_id,

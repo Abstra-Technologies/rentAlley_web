@@ -1,6 +1,6 @@
 /* -------------------------------------------------------------------------- */
-/* XENDIT SPLIT.PAYMENT WEBHOOK HANDLER                                      */
-/* Handles ONLY platform commission split                                     */
+/* XENDIT SPLIT.PAYMENT WEBHOOK (FULL DEBUG VERSION)                         */
+/* Uses List Transactions API by reference_id                                */
 /* -------------------------------------------------------------------------- */
 
 export const runtime = "nodejs";
@@ -18,6 +18,8 @@ const {
     DB_PASSWORD,
     DB_NAME,
     XENDIT_TEXT_WEBHOOK_TOKEN,
+    XENDIT_TEST_TRANSBAL,
+    XENDIT_TRANSBAL_KEY
 } = process.env;
 
 /* -------------------------------------------------------------------------- */
@@ -26,7 +28,9 @@ const {
 
 function debug(stage: string, data?: any) {
     console.log(`\n==================== ${stage} ====================`);
-    if (data) console.log(JSON.stringify(data, null, 2));
+    if (data !== undefined) {
+        console.log(JSON.stringify(data, null, 2));
+    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -46,14 +50,14 @@ async function getDbConnection() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* SPLIT WEBHOOK HANDLER                                                      */
+/* SPLIT WEBHOOK                                                              */
 /* -------------------------------------------------------------------------- */
 
 export async function POST(req: Request) {
     let conn: mysql.Connection | null = null;
 
     try {
-        debug("SPLIT WEBHOOK START");
+        debug("WEBHOOK START");
 
         /* ---------------- VERIFY TOKEN ---------------- */
         const token = req.headers.get("x-callback-token");
@@ -70,76 +74,138 @@ export async function POST(req: Request) {
         const payload = await req.json();
         debug("PAYLOAD RECEIVED", payload);
 
-        /* ---------------- VALIDATE EVENT ---------------- */
         if (payload.event !== "split.payment") {
             debug("NOT split.payment EVENT");
             return NextResponse.json({ message: "Ignored" });
         }
 
         const splitData = payload.data;
-
-        if (!splitData) {
-            debug("NO SPLIT DATA FOUND");
-            return NextResponse.json({ message: "Invalid payload" }, { status: 400 });
-        }
-
         debug("SPLIT DATA", splitData);
 
-        /* ---------------- CHECK PLATFORM SPLIT ---------------- */
-        if (splitData.reference_id !== "platform") {
-            debug("NOT PLATFORM COMMISSION SPLIT");
+        if (!splitData || splitData.reference_id !== "platform") {
+            debug("NOT PLATFORM SPLIT");
             return NextResponse.json({ message: "Ignored (not platform split)" });
         }
 
-        /* ---------------- EXTRACT VALUES ---------------- */
         const commissionAmount = Number(splitData.amount);
-        const paymentReference = splitData.payment_reference_id;
-
-        if (!paymentReference || !commissionAmount) {
-            debug("MISSING REQUIRED SPLIT VALUES");
-            return NextResponse.json({ message: "Invalid split data" }, { status: 400 });
-        }
-
-        const billing_id = paymentReference.replace("billing-", "");
+        const billingReference = splitData.payment_reference_id;
+        const billing_id = billingReference.replace("billing-", "");
 
         debug("EXTRACTED VALUES", {
-            billing_id,
             commissionAmount,
+            billingReference,
+            billing_id,
         });
 
-        /* ---------------- UPDATE PAYMENT ---------------- */
+        /* ------------------------------------------------------------------
+           1️⃣ Fetch Transaction by reference_id
+        ------------------------------------------------------------------ */
+
+        debug("CALLING TRANSACTIONS API");
+
+        /* ------------------------------------------------------------------
+   Fetch PAYMENT transaction from landlord account
+------------------------------------------------------------------ */
+
+        const txResp = await fetch(
+            `https://api.xendit.co/transactions?product_id=${splitData.payment_id}`,
+            {
+                headers: {
+                    Authorization:
+                        "Basic " +
+                        Buffer.from(`${XENDIT_TRANSBAL_KEY}:`).toString("base64"),
+                    "for-user-id": splitData.source_account_id,
+                },
+            }
+        );
+
+        if (!txResp.ok) {
+            const errText = await txResp.text();
+            throw new Error(`Transaction API error: ${errText}`);
+        }
+
+        const txData = await txResp.json();
+
+        if (!Array.isArray(txData.data) || txData.data.length === 0) {
+            throw new Error("No PAYMENT transaction found");
+        }
+
+        const mainTransaction =
+            txData.data.find((tx: any) => tx.type === "PAYMENT") ||
+            txData.data[0];
+
+        const gatewayFee = Number(mainTransaction.fee?.xendit_fee || 0);
+        const gatewayVAT = Number(mainTransaction.fee?.value_added_tax || 0);
+        const netAfterGateway = Number(mainTransaction.net_amount || 0);
+        const finalNet = netAfterGateway - commissionAmount;
+
+        debug("COMPUTED VALUES", {
+            gatewayFee,
+            gatewayVAT,
+            platformFee: commissionAmount,
+            netAfterGateway,
+            finalNet,
+        });
+
+        /* ------------------------------------------------------------------
+           2️⃣ Update Payment Table
+        ------------------------------------------------------------------ */
+
         conn = await getDbConnection();
         await conn.beginTransaction();
-        debug("TRANSACTION STARTED");
+        debug("DB TRANSACTION STARTED");
 
-        const [updateResult]: any = await conn.execute(
+        const [rows]: any = await conn.execute(
             `
-            UPDATE Payment
-            SET gateway_fee = ?
+            SELECT payment_id
+            FROM Payment
             WHERE bill_id = ?
             ORDER BY payment_id DESC
             LIMIT 1
             `,
-            [commissionAmount, billing_id]
+            [billing_id]
         );
 
-        debug("UPDATE RESULT", updateResult);
+        debug("PAYMENT QUERY RESULT", rows);
 
-        if (updateResult.affectedRows === 0) {
-            debug("NO PAYMENT ROW FOUND TO UPDATE");
+        if (!rows.length) {
+            debug("NO PAYMENT ROW FOUND");
             await conn.rollback();
             return NextResponse.json({ message: "Payment not found" }, { status: 404 });
         }
 
+        const paymentId = rows[0].payment_id;
+        debug("PAYMENT ID TO UPDATE", paymentId);
+
+        const [updateResult]: any = await conn.execute(
+            `
+            UPDATE Payment
+            SET 
+                platform_fee = ?,
+                gateway_fee = ?,
+                gateway_vat = ?,
+                net_amount = ?
+            WHERE payment_id = ?
+            `,
+            [
+                commissionAmount,
+                gatewayFee,
+                gatewayVAT,
+                finalNet,
+                paymentId,
+            ]
+        );
+
+        debug("UPDATE RESULT", updateResult);
+
         await conn.commit();
-        debug("TRANSACTION COMMITTED");
+        debug("DB TRANSACTION COMMITTED");
 
         return NextResponse.json({
-            message: "Platform commission recorded successfully",
+            message: "Split + reconciliation complete",
         });
 
     } catch (err: any) {
-
         debug("ERROR OCCURRED", {
             message: err.message,
             stack: err.stack,
@@ -147,7 +213,7 @@ export async function POST(req: Request) {
 
         if (conn) {
             await conn.rollback();
-            debug("TRANSACTION ROLLED BACK");
+            debug("DB TRANSACTION ROLLED BACK");
         }
 
         return NextResponse.json(
@@ -161,6 +227,6 @@ export async function POST(req: Request) {
             debug("DB CONNECTION CLOSED");
         }
 
-        debug("SPLIT WEBHOOK END");
+        debug("WEBHOOK END");
     }
 }
