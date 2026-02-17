@@ -61,61 +61,103 @@ export default function PayoutsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 py-10 px-5">
-            {/* HEADER */}
-            <div className="max-w-7xl mx-auto mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                    <FiArrowDownCircle className="text-blue-600" />
-                    My Payouts
-                </h1>
-                <p className="text-gray-600">
-                    Track your earnings and disbursements from Upkyp.
-                </p>
-            </div>
+            <div className="max-w-7xl mx-auto space-y-8">
 
-            {/* LOADING */}
-            {loading && (
-                <div className="max-w-7xl mx-auto flex justify-center py-20">
-                    <FiRefreshCw className="w-10 h-10 animate-spin text-blue-600" />
+                {/* ================= HEADER ================= */}
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <FiArrowDownCircle className="text-blue-600" />
+                        Payout Dashboard
+                    </h1>
+                    <p className="text-gray-600 mt-1">
+                        Monitor your earnings, available balance, and disbursement history.
+                    </p>
                 </div>
-            )}
 
-            {/* ERROR */}
-            {!loading && error && (
-                <div className="max-w-7xl mx-auto p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-                    <FiXCircle className="inline mr-2" />
-                    {error}
-                </div>
-            )}
+                {/* ================= LOADING ================= */}
+                {loading && (
+                    <div className="flex justify-center py-20">
+                        <FiRefreshCw className="w-10 h-10 animate-spin text-blue-600" />
+                    </div>
+                )}
 
-            {/* CONTENT GRID */}
-            {!loading && !error && (
-                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* ================= ERROR ================= */}
+                {!loading && error && (
+                    <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+                        <FiXCircle className="inline mr-2" />
+                        {error}
+                    </div>
+                )}
 
-                    {/* ================= PENDING EARNINGS ================= */}
-                    <div className="bg-white rounded-xl shadow flex flex-col">
-                        <div className="p-5 border-b flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                <FiLayers className="text-yellow-600" />
-                                Pending Payouts
-                            </h2>
-                            <span className="text-lg font-bold text-emerald-600">
-                ₱{pendingTotal.toLocaleString()}
-              </span>
+                {!loading && !error && (
+                    <>
+                        {/* ================= SUMMARY CARDS ================= */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                            {/* Available */}
+                            <div className="bg-white rounded-2xl shadow p-6">
+                                <p className="text-sm text-gray-500">Available for Payout</p>
+                                <h2 className="text-3xl font-bold text-emerald-600 mt-2">
+                                    ₱{pendingTotal.toLocaleString()}
+                                </h2>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Confirmed payments not yet disbursed
+                                </p>
+                            </div>
+
+                            {/* Processing */}
+                            <div className="bg-white rounded-2xl shadow p-6">
+                                <p className="text-sm text-gray-500">In Processing</p>
+                                <h2 className="text-3xl font-bold text-amber-600 mt-2">
+                                    ₱
+                                    {pendingPayments
+                                        .filter((p) => p.payout_status === "in_payout")
+                                        .reduce((sum, p) => sum + Number(p.net_amount), 0)
+                                        .toLocaleString()}
+                                </h2>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Currently being transferred
+                                </p>
+                            </div>
+
+                            {/* Disbursed */}
+                            <div className="bg-white rounded-2xl shadow p-6">
+                                <p className="text-sm text-gray-500">Total Disbursed</p>
+                                <h2 className="text-3xl font-bold text-blue-600 mt-2">
+                                    ₱
+                                    {payouts
+                                        .reduce((sum, p) => sum + Number(p.amount), 0)
+                                        .toLocaleString()}
+                                </h2>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Successfully transferred earnings
+                                </p>
+                            </div>
                         </div>
 
-                        {pendingPayments.length === 0 ? (
-                            <div className="p-10 text-center text-gray-500">
-                                No pending earnings
+                        {/* ================= AVAILABLE PAYMENTS ================= */}
+                        <div className="bg-white rounded-2xl shadow overflow-hidden">
+                            <div className="px-6 py-4 border-b flex items-center justify-between">
+                                <h2 className="font-semibold text-gray-800">
+                                    Available Earnings
+                                </h2>
+                                <span className="text-sm text-gray-500">
+                {pendingPayments.length} payments
+              </span>
                             </div>
-                        ) : (
-                            <div className="overflow-x-auto">
+
+                            {pendingPayments.length === 0 ? (
+                                <div className="p-10 text-center text-gray-500">
+                                    No available earnings
+                                </div>
+                            ) : (
                                 <table className="min-w-full text-sm">
-                                    <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+                                    <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
                                     <tr>
                                         <th className="py-3 px-4 text-left">Property</th>
                                         <th className="py-3 px-4 text-left">Unit</th>
                                         <th className="py-3 px-4 text-left">Type</th>
-                                        <th className="py-3 px-4 text-left">Amount</th>
+                                        <th className="py-3 px-4 text-left">Net Amount</th>
                                         <th className="py-3 px-4 text-left">Date</th>
                                     </tr>
                                     </thead>
@@ -125,40 +167,38 @@ export default function PayoutsPage() {
                                             <td className="py-3 px-4">{p.property_name}</td>
                                             <td className="py-3 px-4">{p.unit_name}</td>
                                             <td className="py-3 px-4 capitalize">
-                                                {p.payment_type.replace("_", " ")}
+                                                {p.payment_type.replaceAll("_", " ")}
                                             </td>
-                                            <td className="py-3 px-4 font-semibold text-green-600">
-                                                ₱{p?.net_amount}
+                                            <td className="py-3 px-4 font-semibold text-emerald-600">
+                                                ₱{Number(p.net_amount).toLocaleString()}
                                             </td>
-                                            <td className="py-3 px-4 text-gray-600">
+                                            <td className="py-3 px-4 text-gray-500">
                                                 {new Date(p.created_at).toLocaleDateString()}
                                             </td>
                                         </tr>
                                     ))}
                                     </tbody>
                                 </table>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* ================= PAYOUT HISTORY ================= */}
-                    <div className="bg-white rounded-xl shadow flex flex-col">
-                        <div className="p-5 border-b">
-                            <h2 className="text-lg font-semibold text-gray-800">
-                                Disbursement History
-                            </h2>
+                            )}
                         </div>
 
-                        {payouts.length === 0 ? (
-                            <div className="p-10 text-center text-gray-500">
-                                No payouts yet
+                        {/* ================= PAYOUT HISTORY ================= */}
+                        <div className="bg-white rounded-2xl shadow overflow-hidden">
+                            <div className="px-6 py-4 border-b">
+                                <h2 className="font-semibold text-gray-800">
+                                    Disbursement History
+                                </h2>
                             </div>
-                        ) : (
-                            <div className="overflow-x-auto">
+
+                            {payouts.length === 0 ? (
+                                <div className="p-10 text-center text-gray-500">
+                                    No payouts yet
+                                </div>
+                            ) : (
                                 <table className="min-w-full text-sm">
-                                    <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+                                    <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
                                     <tr>
-                                        <th className="py-3 px-4 text-left">ID</th>
+                                        <th className="py-3 px-4 text-left">Payout ID</th>
                                         <th className="py-3 px-4 text-left">Date</th>
                                         <th className="py-3 px-4 text-left">Amount</th>
                                         <th className="py-3 px-4 text-left">Method</th>
@@ -170,31 +210,28 @@ export default function PayoutsPage() {
                                     {payouts.map((p) => (
                                         <tr key={p.payout_id}>
                                             <td className="py-3 px-4">{p.payout_id}</td>
-                                            <td className="py-3 px-4 flex items-center gap-1">
-                                                <FiCalendar className="text-gray-400" />
-                                                {p.date}
-                                            </td>
-                                            <td className="py-3 px-4 font-semibold text-green-600">
+                                            <td className="py-3 px-4">{p.date}</td>
+                                            <td className="py-3 px-4 font-semibold text-blue-600">
                                                 ₱{Number(p.amount).toLocaleString()}
                                             </td>
                                             <td className="py-3 px-4">{p.payout_method}</td>
                                             <td className="py-3 px-4">
-                          <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(
-                                  p.status
-                              )}`}
-                          >
-                            {p.status}
-                          </span>
+                        <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(
+                                p.status
+                            )}`}
+                        >
+                          {p.status}
+                        </span>
                                             </td>
                                             <td className="py-3 px-4">
                                                 {p.receipt_url ? (
                                                     <a
                                                         href={p.receipt_url}
                                                         target="_blank"
-                                                        className="text-blue-600 hover:underline flex items-center gap-1"
+                                                        className="text-blue-600 hover:underline"
                                                     >
-                                                        <FiDownload /> Download
+                                                        Download
                                                     </a>
                                                 ) : (
                                                     "—"
@@ -204,28 +241,12 @@ export default function PayoutsPage() {
                                     ))}
                                     </tbody>
                                 </table>
-                            </div>
-                        )}
-                    </div>
-
-                </div>
-            )}
-
-            {/* EMPTY STATE */}
-            {!loading &&
-                payouts.length === 0 &&
-                pendingPayments.length === 0 &&
-                !error && (
-                    <div className="max-w-7xl mx-auto text-center py-20">
-                        <FiInfo className="w-14 h-14 text-gray-400 mx-auto mb-4" />
-                        <h2 className="text-xl font-semibold text-gray-700">
-                            No payouts or earnings yet
-                        </h2>
-                        <p className="text-gray-500">
-                            Your confirmed payments will appear here once available.
-                        </p>
-                    </div>
+                            )}
+                        </div>
+                    </>
                 )}
+            </div>
         </div>
     );
+
 }
