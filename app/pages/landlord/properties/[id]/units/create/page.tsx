@@ -270,20 +270,21 @@ export default function UnitListingForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (loading) return; // 🔒 prevent double click
+
         const result = unitSchema.safeParse({
             ...formData,
             rentAmt: Number(formData.rentAmt),
             photos,
         });
 
-        // ✅ SAFE ZOD VALIDATION
+        /* ================= VALIDATION ================= */
         if (!result.success) {
             const messages =
-                result.error?.issues
-                    ?.map((issue) => issue.message)
-                    .join(", ") || "Please fill in all required fields.";
+                result.error?.issues?.map((issue) => issue.message).join(", ") ||
+                "Please fill in all required fields.";
 
-            Swal.fire({
+            await Swal.fire({
                 title: "Validation Error",
                 text: messages,
                 icon: "error",
@@ -293,6 +294,7 @@ export default function UnitListingForm() {
             return;
         }
 
+        /* ================= CONFIRMATION ================= */
         const confirmSubmit = await Swal.fire({
             title: "Create Unit?",
             text: "Do you want to submit this unit listing?",
@@ -301,12 +303,31 @@ export default function UnitListingForm() {
             confirmButtonColor: "#10b981",
             cancelButtonColor: "#6b7280",
             confirmButtonText: "Yes, create it!",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
         });
 
         if (!confirmSubmit.isConfirmed) return;
 
         setLoading(true);
-        const propURL = `/pages/landlord/properties/${propertyId}`;
+
+        /* ================= LOCKED LOADING MODAL ================= */
+        Swal.fire({
+            title: "Creating Unit...",
+            html: `
+      <div class="flex flex-col items-center gap-3">
+        <div class="text-gray-500 text-sm">
+          Please wait while we save your unit listing.
+        </div>
+      </div>
+    `,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
 
         try {
             const form = new FormData();
@@ -325,20 +346,29 @@ export default function UnitListingForm() {
 
             await axios.post("/api/unitListing/addUnit", form);
 
-            Swal.fire({
+            /* ================= SUCCESS ================= */
+            await Swal.fire({
                 title: "Success!",
                 text: "Unit created successfully!",
                 icon: "success",
                 confirmButtonColor: "#10b981",
-            }).then(() => {
-                router.replace(propURL);
+                allowOutsideClick: false,
+                allowEscapeKey: false,
             });
+
+            router.replace(`/pages/landlord/properties/${propertyId}`);
         } catch (error: any) {
-            Swal.fire({
+            /* ================= FAILURE ================= */
+            await Swal.fire({
                 title: "Error!",
-                text: error?.message || "Failed to create unit.",
+                text:
+                    error?.response?.data?.error ||
+                    error?.message ||
+                    "Failed to create unit.",
                 icon: "error",
                 confirmButtonColor: "#ef4444",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
             });
         } finally {
             setLoading(false);
