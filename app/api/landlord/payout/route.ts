@@ -52,6 +52,9 @@ export async function GET(req: NextRequest) {
         p.payment_date,
         p.created_at,
         p.payout_status,
+        
+        p.net_amount,
+        
 
         u.unit_name,
         pr.property_name,

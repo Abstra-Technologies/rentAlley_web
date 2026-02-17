@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-//  use cases -->  the components/landlord/analytics/PaymentSummaryGrid.tsx
-
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -17,55 +15,54 @@ export async function GET(req: NextRequest) {
 
         /* ===============================
            TOTAL COLLECTED (YTD)
+           → USE NET AMOUNT
         ================================ */
         const [[collected]]: any = await db.query(
             `
-            SELECT COALESCE(SUM(amount_paid), 0) AS totalCollected
-            FROM Payment p
-            INNER JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
-            INNER JOIN Unit u ON la.unit_id = u.unit_id
-            INNER JOIN Property pr ON pr.property_id = u.property_id
-            WHERE pr.landlord_id = ?
-              AND p.payment_status = 'confirmed'
-              AND YEAR(p.created_at) = YEAR(CURDATE())
-            `,
+      SELECT COALESCE(SUM(p.net_amount), 0) AS totalCollected
+      FROM Payment p
+      INNER JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
+      INNER JOIN Unit u ON la.unit_id = u.unit_id
+      INNER JOIN Property pr ON pr.property_id = u.property_id
+      WHERE pr.landlord_id = ?
+        AND p.payment_status = 'confirmed'
+        AND YEAR(p.created_at) = YEAR(CURDATE())
+      `,
             [landlord_id]
         );
 
         /* ===============================
            TOTAL DISBURSED (SUCCEEDED)
+           → ACTUAL TRANSFERRED AMOUNT
         ================================ */
         const [[disbursed]]: any = await db.query(
             `
-            SELECT COALESCE(SUM(amount), 0) AS totalDisbursed
-            FROM LandlordPayoutHistory
-            WHERE landlord_id = ?
-              AND status = 'SUCCEEDED'
-            `,
+      SELECT COALESCE(SUM(amount), 0) AS totalDisbursed
+      FROM LandlordPayoutHistory
+      WHERE landlord_id = ?
+        AND status = 'SUCCEEDED'
+      `,
             [landlord_id]
         );
 
         /* ===============================
            PENDING DISBURSEMENTS
+           → CONFIRMED + NOT YET PAID
+           → USE NET_AMOUNT
         ================================ */
         const [[pending]]: any = await db.query(
             `
-                SELECT
-                    COALESCE(SUM(net_amount), 0) AS pendingPayouts
-                FROM Payment
-                WHERE agreement_id IN (
-                    SELECT la.agreement_id
-                    FROM LeaseAgreement la
-                             INNER JOIN Unit u ON u.unit_id = la.unit_id
-                             INNER JOIN Property p ON p.property_id = u.property_id
-                    WHERE p.landlord_id = ?
-                )
-                  AND payment_status = 'confirmed'
-                  AND payout_status IN ('unpaid', 'in_payout')
-            `,
+      SELECT COALESCE(SUM(p.net_amount), 0) AS pendingPayouts
+      FROM Payment p
+      INNER JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
+      INNER JOIN Unit u ON u.unit_id = la.unit_id
+      INNER JOIN Property pr ON pr.property_id = u.property_id
+      WHERE pr.landlord_id = ?
+        AND p.payment_status = 'confirmed'
+        AND p.payout_status IN ('unpaid', 'in_payout')
+      `,
             [landlord_id]
         );
-
 
         return NextResponse.json({
             success: true,

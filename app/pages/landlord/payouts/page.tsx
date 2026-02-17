@@ -128,7 +128,7 @@ export default function PayoutsPage() {
                                                 {p.payment_type.replace("_", " ")}
                                             </td>
                                             <td className="py-3 px-4 font-semibold text-green-600">
-                                                ₱{Number(p.amount_paid).toLocaleString()}
+                                                ₱{p?.net_amount}
                                             </td>
                                             <td className="py-3 px-4 text-gray-600">
                                                 {new Date(p.created_at).toLocaleDateString()}
