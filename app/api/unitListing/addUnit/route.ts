@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     const status = (formData.get("status") as string) || "unoccupied";
     const unitType = formData.get("unitType") as string;
 
+
     // Extract 360 photo directly
     const photo360 = formData.get("photo360") as File | null;
 
