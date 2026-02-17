@@ -77,38 +77,72 @@ export default function PaymentPayoutGuidePage() {
                 </div>
             </div>
 
-            {/* Additional Information */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-lg bg-gray-100">
-                        <Info className="h-5 w-5 text-gray-600" />
-                    </div>
-                    <h2 className="text-lg font-bold text-gray-800">
-                        Important Information
+            {/* ================= FEES SECTION ================= */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-10">
+                <div className="flex items-center gap-2 mb-4">
+                    <Info className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-xl font-bold text-gray-800">
+                        Payment Processing Fees
                     </h2>
                 </div>
 
-                <ul className="space-y-3 text-gray-700">
-                    <li>
-                        • All tenant payments are processed securely through <strong>Xendit</strong>.
-                    </li>
-                    <li>
-                        • UPKYP does not release payouts immediately after payment confirmation.
-                    </li>
-                    <li>
-                        • Disbursement is processed <strong>every 15th day of the following month</strong>.
-                    </li>
-                    <li>
-                        • Only <strong>successful and confirmed payments</strong> are included in the payout.
-                    </li>
-                    <li>
-                        • Failed, reversed, or disputed payments are automatically excluded.
-                    </li>
-                    <li>
-                        • Landlords can track payment status and payout history inside their dashboard.
-                    </li>
-                </ul>
+                <p className="text-gray-600 mb-6 max-w-3xl">
+                    Tenant payments are processed through Xendit. Each transaction is
+                    subject to payment gateway fees depending on the payment method used.
+                    These fees are automatically deducted before landlord payout.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                    {/* E-Wallet */}
+                    <FeeCard
+                        title="GCash / Maya (E-Wallets)"
+                        fee="~2.5% – 3.5%"
+                        description="Percentage-based fee per successful transaction."
+                    />
+
+                    {/* Online Banking */}
+                    <FeeCard
+                        title="Online Banking"
+                        fee="~1.5% – 2.5%"
+                        description="Applies to PesoNet / InstaPay bank transfers."
+                    />
+
+                    {/* Over-the-Counter */}
+                    <FeeCard
+                        title="Over-the-Counter"
+                        fee="Fixed + %"
+                        description="Includes 7-Eleven, Cebuana, MLhuillier payments."
+                    />
+
+                    {/* Credit / Debit */}
+                    <FeeCard
+                        title="Credit / Debit Card"
+                        fee="~3.5% + ₱15"
+                        description="Includes Visa, Mastercard, JCB processing fees."
+                    />
+
+                    {/* Disbursement Fee */}
+                    <FeeCard
+                        title="Bank Disbursement"
+                        fee="₱10 – ₱15"
+                        description="Fee per payout transfer to landlord bank account."
+                    />
+
+                    {/* Platform Fee */}
+                    <FeeCard
+                        title="UPKYP Platform Fee"
+                        fee="Based on Subscription"
+                        description="Platform commission may apply depending on plan tier."
+                    />
+                </div>
+
+                <div className="mt-6 text-xs text-gray-500">
+                    * Fees shown are approximate and subject to change. Refer to Xendit’s
+                    official pricing page for the latest rates.
+                </div>
             </div>
+
         </div>
     );
 }
@@ -140,5 +174,23 @@ function FlowCard({
 function Arrow() {
     return (
         <ArrowRight className="hidden lg:block h-6 w-6 text-gray-400 flex-shrink-0" />
+    );
+}
+
+function FeeCard({
+                     title,
+                     fee,
+                     description,
+                 }: {
+    title: string;
+    fee: string;
+    description: string;
+}) {
+    return (
+        <div className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition">
+            <h3 className="font-semibold text-gray-800 mb-1">{title}</h3>
+            <p className="text-emerald-600 font-bold mb-2">{fee}</p>
+            <p className="text-sm text-gray-600">{description}</p>
+        </div>
     );
 }
