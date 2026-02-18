@@ -80,7 +80,7 @@ export default function HowItWorks() {
               >
                 How{" "}
                 <span className="bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent">
-                  UpKyp
+                  Upkyp
                 </span>{" "}
                 works
               </motion.h1>
