@@ -221,7 +221,6 @@ export default function UnitListingForm() {
     }, [preview360]);
 
 
-
     const handleAmenityChange = (amenityName: string) => {
     setFormData((prev) => {
       const isSelected = prev.amenities.includes(amenityName);
@@ -641,70 +640,6 @@ export default function UnitListingForm() {
                 )}
               </div>
 
-              {/* ===== 360° VIRTUAL VIEW ===== */}
-              <div id="virtual-view-section">
-                <SectionHeader
-                  number={4}
-                  icon={Eye}
-                  title="360° Virtual View"
-                  subtitle="Optional: Add an immersive 360° panoramic photo"
-                />
-
-                {/* Enable Toggle */}
-                <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl border border-gray-200 mb-4">
-                  <input
-                    type="checkbox"
-                    id="enable360"
-                    checked={is360Enabled}
-                    onChange={(e) => setIs360Enabled(e.target.checked)}
-                    className="w-5 h-5 accent-emerald-600 rounded cursor-pointer"
-                  />
-                  <label
-                    htmlFor="enable360"
-                    className="text-sm font-medium text-gray-700 cursor-pointer flex-1"
-                  >
-                    Enable 360° View
-                  </label>
-                </div>
-
-                {is360Enabled && (
-                  <div className="space-y-4">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      id="upload360"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setPhoto360(file);
-                        setPreview360(URL.createObjectURL(file));
-                      }}
-                    />
-
-                    <label
-                      htmlFor="upload360"
-                      className="cursor-pointer inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/25 text-sm"
-                    >
-                      <Eye className="w-5 h-5" />
-                      Take 360° Panoramic Photo
-                    </label>
-
-                    {preview360 && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-gray-700">
-                          360° Preview
-                        </p>
-                        <div
-                          id="viewer360"
-                          className="w-full h-64 border-2 border-emerald-200 rounded-xl overflow-hidden shadow-inner bg-gray-900"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
             </form>
           </div>
 
