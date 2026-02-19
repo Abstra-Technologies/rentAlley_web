@@ -74,6 +74,7 @@ const getUser = async (userId: string) => {
       u.userType,
       u.is_2fa_enabled,
       u.points,
+      u.emailVerified,
       u.status,
       u.google_id,
       u.createdAt,

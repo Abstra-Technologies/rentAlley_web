@@ -11,8 +11,9 @@ const dbConfig = {
 };
 
 export async function POST(req: NextRequest) {
+
     /* ======================================================
-       COOKIE + JWT VALIDATION (USER ID ONLY)
+       COOKIE + JWT VALIDATION
     ====================================================== */
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -24,11 +25,7 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    if (!process.env.JWT_SECRET) {
-        throw new Error("JWT_SECRET is missing");
-    }
-
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
     let user_id: string;
 
@@ -71,23 +68,21 @@ export async function POST(req: NextRequest) {
 
         const [otpRows] = await connection.execute<any[]>(
             `
-      SELECT
-        t.expires_at,
-        u.timezone,
-        u.userType
-      FROM UserToken t
-      JOIN User u ON u.user_id = t.user_id
-      WHERE t.user_id = ?
-        AND t.token = ?
-        AND t.token_type = 'email_verification'
-        AND t.expires_at > UTC_TIMESTAMP()
-        AND t.used_at IS NULL
-      LIMIT 1
-      `,
+            SELECT
+              t.expires_at,
+              u.timezone,
+              u.userType
+            FROM UserToken t
+            JOIN User u ON u.user_id = t.user_id
+            WHERE t.user_id = ?
+              AND t.token = ?
+              AND t.token_type = 'email_verification'
+              AND t.expires_at > UTC_TIMESTAMP()
+              AND t.used_at IS NULL
+            LIMIT 1
+            `,
             [user_id, otp]
         );
-
-        console.log("[OTP VERIFY] rows:", otpRows.length);
 
         if (otpRows.length === 0) {
             await connection.rollback();
@@ -97,16 +92,11 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        /* ======================================================
-           AUTHORITATIVE VALUES (FROM DB)
-        ====================================================== */
         const {
             expires_at,
             timezone,
             userType,
         } = otpRows[0];
-
-        console.log("[OTP VERIFY] userType from DB:", userType);
 
         if (!userType) {
             await connection.rollback();
@@ -121,48 +111,52 @@ export async function POST(req: NextRequest) {
         ====================================================== */
         await connection.execute(
             `
-      UPDATE UserToken
-      SET used_at = UTC_TIMESTAMP()
-      WHERE user_id = ? AND token = ?
-      `,
+            UPDATE UserToken
+            SET used_at = UTC_TIMESTAMP()
+            WHERE user_id = ? AND token = ?
+            `,
             [user_id, otp]
         );
 
         await connection.execute(
             `
-      UPDATE User
-      SET emailVerified = 1
-      WHERE user_id = ?
-      `,
+            UPDATE User
+            SET emailVerified = 1
+            WHERE user_id = ?
+            `,
             [user_id]
         );
 
         /* ======================================================
-           LOCAL EXPIRY (FOR UI)
+           CONVERT EXPIRY (OPTIONAL FOR UI)
         ====================================================== */
         const [expiryRows] = await connection.execute<any[]>(
             `
-      SELECT CONVERT_TZ(?, '+00:00', ?) AS local_expiry
-      `,
+            SELECT CONVERT_TZ(?, '+00:00', ?) AS local_expiry
+            `,
             [expires_at, timezone || "UTC"]
         );
 
         /* ======================================================
-           SIGN NEW JWT (WITH ROLE)
+           SIGN NEW JWT (FIXED VERSION)
         ====================================================== */
-        const newToken = await new SignJWT({
+
+        const newTokenPayload = {
             user_id,
-            userType, // ✅ CRITICAL
-        })
+            userType,
+            emailVerified: 1,
+            role: null,
+            permissions: [],
+            ip_hash: null,
+        };
+
+        const newToken = await new SignJWT(newTokenPayload)
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("2h")
             .sign(secret);
 
         await connection.commit();
 
-        /* ======================================================
-           RESPONSE
-        ====================================================== */
         const response = NextResponse.json({
             message: "OTP verified successfully!",
             userType,
@@ -175,7 +169,7 @@ export async function POST(req: NextRequest) {
             path: "/",
             sameSite: "lax",
             secure: process.env.NODE_ENV === "production",
-            maxAge: 2 * 60 * 60, // 2 hours
+            maxAge: 2 * 60 * 60,
         });
 
         return response;

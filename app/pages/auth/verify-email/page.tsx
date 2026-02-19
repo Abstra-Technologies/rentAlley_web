@@ -1,56 +1,55 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
+import useAuthStore from "@/zustand/authStore";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function VerifyOTP() {
     const [otp, setOtp] = useState("");
-    const [timeLeft, setTimeLeft] = useState(0);
+    const [cooldown, setCooldown] = useState(60); // 60 seconds cooldown
     const [verifying, setVerifying] = useState(false);
     const [resending, setResending] = useState(false);
+
     const router = useRouter();
+    const { user, fetchSession } = useAuthStore();
 
-    /* ----------------------------------------
-       TIMER (single source of truth)
-    ---------------------------------------- */
+    /* =========================================
+       LOAD SESSION
+    ========================================= */
     useEffect(() => {
-        const expiry = sessionStorage.getItem("otp_expiry");
+        if (!user) fetchSession();
+    }, [user, fetchSession]);
 
-        if (expiry) {
-            const remaining = Math.floor(
-                (Number(expiry) - Date.now()) / 1000
-            );
-            setTimeLeft(remaining > 0 ? remaining : 0);
-        }
-    }, []);
-
+    /* =========================================
+       REDIRECT IF VERIFIED
+    ========================================= */
     useEffect(() => {
-        if (timeLeft <= 0) return;
+        if (!user) return;
 
-        const interval = setInterval(() => {
-            const expiry = sessionStorage.getItem("otp_expiry");
-            if (!expiry) {
-                setTimeLeft(0);
-                return;
-            }
-
-            const remaining = Math.floor(
-                (Number(expiry) - Date.now()) / 1000
-            );
-
-            if (remaining <= 0) {
-                sessionStorage.removeItem("otp_expiry");
-                setTimeLeft(0);
-                clearInterval(interval);
+        if (user.emailVerified) {
+            if (user.userType === "tenant") {
+                router.replace("/pages/tenant/feeds");
             } else {
-                setTimeLeft(remaining);
+                router.replace("/pages/landlord/dashboard");
             }
+        }
+    }, [user, router]);
+
+    /* =========================================
+       60 SECOND COOLDOWN TIMER
+    ========================================= */
+    useEffect(() => {
+        if (cooldown <= 0) return;
+
+        const timer = setInterval(() => {
+            setCooldown((prev) => prev - 1);
         }, 1000);
 
-        return () => clearInterval(interval);
-    }, [timeLeft]);
+        return () => clearInterval(timer);
+    }, [cooldown]);
 
     const formatTime = (seconds: number) => {
         const min = Math.floor(seconds / 60);
@@ -58,9 +57,9 @@ export default function VerifyOTP() {
         return `${min}:${sec < 10 ? "0" : ""}${sec}`;
     };
 
-    /* ----------------------------------------
+    /* =========================================
        VERIFY OTP
-    ---------------------------------------- */
+    ========================================= */
     const handleVerify = async () => {
         if (otp.length !== 6 || isNaN(Number(otp))) {
             toast.error("OTP must be a 6-digit number");
@@ -68,54 +67,60 @@ export default function VerifyOTP() {
         }
 
         setVerifying(true);
+
         try {
             const res = await axios.post(
                 "/api/auth/verify-otp-reg",
                 { otp },
                 { withCredentials: true }
             );
+
             toast.success(res.data.message);
+
             setTimeout(() => {
                 if (res.data.userType === "tenant") {
-                    router.push("/pages/tenant/feeds");
+                    router.replace("/pages/tenant/feeds");
                 } else {
-                    router.push("/pages/landlord/dashboard");
+                    router.replace("/pages/landlord/dashboard");
                 }
-            }, 1500);
+            }, 1200);
+
         } catch (err: any) {
-            toast.error(err.response?.data?.message || "OTP verification failed");
+            toast.error(
+                err.response?.data?.message ||
+                "OTP verification failed"
+            );
         } finally {
             setVerifying(false);
         }
     };
 
-    /* ----------------------------------------
-       RESEND OTP (authoritative reset)
-    ---------------------------------------- */
+    /* =========================================
+       RESEND OTP (1 MINUTE COOLDOWN)
+    ========================================= */
     const handleResendOTP = async () => {
-        if (timeLeft > 0) return;
+        if (cooldown > 0) return;
 
         setResending(true);
+
         try {
             const res = await axios.post("/api/auth/resend-otp-reg");
-
             toast.info(res.data.message || "New OTP sent");
 
-            if (res.data.expiresAt) {
-                const expiryTime = new Date(res.data.expiresAt).getTime();
-                sessionStorage.setItem("otp_expiry", expiryTime.toString());
+            // 🔥 Restart cooldown to 60 seconds
+            setCooldown(60);
 
-                const remaining = Math.floor(
-                    (expiryTime - Date.now()) / 1000
-                );
-                setTimeLeft(remaining > 0 ? remaining : 0);
-            }
         } catch (err: any) {
-            toast.error(err.response?.data?.message || "Failed to resend OTP");
+            toast.error(
+                err.response?.data?.message ||
+                "Failed to resend OTP"
+            );
         } finally {
             setResending(false);
         }
     };
+
+    if (!user) return null;
 
     return (
         <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-700 via-emerald-600 to-blue-900 px-4">
@@ -130,14 +135,11 @@ export default function VerifyOTP() {
                     Enter the 6-digit code sent to your email
                 </p>
 
-                <p className="text-center text-sm font-semibold text-gray-700 mb-6">
-                    Didn’t receive it? Please check your <span className="text-blue-600">Spam</span> or{" "}
-                    <span className="text-blue-600">Promotions</span> folder.
-                </p>
-
                 <input
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
+                    onChange={(e) =>
+                        setOtp(e.target.value.replace(/\D/g, ""))
+                    }
                     maxLength={6}
                     inputMode="numeric"
                     className="w-full text-center tracking-[0.5em] p-3 border rounded-xl mb-4"
@@ -156,15 +158,15 @@ export default function VerifyOTP() {
                     <p className="text-sm text-gray-600">
                         Resend available in{" "}
                         <span className="font-semibold text-blue-600">
-              {formatTime(timeLeft)}
-            </span>
+                            {formatTime(cooldown)}
+                        </span>
                     </p>
 
                     <button
                         onClick={handleResendOTP}
-                        disabled={timeLeft > 0}
+                        disabled={cooldown > 0}
                         className={`w-full mt-3 py-2 rounded-xl ${
-                            timeLeft > 0
+                            cooldown > 0
                                 ? "bg-gray-300 cursor-not-allowed"
                                 : "bg-gray-800 text-white"
                         }`}

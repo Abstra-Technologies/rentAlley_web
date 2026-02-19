@@ -70,6 +70,8 @@ export async function proxy(req: NextRequest) {
     const { pathname, search } = req.nextUrl;
     const token = req.cookies.get("token")?.value;
 
+    const VERIFY_PAGE = "/pages/auth/verify-email";
+
     /* -----------------------------------------------
        ALLOW WEBHOOKS
     ------------------------------------------------ */
@@ -78,7 +80,7 @@ export async function proxy(req: NextRequest) {
     }
 
     /* -----------------------------------------------
-       NO TOKEN → REDIRECT TO LOGIN (NO CALLBACK LOOP)
+       NO TOKEN
     ------------------------------------------------ */
     if (!token) {
         const isAuthPage = AUTH_PAGES.some(
@@ -121,11 +123,29 @@ export async function proxy(req: NextRequest) {
         return res;
     }
 
-    const { userType, role, permissions = [], ip_hash } = decoded;
+    const {
+        userType,
+        role,
+        permissions = [],
+        ip_hash,
+        emailVerified,
+    } = decoded;
+
+    /* =====================================================
+       🔒 EMAIL VERIFICATION ENFORCEMENT
+    ===================================================== */
+
+    if (!emailVerified) {
+        // Allow ONLY verify page
+        if (pathname !== VERIFY_PAGE) {
+            return safeRedirect(VERIFY_PAGE, req);
+        }
+
+        return NextResponse.next();
+    }
 
     /* -----------------------------------------------
        BLOCK AUTH PAGES WHEN LOGGED IN
-       (IGNORE callbackUrl IF TOKEN EXISTS)
     ------------------------------------------------ */
     const isAuthPage = AUTH_PAGES.some(
         (page) => pathname === page || pathname.startsWith(`${page}/`)
@@ -169,12 +189,10 @@ export async function proxy(req: NextRequest) {
        SYSTEM ADMIN ROUTING (STRICT)
     ------------------------------------------------ */
     if (pathname.startsWith("/pages/system_admin")) {
-        // Role check
         if (!SYSTEM_ADMIN_ROLES.includes(role)) {
             return safeRedirect("/pages/error/accessDenied", req);
         }
 
-        // IP binding enforcement
         const clientIp = getClientIp(req);
 
         if (!clientIp || !ip_hash) {
@@ -195,12 +213,10 @@ export async function proxy(req: NextRequest) {
             return res;
         }
 
-        // Allow common admin pages
         if (excludeAdminPages.has(pathname)) {
             return NextResponse.next();
         }
 
-        // Permission enforcement
         const matchedEntry = Object.entries(permissionMapping).find(
             ([route]) => pathname === route || pathname.startsWith(`${route}/`)
         );

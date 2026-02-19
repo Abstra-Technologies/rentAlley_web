@@ -18,27 +18,25 @@ const resend = new Resend(process.env.RESEND_API_KEY!);
 -------------------------------------------------- */
 async function sendOtpEmail(
     email: string,
-    firstName: string | undefined,
-    otp: string,
-    expiry: string,
-    timezone: string
+    firstName: string,
+    otp: string
 ) {
-    const title = "Verify your Upkyp account";
+    const title = "[Upkyp Registration]: Verify your Upkyp account";
 
     await resend.emails.send({
-        from: "Upkyp <onboarding@resend.dev>",
+        from: "Upkyp Registration <hello@upkyp.com>",
         to: [email],
         subject: title,
         react: EmailTemplate({
             title,
-            firstName,
+            firstName: firstName || "there",
             otp,
-            expiry,
-            timezone,
+            expiry: "10 minutes",
+            timezone: "UTC",
         }),
         tags: [
             { name: "type", value: "transactional" },
-            { name: "category", value: "otp_resend" },
+            { name: "category", value: "otp" },
         ],
     });
 }
@@ -132,12 +130,12 @@ export async function POST(req: NextRequest) {
             [user_id]
         );
 
-        if (rateRows[0].count >= 3) {
-            return NextResponse.json(
-                { error: "Too many OTP requests. Please try again later." },
-                { status: 429 }
-            );
-        }
+        // if (rateRows[0].count >= 3) {
+        //     return NextResponse.json(
+        //         { error: "Too many OTP requests. Please try again later." },
+        //         { status: 429 }
+        //     );
+        // }
 
         /* --------------------------------------------------
            GENERATE + STORE OTP (UTC)

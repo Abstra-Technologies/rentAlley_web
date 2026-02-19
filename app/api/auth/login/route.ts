@@ -175,6 +175,7 @@ export async function POST(req: NextRequest) {
             user_id: user.user_id,
             userType: user.userType,
             role: user.role,
+            emailVerified: user.emailVerified,
             permissions: user.permissions || [],
             displayName,
         })
