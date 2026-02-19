@@ -45,7 +45,6 @@ const SYSTEM_ADMIN_ROLES = ["super-admin", "superadmin", "co-admin"];
 const AUTH_PAGES = [
     "/pages/auth/login",
     "/pages/auth/register",
-    "/pages/auth/select-role",
 ];
 
 const permissionMapping: Record<string, string> = {
@@ -345,12 +344,13 @@ export async function proxy(req: NextRequest) {
     }
 
     /* 🔒 EMAIL VERIFICATION (USER ONLY) */
-    if (!emailVerified) {
+    if (userType && emailVerified === false) {
         if (pathname !== VERIFY_PAGE) {
             return safeRedirect(VERIFY_PAGE, req);
         }
         return NextResponse.next();
     }
+
 
     /* 🔒 ROLE ROUTING */
     if (pathname.startsWith("/pages/tenant") && userType !== "tenant") {
@@ -369,7 +369,6 @@ export async function proxy(req: NextRequest) {
 ===================================================== */
 export const config = {
     matcher: [
-        "/pages/auth/:path*",
         "/pages/tenant/:path*",
         "/pages/tenant/rentalPortal/:path*",
         "/pages/landlord/:path*",
