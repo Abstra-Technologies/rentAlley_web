@@ -10,7 +10,12 @@ import Swal from "sweetalert2";
 export default function JoinBetaPage() {
     const router = useRouter();
     const { user, fetchSession } = useAuthStore();
+
+    const MAX_SLOTS = 50;
+
     const [loading, setLoading] = useState(false);
+    const [slotsTaken, setSlotsTaken] = useState<number>(0);
+    const [loadingSlots, setLoadingSlots] = useState(true);
 
     /** Fetch session */
     useEffect(() => {
@@ -24,8 +29,37 @@ export default function JoinBetaPage() {
         }
     }, [user, router]);
 
+    /** Fetch Beta Count */
+    useEffect(() => {
+        async function fetchCount() {
+            try {
+                const res = await axios.get("/api/landlord/beta/count");
+                setSlotsTaken(res.data.count);
+            } catch (err) {
+                console.error("Failed to fetch beta count");
+            } finally {
+                setLoadingSlots(false);
+            }
+        }
+
+        fetchCount();
+    }, []);
+
+    const remainingSlots = MAX_SLOTS - slotsTaken;
+    const percentageFilled = (slotsTaken / MAX_SLOTS) * 100;
+    const isFull = remainingSlots <= 0;
+
     const handleActivate = async () => {
         if (!user) return;
+
+        if (isFull) {
+            Swal.fire({
+                icon: "error",
+                title: "Beta Full",
+                text: "All 50 beta slots have been claimed.",
+            });
+            return;
+        }
 
         setLoading(true);
 
@@ -64,7 +98,7 @@ export default function JoinBetaPage() {
             <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
 
                 {/* Header */}
-                <div className="text-center mb-8">
+                <div className="text-center mb-6">
                     <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
                         bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-xs font-bold shadow">
                         🚀 BETA ACCESS PROGRAM 1.0
@@ -79,9 +113,40 @@ export default function JoinBetaPage() {
                     </p>
                 </div>
 
+                {/* 🔥 SLOT DISPLAY */}
+                {!loadingSlots && (
+                    <div className="mb-8 text-center">
+                        <p className="text-sm font-semibold text-gray-700">
+                            {isFull ? (
+                                <span className="text-red-600">
+                                    Beta is currently full.
+                                </span>
+                            ) : (
+                                <>
+                                    Only{" "}
+                                    <span className="text-blue-600 font-bold">
+                                        {remainingSlots}
+                                    </span>{" "}
+                                    of 50 spots remaining
+                                </>
+                            )}
+                        </p>
+
+                        <div className="mt-3 w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-blue-600 to-emerald-600 transition-all duration-500"
+                                style={{ width: `${percentageFilled}%` }}
+                            />
+                        </div>
+
+                        <p className="text-xs text-gray-500 mt-2">
+                            {slotsTaken} / 50 beta slots claimed
+                        </p>
+                    </div>
+                )}
+
                 {/* Info Section */}
                 <div className="space-y-6">
-
                     <Feature
                         icon={<Sparkles className="w-5 h-5 text-blue-600" />}
                         title="60 Days Free Premium Access"
@@ -118,22 +183,28 @@ export default function JoinBetaPage() {
                 {/* CTA */}
                 <button
                     onClick={handleActivate}
-                    disabled={loading}
-                    className="w-full mt-8 px-6 py-3 rounded-xl text-white font-semibold
-                        bg-gradient-to-r from-blue-600 to-emerald-600
-                        hover:from-blue-700 hover:to-emerald-700
-                        shadow-lg transition disabled:opacity-60"
+                    disabled={loading || isFull}
+                    className={`w-full mt-8 px-6 py-3 rounded-xl text-white font-semibold shadow-lg transition
+                        ${isFull
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+                    }`}
                 >
-                    {loading ? "Activating..." : "Activate Beta Program"}
+                    {isFull
+                        ? "Beta Full"
+                        : loading
+                            ? "Activating..."
+                            : "Activate Beta Program"}
                 </button>
 
                 <p className="mt-5 text-center text-xs text-gray-500">
-                    Your beta subscription will start immediately and expire automatically after 60 days.
+                    Limited to 50 landlords. Beta expires automatically after 60 days.
                 </p>
             </div>
         </div>
     );
 }
+
 
 /* ================= COMPONENTS ================= */
 

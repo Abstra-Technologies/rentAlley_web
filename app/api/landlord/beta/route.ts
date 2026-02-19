@@ -5,9 +5,6 @@ export async function POST(req: NextRequest) {
     const connection = await db.getConnection();
 
     try {
-        /* ===============================
-           1️⃣ Parse body safely
-        ================================ */
         let body: any = {};
         try {
             body = await req.json();
@@ -27,13 +24,18 @@ export async function POST(req: NextRequest) {
         await connection.beginTransaction();
 
         /* ===============================
-           2️⃣ Resolve landlord_id
+           1️⃣ Get Landlord Info
         ================================ */
         const [landlordRows]: any = await connection.query(
-            `SELECT landlord_id 
-             FROM rentalley_db.Landlord 
-             WHERE user_id = ? 
-             LIMIT 1`,
+            `
+            SELECT l.landlord_id,
+                   CONCAT(u.firstName, ' ', u.lastName) AS full_name,
+                   u.email
+            FROM rentalley_db.Landlord l
+            JOIN rentalley_db.User u ON l.user_id = u.user_id
+            WHERE l.user_id = ?
+            LIMIT 1
+            `,
             [user_id]
         );
 
@@ -41,13 +43,42 @@ export async function POST(req: NextRequest) {
             throw new Error("Landlord not found");
         }
 
-        const landlord_id = landlordRows[0].landlord_id;
+        const landlord = landlordRows[0];
+        const landlord_id: string = landlord.landlord_id;
+        const full_name: string = landlord.full_name;
+        const email: string = landlord.email;
 
         /* ===============================
-           3️⃣ CHECK IF ANY SUBSCRIPTION EXISTS
-           (ACTIVE OR TRIAL OR PAID)
+           2️⃣ Enforce 50 Beta Limit
         ================================ */
+        const [betaCountRows]: any = await connection.query(
+            `SELECT COUNT(*) as total FROM rentalley_db.BetaUsers`
+        );
 
+        if (betaCountRows[0].total >= 50) {
+            throw new Error("Beta program is full. All 50 slots are taken.");
+        }
+
+        /* ===============================
+           3️⃣ Prevent Duplicate Beta Entry
+        ================================ */
+        const [existingBeta]: any = await connection.query(
+            `
+            SELECT beta_id 
+            FROM rentalley_db.BetaUsers
+            WHERE landlord_id = ?
+            LIMIT 1
+            `,
+            [landlord_id]
+        );
+
+        if (existingBeta.length > 0) {
+            throw new Error("You are already registered in the Beta program.");
+        }
+
+        /* ===============================
+           4️⃣ Prevent Existing Subscription
+        ================================ */
         const [existingSubs]: any = await connection.query(
             `
             SELECT subscription_id 
@@ -65,15 +96,62 @@ export async function POST(req: NextRequest) {
         }
 
         /* ===============================
-           4️⃣ CREATE BETA SUBSCRIPTION
+           5️⃣ Optional Stats Calculation
         ================================ */
+        const [propertyCount]: any = await connection.query(
+            `
+            SELECT COUNT(*) as total
+            FROM rentalley_db.Property
+            WHERE landlord_id = ?
+            `,
+            [landlord_id]
+        );
 
+        const properties_count = propertyCount[0].total;
+
+        /* ===============================
+           6️⃣ Insert into BetaUsers
+        ================================ */
+        await connection.query(
+            `
+            INSERT INTO rentalley_db.BetaUsers (
+                landlord_id,
+                full_name,
+                email,
+                properties_count,
+                avg_units_per_property,
+                region,
+                province,
+                city,
+                status,
+                is_activated
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
+            `,
+            [
+                landlord_id,
+                full_name,
+                email,
+                properties_count,
+                0, // avg_units_per_property (set properly later if needed)
+                "NCR",        // replace dynamically if available
+                "Metro Manila",
+                "Manila",
+                "approved",
+                1,
+            ]
+        );
+
+        /* ===============================
+           7️⃣ Create Beta Subscription
+        ================================ */
         await connection.query(
             `
             INSERT INTO rentalley_db.Subscription (
                 landlord_id,
                 plan_name,
-                plan_code,
+                                                   plan_code,
                 start_date,
                 end_date,
                 payment_status,
@@ -107,9 +185,10 @@ export async function POST(req: NextRequest) {
             },
             { status: 201 }
         );
+
     } catch (error: any) {
         await connection.rollback();
-        console.error("[BETA_AUTO_ACTIVATE_ERROR]", error);
+        console.error("[BETA_ACTIVATION_ERROR]", error);
 
         return NextResponse.json(
             {
