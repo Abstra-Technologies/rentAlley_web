@@ -4,16 +4,31 @@ import { SignJWT } from "jose";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 
 /* =====================================================
-   USER LOGIN API (NON-BLOCKING + OPTIMIZED)
+   🔧 CONSTANTS
+===================================================== */
+
+const JWT_SECRET = process.env.JWT_SECRET!;
+const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET!;
+const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET_KEY!;
+const IS_PROD = process.env.NODE_ENV === "production";
+
+const DEFAULT_JWT_EXPIRY = "2h";
+const REMEMBER_JWT_EXPIRY = "7d";
+
+const DEFAULT_COOKIE_AGE = 60 * 60 * 2;        // 2 hours
+const REMEMBER_COOKIE_AGE = 60 * 60 * 24 * 7;  // 7 days
+
+/* =====================================================
+   🚀 USER LOGIN API (BETA VERSION)
 ===================================================== */
 export async function POST(req: NextRequest) {
     try {
         const { email, password, captchaToken, rememberMe, callbackUrl } =
             await req.json();
 
+        /* ================= VALIDATION ================= */
         if (!email || !password || !captchaToken) {
             return NextResponse.json(
                 { error: "Email, password, and captcha are required" },
@@ -26,18 +41,14 @@ export async function POST(req: NextRequest) {
                 ? callbackUrl
                 : null;
 
-        /* =====================================================
-           CAPTCHA VERIFY
-        ===================================================== */
+        /* ================= CAPTCHA VERIFY ================= */
         const captchaRes = await fetch(
             "https://www.google.com/recaptcha/api/siteverify",
             {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: new URLSearchParams({
-                    secret: process.env.RECAPTCHA_SECRET_KEY!,
+                    secret: RECAPTCHA_SECRET,
                     response: captchaToken,
                 }),
             }
@@ -52,9 +63,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        /* =====================================================
-           LOOKUP USER
-        ===================================================== */
+        /* ================= USER LOOKUP ================= */
         const emailHash = crypto
             .createHash("sha256")
             .update(email)
@@ -88,9 +97,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        /* =====================================================
-           PASSWORD CHECK
-        ===================================================== */
+        /* ================= PASSWORD CHECK ================= */
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
@@ -100,9 +107,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        /* =====================================================
-           DISPLAY NAME
-        ===================================================== */
+        /* ================= DISPLAY NAME ================= */
         let displayName = email;
 
         try {
@@ -111,68 +116,28 @@ export async function POST(req: NextRequest) {
             } else if (user.firstName && user.lastName) {
                 const first = await decryptData(
                     JSON.parse(user.firstName),
-                    process.env.ENCRYPTION_SECRET!
+                    ENCRYPTION_SECRET
                 );
                 const last = await decryptData(
                     JSON.parse(user.lastName),
-                    process.env.ENCRYPTION_SECRET!
+                    ENCRYPTION_SECRET
                 );
                 displayName = `${first} ${last}`;
             }
-        } catch {}
-
-        /* =====================================================
-           TOKEN SETTINGS
-        ===================================================== */
-        const jwtExpiry = rememberMe ? "7d" : "2h";
-        const cookieAge = rememberMe ? 60 * 60 * 24 * 7 : 60 * 60 * 2;
-        const isProd = process.env.NODE_ENV === "production";
-
-        /* =====================================================
-           2FA HANDLING
-        ===================================================== */
-        if (user.is_2fa_enabled) {
-            const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-            await db.query(
-                `
-                INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
-                VALUES (?, '2fa', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))
-                ON DUPLICATE KEY UPDATE
-                    token = VALUES(token),
-                    created_at = NOW(),
-                    expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)
-                `,
-                [user.user_id, otp]
-            );
-
-            // 🚀 Non-blocking email
-            sendOtpEmail(email, otp).catch(err =>
-                console.error("2FA email failed:", err)
-            );
-
-            const twoFaUrl = new URL("/pages/auth/twofactor", req.url);
-            twoFaUrl.searchParams.set("user_id", user.user_id);
-
-            if (safeCallbackUrl) {
-                twoFaUrl.searchParams.set("callbackUrl", safeCallbackUrl);
-            }
-
-            const redirect = NextResponse.redirect(twoFaUrl, { status: 303 });
-
-            redirect.cookies.set("pending_2fa", "true", {
-                httpOnly: true,
-                secure: isProd,
-                sameSite: "lax",
-                path: "/",
-            });
-
-            return redirect;
+        } catch {
+            displayName = email;
         }
 
-        /* =====================================================
-           JWT GENERATION (USER ONLY)
-        ===================================================== */
+        /* ================= TOKEN CONFIG ================= */
+        const jwtExpiry = rememberMe
+            ? REMEMBER_JWT_EXPIRY
+            : DEFAULT_JWT_EXPIRY;
+
+        const cookieAge = rememberMe
+            ? REMEMBER_COOKIE_AGE
+            : DEFAULT_COOKIE_AGE;
+
+        /* ================= JWT GENERATION ================= */
         const token = await new SignJWT({
             user_id: user.user_id,
             userType: user.userType,
@@ -184,11 +149,9 @@ export async function POST(req: NextRequest) {
             .setIssuedAt()
             .setExpirationTime(jwtExpiry)
             .setSubject(user.user_id)
-            .sign(new TextEncoder().encode(process.env.JWT_SECRET!));
+            .sign(new TextEncoder().encode(JWT_SECRET));
 
-        /* =====================================================
-           REDIRECT DESTINATION
-        ===================================================== */
+        /* ================= REDIRECT LOGIC ================= */
         const fallbackRedirect =
             user.userType === "tenant"
                 ? "/pages/tenant/feeds"
@@ -203,28 +166,22 @@ export async function POST(req: NextRequest) {
 
         response.cookies.set("token", token, {
             httpOnly: true,
-            secure: isProd,
+            secure: IS_PROD,
             sameSite: "lax",
             maxAge: cookieAge,
             path: "/",
         });
 
-        /* =====================================================
-           NON-BLOCKING AUDIT LOGGING
-        ===================================================== */
+        /* ================= NON-BLOCKING LOGGING ================= */
         db.query(
             "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
             [user.user_id, "User logged in"]
-        ).catch(err =>
-            console.error("Activity log failed:", err)
-        );
+        ).catch(() => {});
 
         db.query(
             "UPDATE User SET last_login_at = CURRENT_TIMESTAMP WHERE user_id = ?",
             [user.user_id]
-        ).catch(err =>
-            console.error("Last login update failed:", err)
-        );
+        ).catch(() => {});
 
         return response;
 
@@ -236,24 +193,4 @@ export async function POST(req: NextRequest) {
             { status: 500 }
         );
     }
-}
-
-/* =====================================================
-   NON-BLOCKING EMAIL SENDER
-===================================================== */
-async function sendOtpEmail(email: string, otp: string) {
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.EMAIL_USER!,
-            pass: process.env.EMAIL_PASS!,
-        },
-    });
-
-    await transporter.sendMail({
-        from: process.env.EMAIL_USER!,
-        to: email,
-        subject: "Your 2FA Verification Code",
-        text: `Your OTP code is ${otp}. It will expire in 10 minutes.`,
-    });
 }
