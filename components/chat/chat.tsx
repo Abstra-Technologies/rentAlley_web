@@ -19,7 +19,7 @@ import {
 import EmojiPicker from "emoji-picker-react";
 
 const socket: Socket = io(
-  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000",
+  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001",
   { autoConnect: true }
 );
 

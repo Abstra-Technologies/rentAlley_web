@@ -26,7 +26,7 @@ const io = new Server(server, {
         origin: [
             "https://upkyp-chatserver.onrender.com",
             "http://localhost:3000",
-            "https://www.upkyp.com"
+            "https://www.upkyp.com",
         ],
         methods: ["GET", "POST"],
     },
@@ -210,6 +210,7 @@ io.on("connection", (socket) => {
 //endregion
 
 const PORT = process.env.CHAT_PORT || 3001;
+
 server.listen(PORT, () => {
     console.log(`🚀 Socket.io server with Web Push running on port ${PORT}`);
 });
