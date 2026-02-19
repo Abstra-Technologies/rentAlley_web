@@ -14,6 +14,7 @@ interface User {
     address: string | null;
     birthDate: string | null;
     points: number;
+    status: string;
     userType: string | null;
     emailVerified: boolean | null;
     landlord_id: string | null;

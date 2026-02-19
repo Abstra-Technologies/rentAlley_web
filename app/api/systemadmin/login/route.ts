@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
             { status: 200 }
         );
 
-        response.cookies.set("token", token, {
+        response.cookies.set("admin_token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",

@@ -49,23 +49,38 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         loadAndroidPush();
     }, [user_id]);
 
+    /* =========================================
+    REAL-TIME STATUS CHECK
+ ========================================= */
     useEffect(() => {
-        if ((user || admin) && !sessionChecked) {
-            fetchSession()
-                .then(() => {
-                    setSessionChecked(true); // Mark session as checked
-                })
-                .catch((err) => {
-                    setSessionChecked(true); // Mark session as checked even on error
-                    if (err.status === 401 || err.message.includes('expired')) {
-                        setSessionExpired(true);
-                        document.cookie = 'token=; path=/; max-age=0; SameSite=Lax';
-                    } else {
-                        console.error('Database connection error during session fetch:', err);
-                    }
-                });
+        if (!sessionChecked) return;
+
+        const currentStatus =
+            user?.status || admin?.status;
+
+        if (!currentStatus) return;
+
+        if (currentStatus !== "active") {
+            Swal.fire({
+                title: "Account Restricted",
+                text: "Your account is currently suspended. Please contact support.",
+                icon: "error",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                confirmButtonText: "OK",
+            }).then(() => {
+                // Clear token
+                document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+                const isAdmin = !!admin && !user;
+                const loginUrl = isAdmin
+                    ? "/pages/admin_login"
+                    : "/pages/auth/login";
+
+                window.location.href = loginUrl;
+            });
         }
-    }, [user, admin, fetchSession, sessionChecked]);
+    }, [user?.status, sessionChecked]);
+
 
     useEffect(() => {
         if (!sessionExpired) return;

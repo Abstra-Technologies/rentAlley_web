@@ -142,7 +142,7 @@ export default function SuspendedAccounts() {
 
         try {
             const res = await fetch(
-                "/api/systemadmin/reactivate/suspended",
+                "/api/systemadmin/reactivate",
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
