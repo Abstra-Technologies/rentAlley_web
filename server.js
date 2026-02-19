@@ -5,7 +5,7 @@ const { Server } = require("socket.io");
 const mysql = require("mysql2/promise");
 const crypto = require("node:crypto");
 require("dotenv").config({ path: ".env" });
-const pool = require("./lib/chat-db");
+const chat_pool = require("./lib/chat-db");
 
 // --- Web Push Setup ---
 const webpush = require("web-push");
@@ -24,8 +24,9 @@ const server = createServer(app);
 const io = new Server(server, {
     cors: {
         origin: [
-            "https://rentalley-web.onrender.com",
+            "https://upkyp-chatserver.onrender.com",
             "http://localhost:3000",
+            "https://www.upkyp.com"
         ],
         methods: ["GET", "POST"],
     },
@@ -72,7 +73,7 @@ const decryptMessage = (encryptedMessage, iv) => {
  */
 async function sendPushNotification(user_id, title, body, url = "") {
     try {
-        const [subscriptions] = await pool.query(
+        const [subscriptions] = await chat_pool.query(
             "SELECT endpoint, p256dh, auth FROM user_push_subscriptions WHERE user_id = ?",
             [user_id]
         );
@@ -103,7 +104,7 @@ async function sendPushNotification(user_id, title, body, url = "") {
                 } catch (err) {
                     if (err.statusCode === 410) {
                         console.log("Removing expired subscription");
-                        await pool.query(
+                        await chat_pool.query(
                             "DELETE FROM user_push_subscriptions WHERE endpoint = ?",
                             [sub.endpoint]
                         );
@@ -132,7 +133,7 @@ io.on("connection", (socket) => {
             socket.join(chatRoom);
             console.log(`User joined room: ${chatRoom}`);
 
-            const [messages] = await pool.query(
+            const [messages] = await chat_pool.query(
                 `SELECT m.*, u.firstName 
                  FROM Message m 
                  JOIN User u ON m.sender_id = u.user_id 
@@ -162,7 +163,7 @@ io.on("connection", (socket) => {
                 sender_type === "tenant"
                     ? "SELECT user_id FROM Tenant WHERE tenant_id = ?"
                     : "SELECT user_id FROM Landlord WHERE landlord_id = ?";
-            const [senderRes] = await pool.query(senderQuery, [sender_id]);
+            const [senderRes] = await chat_pool.query(senderQuery, [sender_id]);
             if (senderRes.length === 0) return;
             const senderUserId = senderRes[0].user_id;
 
@@ -170,12 +171,12 @@ io.on("connection", (socket) => {
                 receiver_type === "tenant"
                     ? "SELECT user_id FROM Tenant WHERE tenant_id = ?"
                     : "SELECT user_id FROM Landlord WHERE landlord_id = ?";
-            const [receiverRes] = await pool.query(receiverQuery, [receiver_id]);
+            const [receiverRes] = await chat_pool.query(receiverQuery, [receiver_id]);
             if (receiverRes.length === 0) return;
             const receiverUserId = receiverRes[0].user_id;
 
             const { encrypted, iv } = encryptMessage(message);
-            await pool.query(
+            await chat_pool.query(
                 "INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)",
                 [senderUserId, receiverUserId, encrypted, iv, chat_room]
             );
