@@ -20,6 +20,24 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     const [sessionExpired, setSessionExpired] = useState(false);
     const [sessionChecked, setSessionChecked] = useState(false);
 
+    /* =========================================
+       REAL-TIME SESSION POLLING (30s)
+    ========================================= */
+    useEffect(() => {
+        if (!user && !admin) return;
+
+        const interval = setInterval(async () => {
+            try {
+                await fetchSession(); // This will refresh Zustand user/admin state
+            } catch (err: any) {
+                if (err?.status === 401) {
+                    setSessionExpired(true);
+                }
+            }
+        }, 20000);
+
+        return () => clearInterval(interval);
+    }, [user?.user_id, admin?.admin_id]);
 
     // ANDROID PUSH (CAPACITOR)
     useEffect(() => {
@@ -50,28 +68,32 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     }, [user_id]);
 
     /* =========================================
-    REAL-TIME STATUS CHECK
- ========================================= */
+       REAL-TIME STATUS CHECK
+    ========================================= */
     useEffect(() => {
         if (!sessionChecked) return;
 
-        const currentStatus =
-            user?.status || admin?.status;
+        const currentStatus = user?.status || admin?.status;
 
         if (!currentStatus) return;
 
         if (currentStatus !== "active") {
+
             Swal.fire({
-                title: "Account Restricted",
-                text: "Your account is currently suspended. Please contact support.",
+                title: "Account Suspended",
+                text: "Your account has been suspended by the system administrator.",
                 icon: "error",
                 allowOutsideClick: false,
                 allowEscapeKey: false,
                 confirmButtonText: "OK",
             }).then(() => {
-                // Clear token
+
+                // Clear both tokens
                 document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+                document.cookie = "adminToken=; path=/; max-age=0; SameSite=Lax";
+
                 const isAdmin = !!admin && !user;
+
                 const loginUrl = isAdmin
                     ? "/pages/admin_login"
                     : "/pages/auth/login";
@@ -79,8 +101,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 window.location.href = loginUrl;
             });
         }
-    }, [user?.status, sessionChecked]);
+    }, [user?.status, admin?.status, sessionChecked]);
 
+    // Session Expired
 
     useEffect(() => {
         if (!sessionExpired) return;

@@ -7,16 +7,13 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 
 /* =====================================================
-   LOGIN API
+   USER LOGIN API (NON-BLOCKING + OPTIMIZED)
 ===================================================== */
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
-        const { email, password, captchaToken, rememberMe, callbackUrl } = body;
+        const { email, password, captchaToken, rememberMe, callbackUrl } =
+            await req.json();
 
-        /* =====================================================
-           BASIC VALIDATION
-        ===================================================== */
         if (!email || !password || !captchaToken) {
             return NextResponse.json(
                 { error: "Email, password, and captcha are required" },
@@ -30,7 +27,7 @@ export async function POST(req: NextRequest) {
                 : null;
 
         /* =====================================================
-           CAPTCHA VERIFICATION
+           CAPTCHA VERIFY
         ===================================================== */
         const captchaRes = await fetch(
             "https://www.google.com/recaptcha/api/siteverify",
@@ -47,6 +44,7 @@ export async function POST(req: NextRequest) {
         );
 
         const captchaData = await captchaRes.json();
+
         if (!captchaData.success) {
             return NextResponse.json(
                 { error: "CAPTCHA verification failed" },
@@ -55,7 +53,7 @@ export async function POST(req: NextRequest) {
         }
 
         /* =====================================================
-           USER LOOKUP (HASHED EMAIL)
+           LOOKUP USER
         ===================================================== */
         const emailHash = crypto
             .createHash("sha256")
@@ -83,7 +81,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        if (["deactivated", "suspended"].includes(user.status)) {
+        if (user.status !== "active") {
             return NextResponse.json(
                 { error: `Your account is ${user.status}. Contact support.` },
                 { status: 403 }
@@ -91,9 +89,10 @@ export async function POST(req: NextRequest) {
         }
 
         /* =====================================================
-           PASSWORD VERIFICATION
+           PASSWORD CHECK
         ===================================================== */
         const isMatch = await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
             return NextResponse.json(
                 { error: "Invalid credentials" },
@@ -102,7 +101,7 @@ export async function POST(req: NextRequest) {
         }
 
         /* =====================================================
-           DISPLAY NAME RESOLUTION
+           DISPLAY NAME
         ===================================================== */
         let displayName = email;
 
@@ -120,12 +119,10 @@ export async function POST(req: NextRequest) {
                 );
                 displayName = `${first} ${last}`;
             }
-        } catch {
-            // fallback to email
-        }
+        } catch {}
 
         /* =====================================================
-           TOKEN CONFIG
+           TOKEN SETTINGS
         ===================================================== */
         const jwtExpiry = rememberMe ? "7d" : "2h";
         const cookieAge = rememberMe ? 60 * 60 * 24 * 7 : 60 * 60 * 2;
@@ -149,15 +146,20 @@ export async function POST(req: NextRequest) {
                 [user.user_id, otp]
             );
 
-            await sendOtpEmail(email, otp);
+            // 🚀 Non-blocking email
+            sendOtpEmail(email, otp).catch(err =>
+                console.error("2FA email failed:", err)
+            );
 
             const twoFaUrl = new URL("/pages/auth/twofactor", req.url);
             twoFaUrl.searchParams.set("user_id", user.user_id);
+
             if (safeCallbackUrl) {
                 twoFaUrl.searchParams.set("callbackUrl", safeCallbackUrl);
             }
 
             const redirect = NextResponse.redirect(twoFaUrl, { status: 303 });
+
             redirect.cookies.set("pending_2fa", "true", {
                 httpOnly: true,
                 secure: isProd,
@@ -169,14 +171,13 @@ export async function POST(req: NextRequest) {
         }
 
         /* =====================================================
-           JWT GENERATION
+           JWT GENERATION (USER ONLY)
         ===================================================== */
         const token = await new SignJWT({
             user_id: user.user_id,
             userType: user.userType,
-            role: user.role,
             emailVerified: user.emailVerified,
-            permissions: user.permissions || [],
+            status: user.status,
             displayName,
         })
             .setProtectedHeader({ alg: "HS256" })
@@ -191,17 +192,10 @@ export async function POST(req: NextRequest) {
         const fallbackRedirect =
             user.userType === "tenant"
                 ? "/pages/tenant/feeds"
-                : user.userType === "landlord"
-                    ? "/pages/landlord/dashboard"
-                    : user.userType === "admin"
-                        ? "/pages/system_admin/dashboard"
-                        : "/pages/auth/login";
+                : "/pages/landlord/dashboard";
 
         const finalRedirect = safeCallbackUrl || fallbackRedirect;
 
-        /* =====================================================
-           FINAL RESPONSE
-        ===================================================== */
         const response = NextResponse.redirect(
             new URL(finalRedirect, req.url),
             { status: 303 }
@@ -216,21 +210,27 @@ export async function POST(req: NextRequest) {
         });
 
         /* =====================================================
-           POST-LOGIN AUDIT + LAST LOGIN
+           NON-BLOCKING AUDIT LOGGING
         ===================================================== */
-        await db.query(
+        db.query(
             "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
             [user.user_id, "User logged in"]
+        ).catch(err =>
+            console.error("Activity log failed:", err)
         );
 
-        await db.query(
+        db.query(
             "UPDATE User SET last_login_at = CURRENT_TIMESTAMP WHERE user_id = ?",
             [user.user_id]
+        ).catch(err =>
+            console.error("Last login update failed:", err)
         );
 
         return response;
+
     } catch (error) {
         console.error("Login error:", error);
+
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }
@@ -239,7 +239,7 @@ export async function POST(req: NextRequest) {
 }
 
 /* =====================================================
-   EMAIL OTP SENDER
+   NON-BLOCKING EMAIL SENDER
 ===================================================== */
 async function sendOtpEmail(email: string, otp: string) {
     const transporter = nodemailer.createTransport({
