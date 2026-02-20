@@ -21,16 +21,7 @@ interface User {
     tenant_id: string | null;
     is_verified?: boolean | null;
     is_trial_used?: boolean | null;
-    subscription?: {
-        subscription_id: string | null;
-        plan_name: string;
-        status: string;
-        start_date: string | null;
-        end_date: string | null;
-        payment_status: string;
-        trial_end_date: string | null;
-    } | null;
-    [key: string]: any;
+    subscription?: any;
 }
 
 interface Admin {
@@ -48,10 +39,14 @@ interface Admin {
 interface AuthState {
     user: User | null;
     admin: Admin | null;
-    loading: boolean;
 
-    setUser: (userData: User) => void;
-    setAdmin: (adminData: Admin) => void;
+    // 🔥 enterprise flags
+    loading: boolean;        // fetching from backend
+    isHydrated: boolean;     // persist finished
+    hasFetched: boolean;     // prevents duplicate session calls
+
+    setUser: (userData: User | null) => void;
+    setAdmin: (adminData: Admin | null) => void;
     updateUser: (updates: Partial<User>) => void;
     logout: () => void;
 
@@ -62,23 +57,25 @@ interface AuthState {
 
 const useAuthStore = create<AuthState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             user: null,
             admin: null,
-            loading: true,
 
+            loading: false,
+            isHydrated: false,
+            hasFetched: false,
+
+            /* ========================= */
             setUser: (userData) =>
                 set({
                     user: userData,
                     admin: null,
-                    loading: false,
                 }),
 
             setAdmin: (adminData) =>
                 set({
                     admin: adminData,
                     user: null,
-                    loading: false,
                 }),
 
             updateUser: (updates) =>
@@ -86,11 +83,20 @@ const useAuthStore = create<AuthState>()(
                     user: state.user ? { ...state.user, ...updates } : null,
                 })),
 
-            logout: () => {
-                set({ user: null, admin: null, loading: false });
-            },
+            logout: () =>
+                set({
+                    user: null,
+                    admin: null,
+                }),
 
+            /* =========================
+               ENTERPRISE fetchSession
+            ========================= */
             fetchSession: async () => {
+                const { hasFetched, loading } = get();
+
+                if (hasFetched || loading) return; // 🔥 prevent duplicate calls
+
                 try {
                     set({ loading: true });
 
@@ -100,67 +106,94 @@ const useAuthStore = create<AuthState>()(
                     });
 
                     if (!response.ok) {
-                        set({ user: null, admin: null, loading: false });
+                        set({
+                            user: null,
+                            admin: null,
+                            loading: false,
+                            hasFetched: true,
+                        });
                         return;
                     }
 
                     const data = await response.json();
 
                     if (data.admin_id) {
-                        set({ admin: data, user: null, loading: false });
+                        set({
+                            admin: data,
+                            user: null,
+                        });
                     } else if (data.user_id) {
-                        set({ user: data, admin: null, loading: false });
+                        set({
+                            user: data,
+                            admin: null,
+                        });
                     } else {
-                        set({ user: null, admin: null, loading: false });
+                        set({
+                            user: null,
+                            admin: null,
+                        });
                     }
+
+                    set({
+                        loading: false,
+                        hasFetched: true,
+                    });
                 } catch (error) {
                     console.error("[AuthStore] fetchSession error:", error);
-                    set({ user: null, admin: null, loading: false });
+                    set({
+                        user: null,
+                        admin: null,
+                        loading: false,
+                        hasFetched: true,
+                    });
                 }
             },
 
-            /* ============================
-               USER LOGOUT (NO BACK BUTTON)
-            ============================ */
+            /* =========================
+               USER LOGOUT
+            ========================= */
             signOut: async () => {
                 try {
                     await fetch("/api/auth/logout", {
                         method: "POST",
                         credentials: "include",
                     });
-                } catch (err) {
-                    console.warn("[AuthStore] Logout request failed", err);
-                } finally {
-                    // 🔥 Clear zustand + persisted storage
-                    set({ user: null, admin: null, loading: false });
-                    localStorage.removeItem("auth-storage");
+                } catch {}
 
-                    // 🔥 Replace history (no back navigation)
-                    window.location.replace("/pages/auth/login");
-                }
+                set({
+                    user: null,
+                    admin: null,
+                    hasFetched: false,
+                });
+
+                useAuthStore.persist.clearStorage();
+                window.location.replace("/pages/auth/login");
             },
 
-            /* ============================
-               ADMIN LOGOUT (NO BACK BUTTON)
-            // ============================ */
+            /* =========================
+               ADMIN LOGOUT
+            ========================= */
             signOutAdmin: async () => {
                 try {
                     await fetch("/api/auth/logout", {
                         method: "POST",
                         credentials: "include",
                     });
-                } catch (err) {
-                    console.warn("[AuthStore] Admin logout request failed", err);
-                } finally {
-                    set({ admin: null, user: null, loading: false });
-                    localStorage.removeItem("auth-storage");
+                } catch {}
 
-                    window.location.replace("/pages/admin_login");
-                }
+                set({
+                    admin: null,
+                    user: null,
+                    hasFetched: false,
+                });
+
+                useAuthStore.persist.clearStorage();
+                window.location.replace("/pages/admin_login");
             },
         }),
         {
             name: "auth-storage",
+
             partialize: (state) => ({
                 user: state.user
                     ? {
@@ -173,8 +206,16 @@ const useAuthStore = create<AuthState>()(
                         is_trial_used: state.user.is_trial_used,
                     }
                     : null,
-                admin: state.admin ? { admin_id: state.admin.admin_id } : null,
+                admin: state.admin
+                    ? { admin_id: state.admin.admin_id }
+                    : null,
             }),
+
+            onRehydrateStorage: () => (state) => {
+                if (state) {
+                    state.isHydrated = true; // 🔥 prevents navbar flicker
+                }
+            },
         }
     )
 );

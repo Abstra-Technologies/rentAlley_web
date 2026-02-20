@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import useAuthStore from "../../zustand/authStore";
+import useAuthStore from "@/zustand/authStore";
 import axios from "axios";
 import { useRouter, usePathname } from "next/navigation";
 import NotificationSection from "@/components/notification/notifCenter";
