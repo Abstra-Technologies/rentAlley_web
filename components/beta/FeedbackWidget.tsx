@@ -14,7 +14,8 @@ const HIDDEN_ROUTES = [
   "/pages/tenant/kypId",
   "/pages/find-rent",
   "/pages/landlord/properties",
-  "/pages/landlord/maintenance-request"
+  "/pages/landlord/maintenance-request",
+  "/pages/landlord/property-listing/create-property",
 ];
 
 export default function FeedbackWidget() {
@@ -25,7 +26,7 @@ export default function FeedbackWidget() {
   // Check if widget should be hidden on current route
   useEffect(() => {
     const shouldHide = HIDDEN_ROUTES.some((route) =>
-      pathname?.startsWith(route)
+      pathname?.startsWith(route),
     );
     setIsVisible(!shouldHide);
 
