@@ -98,7 +98,7 @@ export default function QuickActions({
         //     onClick: () => setScanOpen(true),
         // },
         {
-            label: "Income",
+            label: "Payouts",
             href: "/pages/landlord/payouts",
             icon: Wallet,
             gradient: "from-cyan-500 to-blue-500",
