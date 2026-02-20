@@ -4,15 +4,10 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-    console.log("🟢 [PAYMENT HISTORY] Request received");
-
     const { searchParams } = new URL(req.url);
     const agreementId = searchParams.get("agreement_id");
 
-    console.log("🔍 agreement_id:", agreementId);
-
     if (!agreementId || agreementId.trim() === "") {
-        console.warn("⚠️ agreement_id missing");
         return NextResponse.json(
             { error: "agreement_id is required" },
             { status: 400 }
@@ -23,8 +18,6 @@ export async function GET(req: NextRequest) {
         /* ======================================
            1️⃣ Fetch base lease agreement
         ====================================== */
-        console.log("📄 Fetching base lease");
-
         const [leaseRows]: any = await db.query(
             `
             SELECT
@@ -43,26 +36,20 @@ export async function GET(req: NextRequest) {
         const lease = leaseRows[0];
 
         if (!lease) {
-            console.warn("❌ Lease not found:", agreementId);
             return NextResponse.json(
                 { error: "Lease not found" },
                 { status: 404 }
             );
         }
 
-        console.log("✅ Lease found:", lease);
-
         /* ======================================
-           2️⃣ Resolve ALL related lease IDs
+           2️⃣ Resolve related lease IDs
         ====================================== */
         const leaseIds: string[] = [lease.agreement_id];
 
         if (lease.is_renewal_of) {
-            console.log("🔁 Lease is renewal of:", lease.is_renewal_of);
             leaseIds.push(lease.is_renewal_of);
         } else {
-            console.log("🔁 Checking renewals for:", lease.agreement_id);
-
             const [renewedRows]: any = await db.query(
                 `
                 SELECT agreement_id
@@ -72,47 +59,50 @@ export async function GET(req: NextRequest) {
                 [lease.agreement_id]
             );
 
-            renewedRows.forEach((r: any) => leaseIds.push(r.agreement_id));
+            renewedRows.forEach((r: any) =>
+                leaseIds.push(r.agreement_id)
+            );
         }
 
-        console.log("📌 Related lease IDs:", leaseIds);
-
         /* ======================================
-           3️⃣ Fetch payments
+           3️⃣ Fetch payments WITH billing info
+           (Billing period formatted in SQL)
         ====================================== */
-        console.log("💳 Fetching payments");
 
         const [payments]: any = await db.query(
             `
             SELECT
-              *
-            FROM Payment
-            WHERE agreement_id IN (?)
-              AND payment_status IN ('confirmed', 'failed', 'cancelled')
-            ORDER BY payment_date DESC
+                p.payment_id,
+                p.bill_id,
+                p.agreement_id,
+                p.payment_type,
+                p.amount_paid,
+                p.payment_status,
+                p.payment_date,
+                p.receipt_reference,
+p.gateway_transaction_ref,
+                b.billing_period,
+                DATE_FORMAT(b.billing_period, '%M %Y') AS billing_period_label,
+                b.due_date,
+                b.total_amount_due,
+                b.status AS billing_status
+
+            FROM Payment p
+            LEFT JOIN Billing b 
+                ON p.bill_id = b.billing_id
+
+            WHERE p.agreement_id IN (?)
+              AND p.payment_status IN ('confirmed', 'failed', 'cancelled')
+
+            ORDER BY p.payment_date DESC
             `,
             [leaseIds]
         );
 
-        if (!payments || payments.length === 0) {
-            console.warn("⚠️ No payments found");
-            return NextResponse.json(
-                {
-                    leaseAgreement: lease,
-                    leaseIds,
-                    payments: [],
-                    groupedPayments: {},
-                    message: "No payment records found"
-                },
-                { status: 200 }
-            );
-        }
-
-        console.log(`✅ ${payments.length} payments found`);
-
         /* ======================================
            4️⃣ Group payments by agreement
         ====================================== */
+
         const groupedPayments = leaseIds.reduce((acc, id) => {
             acc[id] = payments.filter(
                 (p: any) => p.agreement_id === id
@@ -120,11 +110,10 @@ export async function GET(req: NextRequest) {
             return acc;
         }, {} as Record<string, any[]>);
 
-        console.log("📦 Grouped payments ready");
-
         /* ======================================
            5️⃣ Response
         ====================================== */
+
         return NextResponse.json({
             leaseAgreement: lease,
             leaseIds,
