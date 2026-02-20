@@ -55,10 +55,7 @@ export default function TenantLeasePayments({
 
       if (res.status === 200) {
         const leaseData = res.data?.leaseAgreement;
-
-        // 🔒 Normalize lease state (IMPORTANT)
         setLease(leaseData && leaseData.agreement_id ? leaseData : null);
-
         setPayments(res.data?.payments || []);
         setError(null);
       } else {
@@ -241,16 +238,16 @@ export default function TenantLeasePayments({
                   <thead className="bg-gray-50 border-b">
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-bold">
-                        ID
+                        Payment Reference
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-bold">
-                        Date
+                        Date Paid
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-bold">
                         Type
                       </th>
                       <th className="px-6 py-4 text-right text-xs font-bold">
-                        Amount
+                        Amount Paid
                       </th>
                       <th className="px-6 py-4 text-center text-xs font-bold">
                         Status
@@ -261,10 +258,10 @@ export default function TenantLeasePayments({
                     {payments.map((p) => (
                       <tr key={p.payment_id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 font-mono text-sm">
-                          #{p.payment_id}
+                          {p.gateway_transaction_ref}
                         </td>
                         <td className="px-6 py-4">
-                          {formatDate(p.payment_date)}
+                          {p.payment_date}
                         </td>
                         <td className="px-6 py-4 uppercase text-sm">
                           {p.payment_type.replace(/_/g, " ")}

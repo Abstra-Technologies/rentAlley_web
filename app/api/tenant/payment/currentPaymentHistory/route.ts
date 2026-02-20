@@ -85,16 +85,7 @@ export async function GET(req: NextRequest) {
         const [payments]: any = await db.query(
             `
             SELECT
-                payment_id,
-                agreement_id,
-                bill_id,
-                payment_type,
-                amount_paid,
-                payment_method_id,
-                payment_status,
-                receipt_reference,
-                payment_date,
-                payout_status
+              *
             FROM Payment
             WHERE agreement_id IN (?)
               AND payment_status IN ('confirmed', 'failed', 'cancelled')
