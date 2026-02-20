@@ -154,47 +154,65 @@ export default function ViewPropertyDetailedPage() {
                         </div>
 
                         {/* ACTION BUTTONS */}
-                        <div className="flex items-center gap-2 w-full overflow-x-auto lg:justify-end">
+                        <div className="
+  grid grid-cols-2 gap-2
+  sm:flex sm:flex-wrap sm:gap-3
+  lg:justify-end
+">
 
                             {/* Add Unit */}
                             <button
                                 onClick={handleAddUnitClick}
                                 disabled={unitActionsDisabled}
-                                className={`px-2.5 py-1.5 sm:px-3 sm:py-2 lg:px-5 lg:py-2.5 rounded-lg font-semibold flex items-center gap-2
-                                ${unitActionsDisabled
-                                    ? "bg-gray-300 text-gray-600"
-                                    : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-md active:scale-95"}`}
+                                className={`w-full
+      px-3 py-2
+      sm:px-4 sm:py-2
+      lg:px-5 lg:py-2.5
+      rounded-lg font-semibold text-sm
+      flex items-center justify-center gap-2
+      transition-all active:scale-95
+      ${
+                                    unitActionsDisabled
+                                        ? "bg-gray-300 text-gray-600"
+                                        : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-md"
+                                }`}
                             >
                                 <Plus className="w-4 h-4" />
-                                Add Unit
+                                <span className="truncate">Add Unit</span>
                             </button>
 
                             {/* Bulk Import */}
                             <button
                                 onClick={() => setBulkImportModal(true)}
-                                className="px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:shadow-md active:scale-95 flex items-center gap-2"
+                                className="w-full
+      px-3 py-2
+      sm:px-4 sm:py-2
+      lg:px-5 lg:py-2.5
+      rounded-lg font-semibold text-sm
+      bg-gradient-to-r from-indigo-600 to-blue-600 text-white
+      hover:shadow-md active:scale-95
+      flex items-center justify-center gap-2"
                             >
                                 <Sparkles className="w-4 h-4" />
-                                Bulk Import
+                                <span className="truncate">Bulk Import</span>
                             </button>
 
                             {/* Invite Tenant */}
                             <button
                                 onClick={() => setInviteModalOpen(true)}
-                                className="px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-md active:scale-95 flex items-center gap-2"
+                                className="w-full
+      px-3 py-2
+      sm:px-4 sm:py-2
+      lg:px-5 lg:py-2.5
+      rounded-lg font-semibold text-sm
+      bg-gradient-to-r from-purple-600 to-pink-600 text-white
+      hover:shadow-md active:scale-95
+      flex items-center justify-center gap-2"
                             >
                                 <Sparkles className="w-4 h-4" />
-                                Invite Tenant
+                                <span className="truncate">Invite Tenant</span>
                             </button>
 
-                            {/* 🆕 Generate QR Codes */}
-                            {/*<button*/}
-                            {/*    onClick={handleGenerateQRCodes}*/}
-                            {/*    className="px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-gray-800 to-black text-white hover:shadow-md active:scale-95 flex items-center gap-2"*/}
-                            {/*>*/}
-                            {/*    <QrCode className="w-4 h-4" />*/}
-                            {/*    Generate QR Codes*/}
-                            {/*</button>*/}
                         </div>
                     </div>
 
