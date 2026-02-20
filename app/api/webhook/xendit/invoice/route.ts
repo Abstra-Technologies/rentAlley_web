@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/* XENDIT INVOICE.PAID WEBHOOK (PRODUCT_ID VERSION)                          */
+/* XENDIT INVOICE.PAID WEBHOOK (TRANSACTION_ID = payment_id)                 */
 /* -------------------------------------------------------------------------- */
 
 export const runtime = "nodejs";
@@ -46,51 +46,44 @@ async function getDbConnection() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* FETCH TRANSACTION USING product_id (LIKE SPLIT WEBHOOK)                   */
+/* FETCH TRANSACTION USING payment_id AS transaction_id                      */
 /* -------------------------------------------------------------------------- */
 
 async function fetchTransactionDetails(
-    invoiceId: string,
+    transactionId: string,
     subAccountId: string
 ) {
-    debug("FETCHING TRANSACTION USING product_id", {
-        invoiceId,
+    debug("FETCHING TRANSACTION USING ID", {
+        transactionId,
         subAccountId,
     });
 
-    const txResp = await fetch(
-        `https://api.xendit.co/transactions?product_id=${invoiceId}`,
+    const response = await fetch(
+        `https://api.xendit.co/transactions/${transactionId}`,
         {
+            method: "GET",
             headers: {
                 Authorization:
                     "Basic " +
                     Buffer.from(`${XENDIT_TRANSBAL_KEY}:`).toString("base64"),
-                "for-user-id": subAccountId, // 🔥 REQUIRED
+                "for-user-id": subAccountId, // 🔥 REQUIRED FOR XENPLATFORM
             },
         }
     );
 
-    if (!txResp.ok) {
-        const errText = await txResp.text();
+    if (!response.ok) {
+        const errText = await response.text();
         throw new Error(`Transaction API error: ${errText}`);
     }
 
-    const txData = await txResp.json();
+    const tx = await response.json();
 
-    if (!Array.isArray(txData.data) || txData.data.length === 0) {
-        throw new Error("No PAYMENT transaction found");
-    }
-
-    const paymentTx =
-        txData.data.find((tx: any) => tx.type === "PAYMENT") ||
-        txData.data[0];
-
-    debug("TRANSACTION OBJECT", paymentTx);
+    debug("TRANSACTION RESPONSE", tx);
 
     return {
-        gatewayFee: Number(paymentTx.fee?.xendit_fee || 0),
-        gatewayVAT: Number(paymentTx.fee?.value_added_tax || 0),
-        netAmount: Number(paymentTx.net_amount || 0),
+        gatewayFee: Number(tx.fee?.xendit_fee || 0),
+        gatewayVAT: Number(tx.fee?.value_added_tax || 0),
+        netAmount: Number(tx.net_amount || 0),
     };
 }
 
@@ -124,19 +117,19 @@ export async function POST(req: Request) {
         const {
             external_id,
             paid_at,
-            id: invoice_id,    // 🔥 THIS IS product_id
-            user_id,           // 🔥 SUBACCOUNT ID
+            payment_id,   // 🔥 THIS IS USED AS transaction_id
+            user_id,      // 🔥 SUBACCOUNT ID
             paid_amount,
             amount,
             payment_method,
-            payment_id,        // store only
+            id: invoice_id,
         } = payload;
 
-        if (!invoice_id || !user_id) {
-            throw new Error("Missing invoice_id or user_id");
+        if (!payment_id || !user_id) {
+            throw new Error("Missing payment_id or user_id");
         }
 
-        if (!external_id.startsWith("billing-")) {
+        if (!external_id || !external_id.startsWith("billing-")) {
             throw new Error("Invalid external_id");
         }
 
@@ -146,16 +139,16 @@ export async function POST(req: Request) {
 
         debug("EXTRACTED VALUES", {
             billing_id,
-            invoice_id,
-            user_id,
+            transaction_id: payment_id,
+            subaccount: user_id,
         });
 
         /* ------------------------------------------------------------------ */
-        /* 1️⃣ FETCH TRANSACTION (LIKE SPLIT LOGIC)                           */
+        /* 1️⃣ FETCH TRANSACTION USING payment_id                             */
         /* ------------------------------------------------------------------ */
 
         const { gatewayFee, gatewayVAT, netAmount } =
-            await fetchTransactionDetails(invoice_id, user_id);
+            await fetchTransactionDetails(payment_id, user_id);
 
         /* ------------------------------------------------------------------ */
         /* 2️⃣ UPDATE DATABASE                                                */
@@ -166,19 +159,19 @@ export async function POST(req: Request) {
 
         const [rows]: any = await conn.execute(
             `
-            SELECT 
-                b.billing_id,
-                b.lease_id,
-                u.user_id AS landlord_user_id
-            FROM Billing b
-            JOIN LeaseAgreement la ON b.lease_id = la.agreement_id
-            JOIN Unit un ON la.unit_id = un.unit_id
-            JOIN Property p ON un.property_id = p.property_id
-            JOIN Landlord l ON p.landlord_id = l.landlord_id
-            JOIN User u ON l.user_id = u.user_id
-            WHERE b.billing_id = ?
-            LIMIT 1
-            `,
+      SELECT 
+        b.billing_id,
+        b.lease_id,
+        u.user_id AS landlord_user_id
+      FROM Billing b
+      JOIN LeaseAgreement la ON b.lease_id = la.agreement_id
+      JOIN Unit un ON la.unit_id = un.unit_id
+      JOIN Property p ON un.property_id = p.property_id
+      JOIN Landlord l ON p.landlord_id = l.landlord_id
+      JOIN User u ON l.user_id = u.user_id
+      WHERE b.billing_id = ?
+      LIMIT 1
+      `,
             [billing_id]
         );
 
@@ -200,27 +193,27 @@ export async function POST(req: Request) {
 
         await conn.execute(
             `
-            INSERT INTO Payment (
-                bill_id,
-                agreement_id,
-                payment_type,
-                amount_paid,
-                gross_amount,
-                net_amount,
-                gateway_fee,
-                gateway_vat,
-                platform_fee,
-                payment_method_id,
-                payment_status,
-                receipt_reference,
-                gateway_transaction_ref,
-                raw_gateway_payload,
-                payment_date,
-                created_at,
-                updated_at
-            )
-            VALUES (?, ?, 'monthly_billing', ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?, NOW(), NOW())
-            `,
+      INSERT INTO Payment (
+        bill_id,
+        agreement_id,
+        payment_type,
+        amount_paid,
+        gross_amount,
+        net_amount,
+        gateway_fee,
+        gateway_vat,
+        platform_fee,
+        payment_method_id,
+        payment_status,
+        receipt_reference,
+        gateway_transaction_ref,
+        raw_gateway_payload,
+        payment_date,
+        created_at,
+        updated_at
+      )
+      VALUES (?, ?, 'monthly_billing', ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?, NOW(), NOW())
+      `,
             [
                 billing.billing_id,
                 billing.lease_id,
@@ -229,10 +222,10 @@ export async function POST(req: Request) {
                 netAmount,
                 gatewayFee,
                 gatewayVAT,
-                0, // split webhook will update platform_fee if exists
+                0, // platform fee handled separately by split webhook
                 payment_method || "UNKNOWN",
                 invoice_id,
-                payment_id,
+                payment_id, // 🔥 STORE REAL TRANSACTION ID
                 JSON.stringify(payload),
                 paidAt,
             ]
@@ -261,7 +254,6 @@ export async function POST(req: Request) {
             { message: "Webhook failed", error: err.message },
             { status: 500 }
         );
-
     } finally {
         if (conn) await conn.end();
         debug("WEBHOOK END");
