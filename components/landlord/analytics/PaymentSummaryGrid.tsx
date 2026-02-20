@@ -74,31 +74,49 @@ export default function PaymentSummaryGrid({ landlord_id }: Props) {
        Render
     ================================ */
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {cards.map((card) => {
                 const CardBody = (
                     <div
-                        className={`relative ${card.bg} rounded-xl border ${card.border} p-4
-                        ${card.link ? "cursor-pointer group hover:shadow-md transition-all" : ""}`}
+                        className={`relative ${card.bg}
+                    rounded-lg sm:rounded-xl
+                    border ${card.border}
+                    p-2 sm:p-4
+                    min-w-0
+                    ${card.link ? "cursor-pointer group hover:shadow-md transition-all" : ""}`}
                     >
-                        <div className="flex items-center justify-between mb-1">
-                            <card.icon className={`w-5 h-5 ${card.iconColor}`} />
-                            <span className={`text-2xl font-bold ${card.valueColor}`}>
-                                {card.value}
-                            </span>
-                        </div>
+                        <div className="flex flex-col">
 
-                        <p className={`text-sm ${card.iconColor}`}>
-                            {card.title}
-                        </p>
+                            {/* Icon */}
+                            <card.icon
+                                className={`w-4 h-4 sm:w-5 sm:h-5 mb-1 ${card.iconColor}`}
+                            />
+
+                            {/* Value */}
+                            <span
+                                className={`text-xs sm:text-2xl font-bold ${card.valueColor}
+                            truncate leading-tight`}
+                            >
+                            {card.value}
+                        </span>
+
+                            {/* Title */}
+                            <p
+                                className={`text-[9px] sm:text-sm ${card.iconColor}
+                            leading-tight mt-1 line-clamp-2`}
+                            >
+                                {card.title}
+                            </p>
+                        </div>
 
                         {card.link && (
                             <span
-                                className="absolute bottom-3 right-4 text-xs font-medium text-amber-700
-                                opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="hidden sm:block absolute bottom-3 right-4
+                            text-xs font-medium text-amber-700
+                            opacity-0 group-hover:opacity-100 transition-opacity"
                             >
-                                {card.helper}
-                            </span>
+                            {card.helper}
+                        </span>
                         )}
                     </div>
                 );
