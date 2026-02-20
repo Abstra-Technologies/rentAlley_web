@@ -156,7 +156,6 @@ export const useRegisterForm = () => {
                     text: "Account successfully registered! Redirecting...",
                     icon: "success",
                 });
-
                 router.push("/pages/auth/verify-email");
                 return;
             }

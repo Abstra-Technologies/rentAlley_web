@@ -231,7 +231,7 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
     matcher: [
-        "/pages/auth/:path*",
+        // "/pages/auth/:path*",
         "/pages/tenant/:path*",
         "/pages/landlord/:path*",
         "/pages/system_admin/:path*",
