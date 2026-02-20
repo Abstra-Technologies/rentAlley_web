@@ -339,7 +339,7 @@ export default function LandlordLayout({
             )}
 
             {/* MAIN */}
-            <main className="flex-1 lg:pl-72  lg:pt-0">{children}</main>
+            <main className="flex-1 lg:pl-72 pt-10 lg:pt-0">{children}</main>
         </div>
     );
 }
