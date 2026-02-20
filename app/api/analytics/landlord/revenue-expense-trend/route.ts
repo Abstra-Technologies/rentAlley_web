@@ -9,8 +9,6 @@ export async function GET(req: Request) {
         const property_id = searchParams.get("property_id");
         const yearParam = searchParams.get("year");
 
-        console.log('property id : ', property_id);
-
         if (!landlord_id || !property_id) {
             return NextResponse.json(
                 { error: "Missing landlord_id or property_id" },
@@ -21,12 +19,12 @@ export async function GET(req: Request) {
         const year = Number(yearParam || new Date().getFullYear());
 
         /* ======================================================
-           🔐 0️⃣ VERIFY PROPERTY OWNERSHIP
+           🔐 VERIFY PROPERTY OWNERSHIP
         ====================================================== */
         const [ownership]: any = await db.query(
             `
       SELECT property_id
-      FROM Property
+      FROM rentalley_db.Property
       WHERE property_id = ?
         AND landlord_id = ?
       LIMIT 1
@@ -42,76 +40,51 @@ export async function GET(req: Request) {
         }
 
         /* ======================================================
-           1️⃣ POTENTIAL GROSS INCOME (PGI)
-        ====================================================== */
-        const [pgiRows]: any = await db.query(
-            `
-      SELECT
-        DATE_FORMAT(la.start_date, '%Y-%m') AS ym,
-        SUM(u.rent_amount) AS pgi
-      FROM LeaseAgreement la
-      JOIN Unit u ON la.unit_id = u.unit_id
-      WHERE u.property_id = ?
-        AND la.status IN ('active', 'completed')
-        AND YEAR(la.start_date) <= ?
-        AND (la.end_date IS NULL OR YEAR(la.end_date) >= ?)
-      GROUP BY ym
-      `,
-            [property_id, year, year]
-        );
-
-        /* ======================================================
-           2️⃣ ACTUAL COLLECTED REVENUE
+           💰 1️⃣ REVENUE (FROM PAYMENT)
         ====================================================== */
         const [revenueRows]: any = await db.query(
             `
       SELECT
-        DATE_FORMAT(b.billing_period, '%Y-%m') AS ym,
+        DATE_FORMAT(p.payment_date, '%Y-%m') AS ym,
         SUM(p.amount_paid) AS revenue
-      FROM Payment p
-      JOIN Billing b ON p.bill_id = b.billing_id
-      JOIN Unit u ON b.unit_id = u.unit_id
+      FROM rentalley_db.Payment p
+      JOIN rentalley_db.LeaseAgreement la 
+        ON p.agreement_id = la.agreement_id
+      JOIN rentalley_db.Unit u 
+        ON la.unit_id = u.unit_id
       WHERE u.property_id = ?
-        AND YEAR(b.billing_period) = ?
+        AND YEAR(p.payment_date) = ?
         AND p.payment_status = 'confirmed'
-        AND p.payment_type IN (
-          'monthly_rent',
-          'monthly_billing',
-          'monthly_utilities',
-            'penalty',
-          'advance_payment',
-          'security_deposit'
-        )
       GROUP BY ym
       `,
             [property_id, year]
         );
 
         /* ======================================================
-           3️⃣ OPERATING EXPENSES
+           💸 2️⃣ EXPENSES (FROM EXPENSES TABLE)
+           reference_type = 'property'
+           reference_id = property_id
         ====================================================== */
         const [expenseRows]: any = await db.query(
             `
       SELECT
-        DATE_FORMAT(cb.period_start, '%Y-%m') AS ym,
-        SUM(
-          COALESCE(cb.water_total, 0) +
-          COALESCE(cb.electricity_total, 0)
-        ) AS expenses
-      FROM ConcessionaireBilling cb
-      WHERE cb.property_id = ?
-        AND YEAR(cb.period_start) = ?
+        DATE_FORMAT(e.created_at, '%Y-%m') AS ym,
+        SUM(e.amount) AS expenses
+      FROM rentalley_db.Expenses e
+      WHERE e.reference_type = 'maintenance'
+        AND e.reference_id = ?
+        AND YEAR(e.created_at) = ?
       GROUP BY ym
       `,
             [property_id, year]
         );
 
         /* ======================================================
-           4️⃣ NORMALIZE MONTHS
+           📊 NORMALIZE MONTHS
         ====================================================== */
+
         const monthKeys = Array.from(
             new Set([
-                ...pgiRows.map((r: any) => r.ym),
                 ...revenueRows.map((r: any) => r.ym),
                 ...expenseRows.map((r: any) => r.ym),
             ])
@@ -125,9 +98,6 @@ export async function GET(req: Request) {
             expenseRows.map((r: any) => [r.ym, Number(r.expenses || 0)])
         );
 
-        /* ======================================================
-           5️⃣ FINAL CHART RESPONSE
-        ====================================================== */
         const months = monthKeys.map((ym) =>
             new Date(`${ym}-01`).toLocaleString("default", {
                 month: "short",
@@ -137,6 +107,9 @@ export async function GET(req: Request) {
 
         const revenue = monthKeys.map((ym) => revenueMap.get(ym) || 0);
         const expenses = monthKeys.map((ym) => expenseMap.get(ym) || 0);
+        const net = monthKeys.map(
+            (ym) => (revenueMap.get(ym) || 0) - (expenseMap.get(ym) || 0)
+        );
 
         return NextResponse.json({
             year,
@@ -144,9 +117,11 @@ export async function GET(req: Request) {
             months,
             revenue,
             expenses,
+            net,
         });
+
     } catch (error: any) {
-        console.error("❌ Revenue–Expense Trend Error:", error);
+        console.error("❌ Revenue–Expense Error:", error);
         return NextResponse.json(
             { error: "Internal server error", details: error.message },
             { status: 500 }

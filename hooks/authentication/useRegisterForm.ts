@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { z } from "zod";
 import useRoleStore from "@/zustand/store";
 import { useRouter, useSearchParams } from "next/navigation";
 import { logEvent } from "@/utils/gtag";
 import Swal from "sweetalert2";
+
+/* --------------------------- Validation Schema --------------------------- */
 
 const registerSchema = z
     .object({
@@ -20,17 +22,21 @@ const registerSchema = z
                     /^[\w!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/.test(value),
                 "Password contains invalid characters"
             ),
-        confirmPassword: z.string().min(8, "Confirm Password must match password"),
+        confirmPassword: z.string().min(8),
     })
     .refine((data) => data.password === data.confirmPassword, {
         message: "Passwords do not match",
         path: ["confirmPassword"],
     });
 
+/* ------------------------------- Hook ----------------------------------- */
+
 export const useRegisterForm = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const role = useRoleStore((state) => state.role);
+
+    /* ------------------------- State ------------------------- */
 
     const [formData, setFormData] = useState({
         firstName: "",
@@ -39,7 +45,7 @@ export const useRegisterForm = () => {
         password: "",
         confirmPassword: "",
         role,
-        timezone: "", // ✅ set by component
+        timezone: "",
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -47,40 +53,63 @@ export const useRegisterForm = () => {
     const [focusedField, setFocusedField] = useState("");
     const [agreeToTerms, setAgreeToTerms] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] =
+        useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
 
     const error_2 = searchParams.get("error");
 
-    // ✅ Only sync role here
+    /* ------------------------- Sync Role Only ------------------------- */
+
     useEffect(() => {
-        setFormData((prev) => ({
-            ...prev,
-            role,
-        }));
+        setFormData((prev) => {
+            if (prev.role === role) return prev;
+            return { ...prev, role };
+        });
     }, [role]);
 
-    // ✅ EXPOSED timezone setter
-    const setTimezone = (timezone: string) => {
-        setFormData((prev) => ({
-            ...prev,
-            timezone,
-        }));
-    };
+    /* ------------------------- SAFE setTimezone ------------------------- */
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { id, value } = e.target;
-        setFormData((prev) => ({ ...prev, [id]: value }));
+    const setTimezone = useCallback((timezone: string) => {
+        setFormData((prev) => {
+            // 🔥 Prevent unnecessary update (THIS prevents infinite loop)
+            if (prev.timezone === timezone) return prev;
 
-        if (errors[id]) setErrors((prev) => ({ ...prev, [id]: "" }));
-        if (error) setError("");
-    };
+            return {
+                ...prev,
+                timezone,
+            };
+        });
+    }, []);
 
-    const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setAgreeToTerms(e.target.checked);
-    };
+    /* ------------------------- Handlers ------------------------- */
 
-    const handleGoogleSignup = () => {
+    const handleChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const { id, value } = e.target;
+
+            setFormData((prev) => ({
+                ...prev,
+                [id]: value,
+            }));
+
+            if (errors[id]) {
+                setErrors((prev) => ({ ...prev, [id]: "" }));
+            }
+
+            if (error) setError("");
+        },
+        [errors, error]
+    );
+
+    const handleCheckboxChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            setAgreeToTerms(e.target.checked);
+        },
+        []
+    );
+
+    const handleGoogleSignup = useCallback(() => {
         logEvent(
             "Login Attempt",
             "Google Sign-Up",
@@ -88,10 +117,10 @@ export const useRegisterForm = () => {
             1
         );
 
-        // ✅ Full page redirect (required for OAuth)
         window.location.href = `/api/auth/googleSignUp?userType=${role}`;
-    };
+    }, [role]);
 
+    /* --------------------------- Submit --------------------------- */
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -102,12 +131,11 @@ export const useRegisterForm = () => {
             registerSchema.parse(formData);
 
             if (!agreeToTerms) {
-                Swal.fire({
+                await Swal.fire({
                     icon: "error",
                     title: "Terms Not Accepted",
                     text:
                         "You must agree to the Terms of Service and Privacy Policy before registering.",
-                    confirmButtonText: "OK",
                 });
                 return;
             }
@@ -127,34 +155,29 @@ export const useRegisterForm = () => {
                     title: "Success!",
                     text: "Account successfully registered! Redirecting...",
                     icon: "success",
-                    confirmButtonText: "OK",
                 });
 
-                window.location.href = "/pages/auth/verify-email";
+                router.push("/pages/auth/verify-email");
                 return;
             }
-            else if (data.error?.includes("already")) {
-                Swal.fire({
-                    icon: "error",
-                    title: "Error!",
-                    text: "This email is already registered. Please log in.",
-                });
-            } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "Registration Failed!",
-                    text: data.error || "Please try again.",
-                });
-            }
+
+            await Swal.fire({
+                icon: "error",
+                title: "Registration Failed!",
+                text: data.error || "Please try again.",
+            });
         } catch (err) {
             if (err instanceof z.ZodError) {
-                const errorObj = err.errors.reduce((acc, curr) => {
-                    acc[curr.path[0]] = curr.message;
-                    return acc;
-                }, {} as Record<string, string>);
+                const errorObj = err.errors.reduce(
+                    (acc, curr) => {
+                        acc[curr.path[0] as string] = curr.message;
+                        return acc;
+                    },
+                    {} as Record<string, string>
+                );
                 setErrors(errorObj);
             } else {
-                Swal.fire({
+                await Swal.fire({
                     icon: "error",
                     title: "Unexpected Error!",
                     text: "An unexpected error occurred. Please try again.",
@@ -164,6 +187,8 @@ export const useRegisterForm = () => {
             setIsRegistering(false);
         }
     };
+
+    /* --------------------------- Return --------------------------- */
 
     return {
         formData,
@@ -182,6 +207,6 @@ export const useRegisterForm = () => {
         handleChange,
         handleGoogleSignup,
         handleSubmit,
-        setTimezone, // ✅ exposed to component
+        setTimezone, // ✅ kept safely
     };
 };

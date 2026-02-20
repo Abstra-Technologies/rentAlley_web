@@ -92,7 +92,7 @@ export default function FinancialsPage() {
 
     const { data, isLoading } = useSWR(
         id
-            ? `/api/analytics/landlord/revenue-expense-trend?property_id=${id}&year=${selectedYear}`
+            ? `/api/analytics/landlord/revenue-expense-trend?property_id=${id}&year=${selectedYear}&landlord_id=${landlordId}`
             : null,
         fetcher
     );
@@ -198,7 +198,6 @@ export default function FinancialsPage() {
                                 );
                                 return;
                             }
-
                             setSelectedYear(year);
                         }}
                         className="px-3 py-1.5 text-sm border rounded-lg"
