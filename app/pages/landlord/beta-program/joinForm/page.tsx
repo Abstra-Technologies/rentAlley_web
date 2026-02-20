@@ -11,7 +11,7 @@ export default function JoinBetaPage() {
     const router = useRouter();
     const { user, fetchSession } = useAuthStore();
 
-    const MAX_SLOTS = 50;
+    const MAX_SLOTS = 20;
 
     const [loading, setLoading] = useState(false);
     const [slotsTaken, setSlotsTaken] = useState<number>(0);
@@ -127,7 +127,7 @@ export default function JoinBetaPage() {
                                     <span className="text-blue-600 font-bold">
                                         {remainingSlots}
                                     </span>{" "}
-                                    of 50 spots remaining
+                                    of 20 spots remaining
                                 </>
                             )}
                         </p>
