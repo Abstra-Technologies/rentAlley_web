@@ -59,7 +59,7 @@ async function fetchTransactionDetails(
     });
 
     const response = await fetch(
-        `https://api.xendit.co/transactions/${transactionId}`,
+        `https://api.xendit.co/transactions?product_id=${transactionId}`,
         {
             method: "GET",
             headers: {
