@@ -222,14 +222,16 @@ export default function NewWorkOrderModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, y: 100, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 100, scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+          className="bg-white w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          style={{ maxHeight: "85vh" }}
         >
           {/* Header */}
           <div
@@ -237,16 +239,22 @@ export default function NewWorkOrderModal({
           >
             <div className="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full" />
             <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full" />
-            <div className="relative p-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-white" />
+
+            {/* Mobile drag handle */}
+            <div className="sm:hidden flex justify-center pt-2">
+              <div className="w-10 h-1 rounded-full bg-white/30" />
+            </div>
+
+            <div className="relative p-4 sm:p-5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">
+                  <h2 className="text-base sm:text-lg font-bold text-white">
                     New Work Order
                   </h2>
-                  <p className="text-sm text-white/80">
+                  <p className="text-xs sm:text-sm text-white/80">
                     Create a maintenance task
                   </p>
                 </div>
@@ -262,31 +270,31 @@ export default function NewWorkOrderModal({
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-5">
-            <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
-              <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-blue-700">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4 sm:space-y-5">
+            <div className="flex items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 bg-blue-50 rounded-xl border border-blue-100">
+              <Info className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs sm:text-sm text-blue-700">
                 Work orders start as <strong>Approved</strong> and are ready to
                 be scheduled.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 Title <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 placeholder="e.g., Fix leaking faucet"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                   Property <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -295,7 +303,7 @@ export default function NewWorkOrderModal({
                     value={selectedProperty}
                     onChange={(e) => setSelectedProperty(e.target.value)}
                     disabled={loadingProperties}
-                    className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl appearance-none text-sm bg-white disabled:bg-gray-50 outline-none"
+                    className="w-full pl-10 pr-10 py-2.5 sm:py-3 border border-gray-200 rounded-xl appearance-none text-sm bg-white disabled:bg-gray-50 outline-none"
                   >
                     <option value="">
                       {loadingProperties ? "Loading..." : "Select property"}
@@ -310,7 +318,7 @@ export default function NewWorkOrderModal({
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                   Unit{" "}
                   <span className="text-gray-400 font-normal">(Optional)</span>
                 </label>
@@ -321,7 +329,7 @@ export default function NewWorkOrderModal({
                     disabled={
                       !selectedProperty || loadingUnits || !units.length
                     }
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl appearance-none text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400 outline-none"
+                    className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl appearance-none text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400 outline-none"
                   >
                     <option value="">
                       {loadingUnits
@@ -344,35 +352,37 @@ export default function NewWorkOrderModal({
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 Category
               </label>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
                 {CATEGORIES.map((c) => (
                   <button
                     key={c.value}
                     type="button"
                     onClick={() => setCategory(c.value)}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${category === c.value ? `border-transparent bg-gradient-to-r ${c.gradient} text-white shadow-lg` : "border-gray-100 bg-gray-50 hover:bg-gray-100 text-gray-700"}`}
+                    className={`flex flex-col items-center gap-1 sm:gap-1.5 p-2 sm:p-3 rounded-xl border-2 transition-all ${category === c.value ? `border-transparent bg-gradient-to-r ${c.gradient} text-white shadow-lg` : "border-gray-100 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-gray-700"}`}
                   >
-                    <span className="text-xl">{c.icon}</span>
-                    <span className="text-[10px] font-medium">{c.value}</span>
+                    <span className="text-lg sm:text-xl">{c.icon}</span>
+                    <span className="text-[9px] sm:text-[10px] font-medium">
+                      {c.value}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 Priority
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 sm:gap-2">
                 {PRIORITIES.map((p) => (
                   <button
                     key={p.value}
                     type="button"
                     onClick={() => setPriority(p.value)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${priority === p.value ? `${p.bg} border-current` : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
+                    className={`flex items-center justify-center sm:justify-start gap-2 px-3 sm:px-4 py-2 rounded-xl border-2 transition-all ${priority === p.value ? `${p.bg} border-current` : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 active:bg-gray-100"}`}
                   >
                     <span className={`w-2 h-2 rounded-full ${p.dot}`} />
                     <span className="text-sm font-medium">{p.value}</span>
@@ -382,25 +392,25 @@ export default function NewWorkOrderModal({
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 Asset ID{" "}
                 <span className="text-gray-400 font-normal">(Optional)</span>
               </label>
               <div className="flex gap-2">
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-0">
                   <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     value={assetId}
                     onChange={(e) => setAssetId(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm outline-none"
+                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl text-sm outline-none"
                     placeholder="Scan or enter ID"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowScanner(true)}
-                  className="px-4 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl flex items-center gap-2"
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl flex items-center gap-2 flex-shrink-0"
                 >
                   <Scan className="w-4 h-4" />
                   <span className="hidden sm:inline text-sm font-medium">
@@ -415,14 +425,14 @@ export default function NewWorkOrderModal({
                 </div>
               )}
               {assetDetails && (
-                <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl border border-blue-100">
+                <div className="mt-2 sm:mt-3 p-2.5 sm:p-3 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl border border-blue-100">
                   <div className="flex items-center gap-2 mb-1">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="font-semibold text-gray-900">
+                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <span className="font-semibold text-gray-900 text-sm truncate">
                       {assetDetails.asset_name}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-600 pl-6">
                     Serial: {assetDetails.serial_number}
                   </p>
                 </div>
@@ -430,7 +440,7 @@ export default function NewWorkOrderModal({
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 Assign To{" "}
                 <span className="text-gray-400 font-normal">(Optional)</span>
               </label>
@@ -440,14 +450,14 @@ export default function NewWorkOrderModal({
                   type="text"
                   value={assignedTo}
                   onChange={(e) => setAssignedTo(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm outline-none"
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl text-sm outline-none"
                   placeholder="Technician name"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 Description{" "}
                 <span className="text-gray-400 font-normal">(Optional)</span>
               </label>
@@ -455,37 +465,39 @@ export default function NewWorkOrderModal({
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none outline-none"
+                className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl text-sm resize-none outline-none"
                 placeholder="Describe the issue..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 Photos{" "}
                 <span className="text-gray-400 font-normal">(Max 6)</span>
               </label>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
                 {photos.map((f, i) => (
                   <div key={i} className="relative group">
                     <img
                       src={URL.createObjectURL(f)}
                       alt=""
-                      className="w-full h-20 object-cover rounded-xl border"
+                      className="w-full h-16 sm:h-20 object-cover rounded-xl border"
                     />
                     <button
                       type="button"
                       onClick={() => removePhoto(i)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100"
+                      className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-sm"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                     </button>
                   </div>
                 ))}
                 {photos.length < 6 && (
-                  <label className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50">
-                    <Camera className="w-5 h-5 text-gray-400 mb-1" />
-                    <span className="text-[10px] text-gray-500">Add Photo</span>
+                  <label className="w-full h-16 sm:h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 active:bg-blue-50">
+                    <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 mb-0.5 sm:mb-1" />
+                    <span className="text-[9px] sm:text-[10px] text-gray-500">
+                      Add Photo
+                    </span>
                     <input
                       type="file"
                       multiple
@@ -500,12 +512,17 @@ export default function NewWorkOrderModal({
           </div>
 
           {/* Footer */}
-          <div className="p-5 border-t border-gray-100 bg-gray-50/50 flex flex-col-reverse sm:flex-row gap-3">
+          <div
+            className="p-4 sm:p-5 border-t border-gray-100 bg-gray-50/50 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 flex-shrink-0"
+            style={{
+              paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))",
+            }}
+          >
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl font-medium text-sm disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 sm:py-3 bg-white border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-gray-700 rounded-xl font-medium text-sm disabled:opacity-50"
             >
               Cancel
             </button>
@@ -513,7 +530,7 @@ export default function NewWorkOrderModal({
               type="button"
               onClick={handleSave}
               disabled={loading || !title.trim() || !selectedProperty}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${loading || !title.trim() || !selectedProperty ? "bg-gray-300 text-gray-500 cursor-not-allowed" : `bg-gradient-to-r ${selCat?.gradient || "from-blue-600 to-emerald-600"} text-white hover:shadow-lg`}`}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all ${loading || !title.trim() || !selectedProperty ? "bg-gray-300 text-gray-500 cursor-not-allowed" : `bg-gradient-to-r ${selCat?.gradient || "from-blue-600 to-emerald-600"} text-white hover:shadow-lg active:scale-[0.98]`}`}
             >
               {loading ? (
                 <>
@@ -545,10 +562,10 @@ export default function NewWorkOrderModal({
                 animate={{ scale: 1 }}
                 exit={{ scale: 0.9 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl"
+                className="bg-white rounded-2xl p-4 sm:p-5 w-full max-w-sm shadow-2xl"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900">
                     Scan Asset QR
                   </h3>
                   <button
@@ -565,7 +582,7 @@ export default function NewWorkOrderModal({
                 <button
                   type="button"
                   onClick={() => setShowScanner(false)}
-                  className="mt-4 w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium"
+                  className="mt-3 sm:mt-4 w-full px-4 py-2.5 sm:py-3 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 rounded-xl font-medium text-sm"
                 >
                   Cancel
                 </button>
