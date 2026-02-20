@@ -43,6 +43,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ],
         },
         {
+            title: "Subscription Plan",
+            items: [
+                { label: "Split Rules", href: "/pages/system_admin/split_rules", icon: Users },
+
+            ],
+        },
+        {
             title: "Payments & Payouts",
             items: [
                 { label: "Payment Channels", href: "/pages/system_admin/payouts/payment_channels", icon: Banknote },
