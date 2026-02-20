@@ -76,6 +76,7 @@ interface KanbanColumnConfig {
   Icon: React.ComponentType<{ className?: string }>;
   acceptsFrom: string[];
   nextActions: NextAction[];
+  mobileLabel: string;
 }
 
 // ============================================
@@ -93,6 +94,7 @@ const KANBAN_COLUMNS: KanbanColumnConfig[] = [
     textColor: "text-amber-600",
     Icon: Clock,
     acceptsFrom: [],
+    mobileLabel: "Pending",
     nextActions: [
       {
         label: "Approve",
@@ -117,6 +119,7 @@ const KANBAN_COLUMNS: KanbanColumnConfig[] = [
     textColor: "text-emerald-600",
     Icon: CheckCircle,
     acceptsFrom: ["pending"],
+    mobileLabel: "Approved",
     nextActions: [
       {
         label: "Schedule",
@@ -137,6 +140,7 @@ const KANBAN_COLUMNS: KanbanColumnConfig[] = [
     textColor: "text-purple-600",
     Icon: CalendarClock,
     acceptsFrom: ["approved"],
+    mobileLabel: "Scheduled",
     nextActions: [
       {
         label: "Start Work",
@@ -156,6 +160,7 @@ const KANBAN_COLUMNS: KanbanColumnConfig[] = [
     textColor: "text-blue-600",
     Icon: Play,
     acceptsFrom: ["scheduled"],
+    mobileLabel: "Active",
     nextActions: [
       {
         label: "Complete",
@@ -175,6 +180,7 @@ const KANBAN_COLUMNS: KanbanColumnConfig[] = [
     textColor: "text-gray-600",
     Icon: CheckCircle,
     acceptsFrom: ["in-progress", "pending"],
+    mobileLabel: "Done",
     nextActions: [],
   },
 ];
@@ -184,7 +190,6 @@ const getColumnForStatus = (status: string) => {
   return KANBAN_COLUMNS.find((col) => col.statuses.includes(normalized));
 };
 
-// Transform API response (nested) to flat structure
 function transformApiResponse(data: any[]): MaintenanceRequest[] {
   return data.map((item) => ({
     request_id: item.request_id,
@@ -239,7 +244,7 @@ export default function MaintenanceRequestPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   const [activeColumnIndex, setActiveColumnIndex] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const tabScrollRef = useRef<HTMLDivElement>(null);
 
   const [draggedItem, setDraggedItem] = useState<MaintenanceRequest | null>(
     null,
@@ -404,7 +409,7 @@ export default function MaintenanceRequestPage() {
     });
   };
 
-  // Drag handlers
+  // Drag handlers (desktop only)
   const handleDragStart = (r: MaintenanceRequest) => setDraggedItem(r);
   const handleDragOver = (e: React.DragEvent, colId: string) => {
     e.preventDefault();
@@ -458,21 +463,22 @@ export default function MaintenanceRequestPage() {
   const hasFilters = !!filterPriority || !!search || filterSource !== "all";
   const pendingCount = filtered.filter((r) => r.status === "pending").length;
 
-  // Mobile nav
-  const scrollToCol = (i: number) => {
-    setActiveColumnIndex(i);
-    scrollRef.current?.scrollTo({
-      left: scrollRef.current.offsetWidth * i,
-      behavior: "smooth",
-    });
+  // Mobile tab selection
+  const selectTab = (idx: number) => {
+    setActiveColumnIndex(idx);
+    const tabEl = tabScrollRef.current?.children[idx] as
+      | HTMLElement
+      | undefined;
+    if (tabEl && tabScrollRef.current) {
+      const container = tabScrollRef.current;
+      const scrollLeft =
+        tabEl.offsetLeft - container.offsetWidth / 2 + tabEl.offsetWidth / 2;
+      container.scrollTo({ left: scrollLeft, behavior: "smooth" });
+    }
   };
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const i = Math.round(
-      scrollRef.current.scrollLeft / scrollRef.current.offsetWidth,
-    );
-    if (i !== activeColumnIndex) setActiveColumnIndex(i);
-  };
+
+  const activeColumn = KANBAN_COLUMNS[activeColumnIndex];
+  const activeRequests = getColRequests(activeColumn);
 
   if (loading)
     return (
@@ -487,6 +493,12 @@ export default function MaintenanceRequestPage() {
           </div>
         </div>
         <div className="px-4 lg:px-8 py-6">
+          <div className="lg:hidden space-y-3">
+            <div className="h-10 bg-gray-200 rounded-xl animate-pulse" />
+            <div className="h-14 bg-gray-200 rounded-xl animate-pulse" />
+            <div className="h-32 bg-gray-200 rounded-xl animate-pulse" />
+            <div className="h-32 bg-gray-200 rounded-xl animate-pulse" />
+          </div>
           <div className="hidden lg:grid lg:grid-cols-5 gap-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="space-y-3">
@@ -500,196 +512,190 @@ export default function MaintenanceRequestPage() {
     );
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30"
+    <div
+      style={{ maxWidth: "100vw", overflowX: "hidden" }}
+      className="bg-gray-50 min-h-screen"
     >
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4 lg:px-8 sticky top-14 lg:top-0 z-30">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <Wrench className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg lg:text-2xl font-bold text-gray-900">
-                Work Orders
-              </h1>
-              <div className="flex items-center gap-2 text-xs lg:text-sm text-gray-500">
-                <span>{filtered.length} total</span>
-                {pendingCount > 0 && (
-                  <>
-                    <span className="w-1 h-1 bg-gray-300 rounded-full" />
-                    <span className="text-amber-600 font-medium">
-                      {pendingCount} pending
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-white w-full"
+      >
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-4 py-2 lg:px-8 lg:py-4 sticky top-14 lg:top-0 z-30">
+          <div className="flex items-center justify-between mb-2 lg:mb-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="hidden sm:flex w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl items-center justify-center shadow-lg shadow-blue-500/25 flex-shrink-0">
+                <Wrench className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base sm:text-lg lg:text-2xl font-bold text-gray-900 truncate">
+                    Work Orders
+                  </h1>
+                  <span className="text-[11px] sm:text-xs lg:text-sm text-gray-400">
+                    {filtered.length} total
+                  </span>
+                  {pendingCount > 0 && (
+                    <span className="text-[11px] sm:text-xs text-amber-600 font-medium">
+                      · {pendingCount} pending
                     </span>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
             </div>
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => fetchRequests(true)}
+                disabled={refreshing}
+                className="p-2 sm:p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+                />
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowNewModal(true)}
+                className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold text-sm shadow-lg"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Work Order</span>
+              </motion.button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => fetchRequests(true)}
-              disabled={refreshing}
-              className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+          <div className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
               />
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowNewModal(true)}
-              className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold text-sm shadow-lg"
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5"
+                >
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl border transition-all flex-shrink-0 ${showFilters || hasFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-700"}`}
             >
-              <Plus className="w-4 h-4" />
-              <span>New Work Order</span>
-            </motion.button>
+              <Filter className="w-4 h-4" />
+              <span className="text-sm font-medium hidden sm:inline">
+                Filters
+              </span>
+              {hasFilters && (
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+              )}
+            </button>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
               >
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
-            )}
-          </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all ${showFilters || hasFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-700"}`}
-          >
-            <Filter className="w-4 h-4" />
-            <span className="text-sm font-medium hidden sm:inline">
-              Filters
-            </span>
-            {hasFilters && (
-              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-            )}
-          </button>
-        </div>
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-gray-100">
-                <select
-                  value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value)}
-                  className="px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm outline-none"
-                >
-                  <option value="">All Priorities</option>
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                  <option value="Urgent">Urgent</option>
-                </select>
-                <select
-                  value={filterSource}
-                  onChange={(e) => setFilterSource(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm outline-none"
-                >
-                  <option value="all">All Sources</option>
-                  <option value="tenant">Tenant Requests</option>
-                  <option value="landlord">Work Orders</option>
-                </select>
-                {hasFilters && (
-                  <button
-                    onClick={() => {
-                      setSearch("");
-                      setFilterPriority("");
-                      setFilterSource("all");
-                    }}
-                    className="px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center gap-1.5"
+                <div className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-gray-100">
+                  <select
+                    value={filterPriority}
+                    onChange={(e) => setFilterPriority(e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm outline-none flex-1 sm:flex-none"
                   >
-                    <X className="w-3.5 h-3.5" />
-                    Clear
+                    <option value="">All Priorities</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                  <select
+                    value={filterSource}
+                    onChange={(e) => setFilterSource(e.target.value as any)}
+                    className="px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm outline-none flex-1 sm:flex-none"
+                  >
+                    <option value="all">All Sources</option>
+                    <option value="tenant">Tenant Requests</option>
+                    <option value="landlord">Work Orders</option>
+                  </select>
+                  {hasFilters && (
+                    <button
+                      onClick={() => {
+                        setSearch("");
+                        setFilterPriority("");
+                        setFilterSource("all");
+                      }}
+                      className="px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center gap-1.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <p className="hidden lg:block text-xs text-gray-400 mt-3">
+            💡 Drag cards between columns or use action buttons to update
+            status.
+          </p>
+
+          {/* Mobile tabs — inside header so sticky position is automatic */}
+          <div className="lg:hidden mt-2 -mx-4 px-3 py-1.5 border-t border-gray-100">
+            <div
+              ref={tabScrollRef}
+              className="flex overflow-x-auto scrollbar-hide gap-1.5"
+            >
+              {KANBAN_COLUMNS.map((col, idx) => {
+                const count = getColRequests(col).length;
+                const active = activeColumnIndex === idx;
+                const Icon = col.Icon;
+                return (
+                  <button
+                    key={col.id}
+                    onClick={() => selectTab(idx)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full whitespace-nowrap text-xs font-medium transition-all flex-shrink-0 ${
+                      active
+                        ? `bg-gradient-to-r ${col.gradient} text-white shadow-sm`
+                        : "bg-gray-100 text-gray-500 active:bg-gray-200"
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" />
+                    <span>{col.mobileLabel}</span>
+                    <span
+                      className={`min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold rounded-full leading-none ${
+                        active
+                          ? "bg-white/25 text-white"
+                          : "bg-gray-200 text-gray-600"
+                      }`}
+                    >
+                      {count}
+                    </span>
                   </button>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <p className="hidden lg:block text-xs text-gray-400 mt-3">
-          💡 Drag cards between columns or use action buttons to update status.
-        </p>
-      </div>
-
-      {/* Mobile tabs */}
-      <div className="lg:hidden sticky top-[130px] z-20 bg-white border-b border-gray-200 px-4 py-2.5">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {KANBAN_COLUMNS.map((col, idx) => {
-            const count = getColRequests(col).length;
-            const active = activeColumnIndex === idx;
-            const Icon = col.Icon;
-            return (
-              <button
-                key={col.id}
-                onClick={() => scrollToCol(idx)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg whitespace-nowrap text-sm transition-all ${active ? `bg-gradient-to-r ${col.gradient} text-white` : "bg-gray-100 text-gray-600"}`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span className="font-medium">{col.title.split(" ")[0]}</span>
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded-md ${active ? "bg-white/20" : "bg-gray-200"}`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Board */}
-      <div className="px-4 lg:px-6 py-4 pb-24 lg:pb-8">
-        <div className="hidden lg:grid lg:grid-cols-5 gap-4">
-          {KANBAN_COLUMNS.map((col) => (
-            <KanbanColumn
-              key={col.id}
-              column={col}
-              requests={getColRequests(col)}
-              onCardClick={(r) => {
-                setSelectedRequest(r);
-                setShowDetailsModal(true);
-              }}
-              onStatusChange={updateRequestStatus}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-              isDragOver={dragOverColumn === col.id}
-              draggedItem={draggedItem}
-            />
-          ))}
-        </div>
+        {/* Board */}
         <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="lg:hidden flex overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 gap-4"
+          className="px-3 lg:px-6 py-2 lg:py-4 pb-24 lg:pb-8"
+          style={{ maxWidth: "100%", overflowX: "hidden" }}
         >
-          {KANBAN_COLUMNS.map((col) => (
-            <div key={col.id} className="flex-shrink-0 w-full snap-center">
+          {/* Desktop kanban */}
+          <div className="hidden lg:grid lg:grid-cols-5 gap-4">
+            {KANBAN_COLUMNS.map((col) => (
               <KanbanColumn
+                key={col.id}
                 column={col}
                 requests={getColRequests(col)}
                 onCardClick={(r) => {
@@ -697,99 +703,120 @@ export default function MaintenanceRequestPage() {
                   setShowDetailsModal(true);
                 }}
                 onStatusChange={updateRequestStatus}
-                isMobile
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+                isDragOver={dragOverColumn === col.id}
+                draggedItem={draggedItem}
               />
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Mobile: tab-controlled single column */}
+          <div className="lg:hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeColumn.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+              >
+                <KanbanColumn
+                  column={activeColumn}
+                  requests={activeRequests}
+                  onCardClick={(r) => {
+                    setSelectedRequest(r);
+                    setShowDetailsModal(true);
+                  }}
+                  onStatusChange={updateRequestStatus}
+                  isMobile
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
-        <div className="lg:hidden flex justify-center gap-1.5 mt-4">
-          {KANBAN_COLUMNS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => scrollToCol(i)}
-              className={`h-1.5 rounded-full transition-all ${activeColumnIndex === i ? "bg-blue-500 w-6" : "bg-gray-300 w-1.5"}`}
+
+        {/* FAB */}
+        <motion.button
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setShowNewModal(true)}
+          className="sm:hidden fixed bottom-6 right-4 w-14 h-14 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center z-40"
+        >
+          <Plus className="w-6 h-6" />
+        </motion.button>
+
+        {/* Modals */}
+        <AnimatePresence>
+          {showCalendarModal && (
+            <MaintenanceCalendarModal
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              handleScheduleConfirm={handleScheduleConfirm}
+              onClose={() => {
+                setShowCalendarModal(false);
+                setPendingStatusChange(null);
+              }}
             />
-          ))}
-        </div>
-      </div>
-
-      {/* FAB */}
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setShowNewModal(true)}
-        className="sm:hidden fixed bottom-6 right-4 w-14 h-14 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-full shadow-lg flex items-center justify-center z-40"
-      >
-        <Plus className="w-6 h-6" />
-      </motion.button>
-
-      {/* Modals */}
-      <AnimatePresence>
-        {showCalendarModal && (
-          <MaintenanceCalendarModal
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            handleScheduleConfirm={handleScheduleConfirm}
-            onClose={() => {
-              setShowCalendarModal(false);
-              setPendingStatusChange(null);
-            }}
-          />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {showDetailsModal && selectedRequest && (
-          <MaintenanceDetailsModal
-            selectedRequest={selectedRequest}
-            onClose={() => {
-              setShowDetailsModal(false);
-              setSelectedRequest(null);
-            }}
-            onStart={() => {
-              setPendingStatusChange({
-                requestId: selectedRequest.request_id,
-                status: "scheduled",
-              });
-              setShowCalendarModal(true);
-            }}
-            onComplete={() =>
-              updateRequestStatus(selectedRequest.request_id, "completed")
-            }
-            onReschedule={() => {
-              setPendingStatusChange({
-                requestId: selectedRequest.request_id,
-                status: "scheduled",
-              });
-              setShowCalendarModal(true);
-            }}
-            updateStatus={updateRequestStatus}
-          />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {showExpenseModal && pendingStatusChange && (
-          <MaintenanceExpenseModal
-            requestId={pendingStatusChange.requestId}
-            userId={user?.user_id}
-            onClose={() => {
-              setShowExpenseModal(false);
-              setPendingStatusChange(null);
-            }}
-            onSaved={handleExpenseSaved}
-          />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {showNewModal && (
-          <NewWorkOrderModal
-            landlordId={landlordId}
-            onClose={() => setShowNewModal(false)}
-            onCreated={handleWorkOrderCreated}
-          />
-        )}
-      </AnimatePresence>
-    </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {showDetailsModal && selectedRequest && (
+            <MaintenanceDetailsModal
+              selectedRequest={selectedRequest}
+              onClose={() => {
+                setShowDetailsModal(false);
+                setSelectedRequest(null);
+              }}
+              onStart={() => {
+                setPendingStatusChange({
+                  requestId: selectedRequest.request_id,
+                  status: "scheduled",
+                });
+                setShowCalendarModal(true);
+              }}
+              onComplete={() =>
+                updateRequestStatus(selectedRequest.request_id, "completed")
+              }
+              onReschedule={() => {
+                setPendingStatusChange({
+                  requestId: selectedRequest.request_id,
+                  status: "scheduled",
+                });
+                setShowCalendarModal(true);
+              }}
+              updateStatus={updateRequestStatus}
+            />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {showExpenseModal && pendingStatusChange && (
+            <MaintenanceExpenseModal
+              requestId={pendingStatusChange.requestId}
+              userId={user?.user_id}
+              onClose={() => {
+                setShowExpenseModal(false);
+                setPendingStatusChange(null);
+              }}
+              onSaved={handleExpenseSaved}
+            />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {showNewModal && (
+            <NewWorkOrderModal
+              landlordId={landlordId}
+              onClose={() => setShowNewModal(false)}
+              onCreated={handleWorkOrderCreated}
+            />
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
   );
 }
 
@@ -832,21 +859,21 @@ function KanbanColumn({
 
   return (
     <div
-      className={`flex flex-col ${isMobile ? "min-h-[50vh]" : "h-full"}`}
+      className={`flex flex-col min-w-0 ${isMobile ? "" : "h-full"}`}
       onDragOver={(e) => onDragOver?.(e, column.id)}
       onDragLeave={onDragLeave}
       onDrop={(e) => onDrop?.(e, column.id)}
     >
       <div
-        className={`flex items-center justify-between p-3 rounded-t-xl bg-gradient-to-r ${column.gradient}`}
+        className={`flex items-center justify-between p-2.5 lg:p-3 rounded-t-xl bg-gradient-to-r ${column.gradient}`}
       >
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-white/90" />
           <div>
             <h3 className="font-semibold text-white text-sm">{column.title}</h3>
-            {!isMobile && (
-              <p className="text-[10px] text-white/70">{column.subtitle}</p>
-            )}
+            <p className="text-[10px] text-white/70 hidden lg:block">
+              {column.subtitle}
+            </p>
           </div>
         </div>
         <span className="px-2 py-0.5 bg-white/20 rounded-lg text-white text-xs font-semibold">
@@ -854,10 +881,10 @@ function KanbanColumn({
         </span>
       </div>
       <div
-        className={`flex-1 p-2.5 rounded-b-xl border-2 border-t-0 transition-all ${isDragOver && canAccept ? `${column.bgLight} border-dashed ${column.dotColor.replace("bg-", "border-")}` : "bg-gray-50/50 border-gray-100"}`}
+        className={`flex-1 p-2 lg:p-2.5 rounded-b-xl border-2 border-t-0 transition-all ${isDragOver && canAccept ? `${column.bgLight} border-dashed ${column.dotColor.replace("bg-", "border-")}` : "bg-gray-50/50 border-gray-100"}`}
       >
         {requests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+          <div className="flex flex-col items-center justify-center py-6 lg:py-8 text-gray-400 text-center">
             <div
               className={`w-10 h-10 rounded-xl ${column.bgLight} flex items-center justify-center mb-2`}
             >
@@ -921,7 +948,7 @@ function RequestCard({
       draggable={!isMobile}
       onDragStart={() => onDragStart?.(request)}
       onDragEnd={onDragEnd}
-      className="bg-white rounded-xl border border-gray-100 p-3 cursor-pointer hover:shadow-md hover:border-gray-200 transition-all relative group"
+      className="bg-white rounded-xl border border-gray-100 p-3 cursor-pointer hover:shadow-md hover:border-gray-200 transition-all relative group active:scale-[0.98] overflow-hidden"
     >
       {!isMobile && (
         <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-50 cursor-grab">
@@ -931,7 +958,7 @@ function RequestCard({
       <div
         className={`absolute top-0 left-0 w-1 h-full rounded-l-xl ${priority.dot}`}
       />
-      <div className="pl-2" onClick={onClick}>
+      <div className="pl-2 min-w-0" onClick={onClick}>
         <div className="flex items-center gap-2 mb-1">
           <span className="text-[10px] text-gray-400 font-mono">
             #{request.request_id}
@@ -947,7 +974,7 @@ function RequestCard({
         </h4>
         {request.property_name && (
           <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
-            <Home className="w-3 h-3" />
+            <Home className="w-3 h-3 flex-shrink-0" />
             <span className="truncate">{request.property_name}</span>
             {request.unit_name && (
               <>
@@ -999,7 +1026,7 @@ function RequestCard({
                 e.stopPropagation();
                 onStatusChange(request.request_id, a.status);
               }}
-              className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-white text-xs font-medium transition-all ${a.color}`}
+              className={`flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-white text-xs font-medium transition-all active:scale-95 ${a.color}`}
             >
               <ChevronRight className="w-3 h-3" />
               {a.label}

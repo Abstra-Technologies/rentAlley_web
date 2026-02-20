@@ -158,7 +158,7 @@ export default function MaintenanceExpenseModal({
         animate="visible"
         exit="exit"
         onClick={onClose}
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
       >
         <motion.div
           variants={modalVariants}
@@ -166,10 +166,16 @@ export default function MaintenanceExpenseModal({
           animate="visible"
           exit="exit"
           onClick={(e) => e.stopPropagation()}
-          className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+          className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          style={{ maxHeight: "85vh" }}
         >
+          {/* Mobile drag handle */}
+          <div className="sm:hidden flex justify-center pt-2 bg-gradient-to-r from-blue-500 to-emerald-500">
+            <div className="w-10 h-1 rounded-full bg-white/30" />
+          </div>
+
           {/* Header */}
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-hidden flex-shrink-0">
             <div
               className={`absolute inset-0 bg-gradient-to-r ${
                 selectedCategory?.color || "from-blue-500 to-emerald-500"
@@ -178,17 +184,17 @@ export default function MaintenanceExpenseModal({
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full" />
             <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-white/10 rounded-full" />
 
-            <div className="relative p-5">
+            <div className="relative p-4 sm:p-5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-white">
+                    <h2 className="text-base sm:text-lg font-bold text-white">
                       Record Expense
                     </h2>
-                    <p className="text-sm text-white/80">
+                    <p className="text-xs sm:text-sm text-white/80">
                       Add maintenance cost
                     </p>
                   </div>
@@ -211,11 +217,11 @@ export default function MaintenanceExpenseModal({
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
-            className="p-5 space-y-5"
+            className="p-4 sm:p-5 space-y-4 sm:space-y-5 flex-1 overflow-y-auto overscroll-contain"
           >
             {/* Amount Input */}
             <motion.div variants={fadeInUp}>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 Expense Amount
               </label>
               <div className="relative">
@@ -226,6 +232,7 @@ export default function MaintenanceExpenseModal({
                   type="number"
                   min="0"
                   step="0.01"
+                  inputMode="decimal"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl text-lg font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
@@ -236,24 +243,26 @@ export default function MaintenanceExpenseModal({
 
             {/* Category Selection */}
             <motion.div variants={fadeInUp}>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 Category
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                 {expenseCategories.map((cat) => (
                   <motion.button
                     key={cat.value}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setCategory(cat.value)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 ${
+                    className={`flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl border-2 transition-all duration-200 ${
                       category === cat.value
                         ? `border-transparent bg-gradient-to-r ${cat.color} text-white shadow-lg`
                         : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
                     }`}
                   >
-                    <span className="text-lg">{cat.icon}</span>
-                    <span className="text-sm font-medium">{cat.label}</span>
+                    <span className="text-base sm:text-lg">{cat.icon}</span>
+                    <span className="text-xs sm:text-sm font-medium">
+                      {cat.label}
+                    </span>
                   </motion.button>
                 ))}
               </div>
@@ -261,7 +270,7 @@ export default function MaintenanceExpenseModal({
 
             {/* Description */}
             <motion.div variants={fadeInUp}>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
                 Description
                 <span className="text-gray-400 font-normal ml-1">
                   (Optional)
@@ -272,7 +281,7 @@ export default function MaintenanceExpenseModal({
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none text-sm"
                   placeholder="Add notes about this expense..."
                   rows={3}
                 />
@@ -281,13 +290,18 @@ export default function MaintenanceExpenseModal({
           </motion.div>
 
           {/* Footer */}
-          <div className="p-5 border-t border-gray-100 bg-gray-50/50 flex flex-col-reverse sm:flex-row gap-3">
+          <div
+            className="p-4 sm:p-5 border-t border-gray-100 bg-gray-50/50 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 flex-shrink-0"
+            style={{
+              paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))",
+            }}
+          >
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition-all font-medium text-sm disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 sm:py-3 bg-white border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-gray-700 rounded-xl transition-all font-medium text-sm disabled:opacity-50"
             >
               Cancel
             </motion.button>
@@ -297,7 +311,7 @@ export default function MaintenanceExpenseModal({
               whileTap={{ scale: 0.98 }}
               onClick={handleSave}
               disabled={loading}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all ${
                 loading
                   ? "bg-blue-400 cursor-not-allowed"
                   : `bg-gradient-to-r ${
