@@ -135,7 +135,7 @@ export default function QuickActions({
         },
         {
             label: "Calendar",
-            href: "/pages/landlord/booking-appointment",
+            href: "/pages/landlord/calendar",
             icon: Calendar,
             gradient: "from-rose-500 to-pink-500",
         },

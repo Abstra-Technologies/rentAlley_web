@@ -2,11 +2,8 @@
 
 interface Props {
     total: number;
-
-    // 🔹 from API
-    delta: number;        // + / - count vs last month
-    deltaPct: number;     // percentage change
-
+    delta: number;
+    deltaPct: number;
     active: number;
     expiringSoon: number;
     pendingSignatures: number;
@@ -22,6 +19,7 @@ export default function LeaseScorecards({
                                             pendingSignatures,
                                             pendingLabel = "Awaiting tenant",
                                         }: Props) {
+
     const Card = ({
                       title,
                       value,
@@ -33,6 +31,7 @@ export default function LeaseScorecards({
         subtitle?: string;
         accent?: "green" | "orange" | "blue" | "red";
     }) => {
+
         const accentMap = {
             green: "text-green-600",
             orange: "text-orange-600",
@@ -41,12 +40,19 @@ export default function LeaseScorecards({
         };
 
         return (
-            <div className="bg-white rounded-xl border shadow-sm p-4">
-                <p className="text-xs text-gray-500">{title}</p>
-                <p className="text-2xl font-bold mt-1">{value}</p>
+            <div className="bg-white rounded-lg sm:rounded-xl border shadow-sm
+                      p-2 sm:p-4 min-w-0">
+                <p className="text-[10px] sm:text-xs text-gray-500 truncate">
+                    {title}
+                </p>
+
+                <p className="text-sm sm:text-2xl font-bold mt-1 truncate">
+                    {value}
+                </p>
+
                 {subtitle && (
                     <p
-                        className={`text-xs mt-1 ${
+                        className={`text-[9px] sm:text-xs mt-1 truncate ${
                             accent ? accentMap[accent] : "text-gray-400"
                         }`}
                     >
@@ -58,45 +64,42 @@ export default function LeaseScorecards({
     };
 
     /* ===============================
-       TREND TEXT (API-DRIVEN)
+       TREND TEXT
     ================================ */
+
     const trendText =
         delta === 0
-            ? "No change from last month"
-            : `${delta > 0 ? "+" : ""}${delta} (${deltaPct}%) from last month`;
+            ? "No change"
+            : `${delta > 0 ? "+" : ""}${delta} (${deltaPct}%)`;
 
     const trendAccent =
         delta > 0 ? "green" : delta < 0 ? "red" : undefined;
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {/* Total leases */}
+        <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-6">
             <Card
-                title="Total Leases"
+                title="Total"
                 value={total}
                 subtitle={trendText}
                 accent={trendAccent}
             />
 
-            {/* Active */}
             <Card
-                title="Active & Healthy"
+                title="Active"
                 value={active}
-                subtitle="of total"
+                subtitle="Healthy"
                 accent="green"
             />
 
-            {/* Expiring */}
             <Card
-                title="Expiring Soon"
+                title="Expiring"
                 value={expiringSoon}
-                subtitle="Action required"
+                subtitle="Action"
                 accent="orange"
             />
 
-            {/* Pending signatures */}
             <Card
-                title="Pending Signatures"
+                title="Pending"
                 value={pendingSignatures}
                 subtitle={pendingLabel}
                 accent="blue"
