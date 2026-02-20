@@ -3,10 +3,6 @@
 import { useEffect, useState } from "react";
 import {
     FiArrowDownCircle,
-    FiCalendar,
-    FiDownload,
-    FiInfo,
-    FiLayers,
     FiRefreshCw,
     FiXCircle,
 } from "react-icons/fi";
@@ -47,43 +43,43 @@ export default function PayoutsPage() {
     const statusColor = (status: string) => {
         switch (status) {
             case "completed":
-                return "text-emerald-600 bg-emerald-100";
+                return "bg-emerald-100 text-emerald-700";
             case "processing":
-                return "text-blue-600 bg-blue-100";
+                return "bg-blue-100 text-blue-700";
             case "pending":
-                return "text-yellow-600 bg-yellow-100";
+                return "bg-amber-100 text-amber-700";
             case "failed":
-                return "text-red-600 bg-red-100";
+                return "bg-red-100 text-red-700";
             default:
-                return "text-gray-600 bg-gray-100";
+                return "bg-gray-100 text-gray-600";
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-10 px-5">
-            <div className="max-w-7xl mx-auto space-y-8">
+        <div className="min-h-screen bg-gray-50 py-6 sm:py-10 px-4 sm:px-6">
+            <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
 
-                {/* ================= HEADER ================= */}
+                {/* HEADER */}
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    <h1 className="text-xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <FiArrowDownCircle className="text-blue-600" />
                         Payout Dashboard
                     </h1>
-                    <p className="text-gray-600 mt-1">
-                        Monitor your earnings, available balance, and disbursement history.
+                    <p className="text-sm sm:text-base text-gray-600 mt-1">
+                        Monitor earnings and disbursement history.
                     </p>
                 </div>
 
-                {/* ================= LOADING ================= */}
+                {/* LOADING */}
                 {loading && (
-                    <div className="flex justify-center py-20">
-                        <FiRefreshCw className="w-10 h-10 animate-spin text-blue-600" />
+                    <div className="flex justify-center py-16">
+                        <FiRefreshCw className="w-8 h-8 animate-spin text-blue-600" />
                     </div>
                 )}
 
-                {/* ================= ERROR ================= */}
+                {/* ERROR */}
                 {!loading && error && (
-                    <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+                    <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
                         <FiXCircle className="inline mr-2" />
                         {error}
                     </div>
@@ -91,156 +87,127 @@ export default function PayoutsPage() {
 
                 {!loading && !error && (
                     <>
-                        {/* ================= SUMMARY CARDS ================= */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                            {/* Available */}
-                            <div className="bg-white rounded-2xl shadow p-6">
-                                <p className="text-sm text-gray-500">Available for Payout</p>
-                                <h2 className="text-3xl font-bold text-emerald-600 mt-2">
+                        {/* SUMMARY CARDS */}
+                        <div className="grid grid-cols-3 gap-3 sm:gap-6">
+                            <div className="bg-white rounded-xl sm:rounded-2xl shadow p-3 sm:p-6">
+                                <p className="text-[11px] sm:text-sm text-gray-500">
+                                    Available
+                                </p>
+                                <h2 className="text-sm sm:text-3xl font-bold text-emerald-600 mt-1 sm:mt-2">
                                     ₱{pendingTotal.toLocaleString()}
                                 </h2>
-                                <p className="text-xs text-gray-400 mt-1">
-                                    Confirmed payments not yet disbursed
-                                </p>
                             </div>
 
-                            {/* Processing */}
-                            <div className="bg-white rounded-2xl shadow p-6">
-                                <p className="text-sm text-gray-500">In Processing</p>
-                                <h2 className="text-3xl font-bold text-amber-600 mt-2">
+                            <div className="bg-white rounded-xl sm:rounded-2xl shadow p-3 sm:p-6">
+                                <p className="text-[11px] sm:text-sm text-gray-500">
+                                    Processing
+                                </p>
+                                <h2 className="text-sm sm:text-3xl font-bold text-amber-600 mt-1 sm:mt-2">
                                     ₱
                                     {pendingPayments
                                         .filter((p) => p.payout_status === "in_payout")
                                         .reduce((sum, p) => sum + Number(p.net_amount), 0)
                                         .toLocaleString()}
                                 </h2>
-                                <p className="text-xs text-gray-400 mt-1">
-                                    Currently being transferred
-                                </p>
                             </div>
 
-                            {/* Disbursed */}
-                            <div className="bg-white rounded-2xl shadow p-6">
-                                <p className="text-sm text-gray-500">Total Disbursed</p>
-                                <h2 className="text-3xl font-bold text-blue-600 mt-2">
+                            <div className="bg-white rounded-xl sm:rounded-2xl shadow p-3 sm:p-6">
+                                <p className="text-[11px] sm:text-sm text-gray-500">
+                                    Disbursed
+                                </p>
+                                <h2 className="text-sm sm:text-3xl font-bold text-blue-600 mt-1 sm:mt-2">
                                     ₱
                                     {payouts
                                         .reduce((sum, p) => sum + Number(p.amount), 0)
                                         .toLocaleString()}
                                 </h2>
-                                <p className="text-xs text-gray-400 mt-1">
-                                    Successfully transferred earnings
-                                </p>
                             </div>
                         </div>
 
-                        {/* ================= AVAILABLE PAYMENTS ================= */}
-                        <div className="bg-white rounded-2xl shadow overflow-hidden">
-                            <div className="px-6 py-4 border-b flex items-center justify-between">
-                                <h2 className="font-semibold text-gray-800">
+                        {/* AVAILABLE PAYMENTS */}
+                        <div className="bg-white rounded-xl sm:rounded-2xl shadow overflow-hidden">
+                            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b">
+                                <h2 className="text-sm sm:text-base font-semibold text-gray-800">
                                     Available Earnings
                                 </h2>
-                                <span className="text-sm text-gray-500">
-                {pendingPayments.length} payments
-              </span>
                             </div>
 
                             {pendingPayments.length === 0 ? (
-                                <div className="p-10 text-center text-gray-500">
+                                <div className="p-6 text-center text-gray-500 text-sm">
                                     No available earnings
                                 </div>
                             ) : (
-                                <table className="min-w-full text-sm">
-                                    <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
-                                    <tr>
-                                        <th className="py-3 px-4 text-left">Property</th>
-                                        <th className="py-3 px-4 text-left">Unit</th>
-                                        <th className="py-3 px-4 text-left">Type</th>
-                                        <th className="py-3 px-4 text-left">Net Amount</th>
-                                        <th className="py-3 px-4 text-left">Date</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
+                                <div className="divide-y">
                                     {pendingPayments.map((p) => (
-                                        <tr key={p.payment_id}>
-                                            <td className="py-3 px-4">{p.property_name}</td>
-                                            <td className="py-3 px-4">{p.unit_name}</td>
-                                            <td className="py-3 px-4 capitalize">
-                                                {p.payment_type.replaceAll("_", " ")}
-                                            </td>
-                                            <td className="py-3 px-4 font-semibold text-emerald-600">
+                                        <div
+                                            key={p.payment_id}
+                                            className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-gray-900 truncate">
+                                                    {p.property_name} • {p.unit_name}
+                                                </p>
+                                                <p className="text-xs text-gray-500 capitalize">
+                                                    {p.payment_type.replaceAll("_", " ")}
+                                                </p>
+                                                <p className="text-xs text-gray-400">
+                                                    {new Date(p.created_at).toLocaleDateString()}
+                                                </p>
+                                            </div>
+
+                                            <div className="text-sm font-bold text-emerald-600">
                                                 ₱{Number(p.net_amount).toLocaleString()}
-                                            </td>
-                                            <td className="py-3 px-4 text-gray-500">
-                                                {new Date(p.created_at).toLocaleDateString()}
-                                            </td>
-                                        </tr>
+                                            </div>
+                                        </div>
                                     ))}
-                                    </tbody>
-                                </table>
+                                </div>
                             )}
                         </div>
 
-                        {/* ================= PAYOUT HISTORY ================= */}
-                        <div className="bg-white rounded-2xl shadow overflow-hidden">
-                            <div className="px-6 py-4 border-b">
-                                <h2 className="font-semibold text-gray-800">
+                        {/* DISBURSEMENT HISTORY */}
+                        <div className="bg-white rounded-xl sm:rounded-2xl shadow overflow-hidden">
+                            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b">
+                                <h2 className="text-sm sm:text-base font-semibold text-gray-800">
                                     Disbursement History
                                 </h2>
                             </div>
 
                             {payouts.length === 0 ? (
-                                <div className="p-10 text-center text-gray-500">
+                                <div className="p-6 text-center text-gray-500 text-sm">
                                     No payouts yet
                                 </div>
                             ) : (
-                                <table className="min-w-full text-sm">
-                                    <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
-                                    <tr>
-                                        <th className="py-3 px-4 text-left">Payout ID</th>
-                                        <th className="py-3 px-4 text-left">Date</th>
-                                        <th className="py-3 px-4 text-left">Amount</th>
-                                        <th className="py-3 px-4 text-left">Method</th>
-                                        <th className="py-3 px-4 text-left">Status</th>
-                                        <th className="py-3 px-4 text-left">Receipt</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
+                                <div className="divide-y">
                                     {payouts.map((p) => (
-                                        <tr key={p.payout_id}>
-                                            <td className="py-3 px-4">{p.payout_id}</td>
-                                            <td className="py-3 px-4">{p.date}</td>
-                                            <td className="py-3 px-4 font-semibold text-blue-600">
-                                                ₱{Number(p.amount).toLocaleString()}
-                                            </td>
-                                            <td className="py-3 px-4">{p.payout_method}</td>
-                                            <td className="py-3 px-4">
-                        <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(
-                                p.status
-                            )}`}
-                        >
+                                        <div
+                                            key={p.payout_id}
+                                            className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                                        >
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                    Payout #{p.payout_id}
+                                                </p>
+                                                <p className="text-xs text-gray-500">{p.date}</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {p.payout_method}
+                                                </p>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-blue-600">
+                          ₱{Number(p.amount).toLocaleString()}
+                        </span>
+                                                <span
+                                                    className={`px-2 py-1 rounded-full text-[10px] font-medium ${statusColor(
+                                                        p.status
+                                                    )}`}
+                                                >
                           {p.status}
                         </span>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                {p.receipt_url ? (
-                                                    <a
-                                                        href={p.receipt_url}
-                                                        target="_blank"
-                                                        className="text-blue-600 hover:underline"
-                                                    >
-                                                        Download
-                                                    </a>
-                                                ) : (
-                                                    "—"
-                                                )}
-                                            </td>
-                                        </tr>
+                                            </div>
+                                        </div>
                                     ))}
-                                    </tbody>
-                                </table>
+                                </div>
                             )}
                         </div>
                     </>
@@ -248,5 +215,4 @@ export default function PayoutsPage() {
             </div>
         </div>
     );
-
 }

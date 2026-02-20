@@ -10,7 +10,7 @@ export default function MobileLandlordSidenav({
                                                   navGroups,
                                                   onLogoutClick,
                                                   landlordId,
-                                                  InviteModal,
+                                                  // InviteModal,
                                                   user,
                                               }: {
     isOpen: boolean;
@@ -21,7 +21,7 @@ export default function MobileLandlordSidenav({
     }[];
     onLogoutClick: () => void;
     landlordId?: number;
-    InviteModal: any;
+    // InviteModal: any;
     user: any;
 }) {
     return (
@@ -133,11 +133,11 @@ export default function MobileLandlordSidenav({
                     </nav>
 
                     {/* Invite */}
-                    {landlordId && (
-                        <div className="p-4 border-t">
-                            <InviteModal landlord_id={landlordId} />
-                        </div>
-                    )}
+                    {/*{landlordId && (*/}
+                    {/*    <div className="p-4 border-t">*/}
+                    {/*        <InviteModal landlord_id={landlordId} />*/}
+                    {/*    </div>*/}
+                    {/*)}*/}
 
                     {/* Logout */}
                     <div className="p-4 border-t">

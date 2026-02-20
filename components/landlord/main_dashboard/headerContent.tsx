@@ -29,29 +29,36 @@ export default function HeaderContent({
     });
 
     return (
-        <div className={`${CARD_CONTAINER} py-4 px-5`}>
-            <div className="flex items-center justify-between gap-4">
+        <div className={`${CARD_CONTAINER} py-3 px-4 sm:py-4 sm:px-5`}>
+            <div className="flex items-center justify-between gap-3">
+
                 {/* LEFT: Greeting */}
                 <div className="flex-1 min-w-0">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold leading-tight truncate">
+
+                    {/* Smaller but readable heading */}
+                    <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl
+                                   font-semibold leading-snug truncate">
                         <span className={GRADIENT_TEXT}>{greeting}</span>
                         <span className="text-gray-400">, </span>
                         <span className="text-gray-900">{displayName}</span>
                     </h1>
 
-                    <p>Here's whats happening with your properties today</p>
+                    {/* Subtitle smaller on mobile */}
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                        Here's what’s happening with your properties today
+                    </p>
 
-                    {/* Date (mobile + subtle) */}
-                    <p className="text-xs text-gray-500 mt-0.5 lg:hidden">
+                    {/* Date for mobile */}
+                    <p className="text-[11px] sm:text-xs text-gray-500 mt-1 lg:hidden">
                         {weekday}, {formattedDate}
                     </p>
                 </div>
 
-                {/* RIGHT: Time (desktop only, slimmer) */}
-                <div className="hidden lg:flex items-center gap-3">
+                {/* RIGHT: Time (desktop only) */}
+                <div className="hidden lg:flex items-center">
                     <div
                         className="bg-gradient-to-br from-blue-50 via-emerald-50 to-cyan-50
-                       px-4 py-2 rounded-lg border border-blue-100"
+                                   px-4 py-2 rounded-lg border border-blue-100"
                     >
                         <div className="flex flex-col items-end leading-tight">
                             <div className={`text-lg font-bold ${GRADIENT_TEXT}`}>
@@ -66,6 +73,7 @@ export default function HeaderContent({
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     );

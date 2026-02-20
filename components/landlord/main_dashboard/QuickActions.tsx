@@ -91,14 +91,14 @@ export default function QuickActions({
          MOBILE MENU ACTIONS
       ================================= */
     const mobileActions = [
+        // {
+        //     label: "Scan Unit",
+        //     icon: QrCode,
+        //     gradient: "from-slate-700 to-slate-900",
+        //     onClick: () => setScanOpen(true),
+        // },
         {
-            label: "Scan Unit",
-            icon: QrCode,
-            gradient: "from-slate-700 to-slate-900",
-            onClick: () => setScanOpen(true),
-        },
-        {
-            label: "Income",
+            label: "Payouts",
             href: "/pages/landlord/payouts",
             icon: Wallet,
             gradient: "from-cyan-500 to-blue-500",
@@ -135,7 +135,7 @@ export default function QuickActions({
         },
         {
             label: "Calendar",
-            href: "/pages/landlord/booking-appointment",
+            href: "/pages/landlord/calendar",
             icon: Calendar,
             gradient: "from-rose-500 to-pink-500",
         },

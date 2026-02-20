@@ -156,18 +156,30 @@ export default function PaymentsPage() {
                 className="bg-white border-b border-gray-200 pt-20 pb-6 px-6"
             >
                 {/* Title */}
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
-                        <CreditCard className="w-6 h-6 text-white" />
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+
+                    {/* Icon */}
+                    <div className="w-10 h-10 sm:w-12 sm:h-12
+                    bg-gradient-to-br from-blue-500 to-emerald-500
+                    rounded-lg sm:rounded-xl
+                    flex items-center justify-center
+                    shadow-md sm:shadow-lg
+                    flex-shrink-0">
+                        <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
+
+                    {/* Text Content */}
+                    <div className="min-w-0">
+                        <h1 className="text-lg sm:text-2xl lg:text-3xl
+                       font-bold text-gray-900 leading-tight">
                             Payment Transactions
                         </h1>
-                        <p className="text-gray-600 text-sm">
+
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
                             Track rent collections, fees, and payout status
                         </p>
                     </div>
+
                 </div>
 
                 {/* SUMMARY */}
@@ -193,26 +205,37 @@ export default function PaymentsPage() {
                 </div>
 
                 {/* ================= FILTERS ================= */}
-                <div className="flex flex-col lg:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+
                     {/* Search */}
-                    <div className="flex-1 relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <div className="w-full sm:flex-1 relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                         <input
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search tenant, property, reference"
-                            className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 text-sm"
+                            className="w-full pl-9 sm:pl-11 pr-4 py-2.5 sm:py-3
+                       border border-gray-200 rounded-lg sm:rounded-xl
+                       bg-gray-50 focus:bg-white
+                       focus:ring-2 focus:ring-blue-500/20
+                       text-xs sm:text-sm"
                         />
                     </div>
 
                     {/* Payment Type */}
-                    <div className="relative">
-                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <div className="w-full sm:w-auto relative">
+                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                         <select
                             value={paymentType}
                             onChange={(e) => setPaymentType(e.target.value)}
-                            className="appearance-none pl-10 pr-8 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm"
+                            className="w-full appearance-none
+                       pl-9 sm:pl-10 pr-8
+                       py-2.5 sm:py-3
+                       border border-gray-200
+                       rounded-lg sm:rounded-xl
+                       bg-gray-50
+                       text-xs sm:text-sm"
                         >
                             {PAYMENT_TYPE_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -223,11 +246,16 @@ export default function PaymentsPage() {
                     </div>
 
                     {/* Payment Status */}
-                    <div className="relative">
+                    <div className="w-full sm:w-auto relative">
                         <select
                             value={paymentStatus}
                             onChange={(e) => setPaymentStatus(e.target.value)}
-                            className="appearance-none px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm"
+                            className="w-full appearance-none
+                       px-4 py-2.5 sm:py-3
+                       border border-gray-200
+                       rounded-lg sm:rounded-xl
+                       bg-gray-50
+                       text-xs sm:text-sm"
                         >
                             {PAYMENT_STATUS_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -238,11 +266,16 @@ export default function PaymentsPage() {
                     </div>
 
                     {/* Payout Status */}
-                    <div className="relative">
+                    <div className="w-full sm:w-auto relative">
                         <select
                             value={payoutStatus}
                             onChange={(e) => setPayoutStatus(e.target.value)}
-                            className="appearance-none px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm"
+                            className="w-full appearance-none
+                       px-4 py-2.5 sm:py-3
+                       border border-gray-200
+                       rounded-lg sm:rounded-xl
+                       bg-gray-50
+                       text-xs sm:text-sm"
                         >
                             {PAYOUT_STATUS_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>
@@ -253,12 +286,18 @@ export default function PaymentsPage() {
                     </div>
 
                     {/* Date Filter */}
-                    <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <div className="w-full sm:w-auto relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                         <select
                             value={dateRange}
                             onChange={(e) => setDateRange(e.target.value)}
-                            className="appearance-none pl-10 pr-8 py-3 border border-gray-200 rounded-xl bg-gray-50 text-sm"
+                            className="w-full appearance-none
+                       pl-9 sm:pl-10 pr-8
+                       py-2.5 sm:py-3
+                       border border-gray-200
+                       rounded-lg sm:rounded-xl
+                       bg-gray-50
+                       text-xs sm:text-sm"
                         >
                             <option value="all">All Transactions</option>
                             <option value="7">Last 7 Days</option>
@@ -276,6 +315,7 @@ export default function PaymentsPage() {
                             )}
                         </select>
                     </div>
+
                 </div>
             </motion.div>
 

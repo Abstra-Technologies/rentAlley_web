@@ -318,16 +318,17 @@ export default function LandlordLayout({
         </div>
       </div>
 
-      {/* MOBILE SIDENAV */}
-      <MobileLandlordSidenav
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        navGroups={navGroups}
-        landlordId={user.landlord_id}
-        InviteModal={SendTenantInviteModal}
-        onLogoutClick={() => setShowLogoutConfirm(true)}
-        user={user}
-      />
+            {/* MOBILE SIDENAV (COMPONENT) */}
+            <MobileLandlordSidenav
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+                navGroups={navGroups}
+                landlordId={user.landlord_id}
+                // InviteModal={SendTenantInviteModal}
+                onLogoutClick={() => setShowLogoutConfirm(true)}
+                user={user}
+            />
+
 
       {/* LOGOUT CONFIRM */}
       {showLogoutConfirm && (
@@ -360,8 +361,8 @@ export default function LandlordLayout({
         </div>
       )}
 
-      {/* MAIN */}
-      <main className="flex-1 lg:pl-72 pt-14 lg:pt-0">{children}</main>
-    </div>
-  );
+            {/* MAIN */}
+            <main className="flex-1 lg:pl-72  lg:pt-0">{children}</main>
+        </div>
+    );
 }
