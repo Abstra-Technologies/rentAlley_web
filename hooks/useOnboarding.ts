@@ -13,7 +13,6 @@ interface OnboardingOptions {
 const injectCustomStyles = () => {
   const styleId = "upkyp-driver-styles";
 
-  // Remove existing styles first to ensure fresh styles
   const existingStyle = document.getElementById(styleId);
   if (existingStyle) {
     existingStyle.remove();
@@ -23,18 +22,17 @@ const injectCustomStyles = () => {
   styles.id = styleId;
   styles.textContent = `
     /* ========================================
-       DRIVER.JS OVERLAY - Dark background
+       NOTE: Do NOT override .driver-overlay here.
+       Driver.js uses an SVG cutout to spotlight the
+       active element. Overriding the overlay background
+       covers the cutout and makes everything dark.
+       Use overlayColor in the driver() config instead.
     ======================================== */
-    .driver-overlay {
-      background: rgba(0, 0, 0, 0.75) !important;
-    }
 
     /* ========================================
-       HIGHLIGHTED ELEMENT - Must be clearly visible
-       The key is making it stand out from the dark overlay
+       HIGHLIGHTED ELEMENT
     ======================================== */
     .driver-active-element {
-      background-color: #ffffff !important;
       border-radius: 12px !important;
       box-shadow: 
         0 0 0 4px #3b82f6,
@@ -174,7 +172,6 @@ export const useOnboarding = ({
   autoStart = false,
   onComplete,
 }: OnboardingOptions) => {
-  // Inject styles on mount
   useEffect(() => {
     injectCustomStyles();
   }, []);
@@ -194,7 +191,8 @@ export const useOnboarding = ({
       prevBtnText: "← Back",
       doneBtnText: "Done",
       allowClose: true,
-      // Key settings for clear highlighting
+
+      overlayColor: "rgba(0, 0, 0, 0.65)",
       stagePadding: 15,
       stageRadius: 12,
       animate: true,
@@ -209,7 +207,6 @@ export const useOnboarding = ({
     const hasSeenTour = localStorage.getItem(`onboarding_${tourId}`);
 
     if (!hasSeenTour && autoStart) {
-      // Small delay to ensure DOM is ready
       const timer = setTimeout(() => {
         startTour();
       }, 500);
