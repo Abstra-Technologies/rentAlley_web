@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
     /* -------------------- VERIFY TOKEN -------------------- */
     const token = req.headers.get("x-callback-token");
-    if (token !== process.env.XENDIT_TEXT_WEBHOOK_TOKEN) {
+    if (token !== process.env.XENDIT_WEBHOOK_TOKEN) {
         return NextResponse.json({ message: "Invalid token" }, { status: 401 });
     }
 
