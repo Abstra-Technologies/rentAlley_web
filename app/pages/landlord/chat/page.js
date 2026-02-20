@@ -15,10 +15,11 @@ export default function LandlordChatPage() {
   }, [clearPreselectedChat]);
 
   return (
+      <div className='pt-14'>
     <ChatComponent
       userId={userId}
       preselectedChat={preselectedChat || undefined}
       variant="landlord"
-    />
+    /></div>
   );
 }

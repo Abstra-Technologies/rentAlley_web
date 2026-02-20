@@ -152,48 +152,48 @@ export default function PropertyLeasesPage() {
           </div>
 
           {/* 🔘 Action Buttons — BELOW header */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-5">
-            {/* Go to Billing */}
-            <button
-              onClick={() =>
-                router.push(`/pages/landlord/properties/${id}/billing`)
-              }
-              className="
-        w-full sm:w-auto
-        px-6 py-4 sm:px-5 sm:py-3
-        bg-gradient-to-r from-blue-600 to-emerald-600
-        hover:from-blue-700 hover:to-emerald-700
-        text-white text-base sm:text-sm font-semibold
-        rounded-2xl
-        shadow-md
-        transition-all
-        active:scale-95
-      "
-            >
-              Go to Billing
-            </button>
+            <div className="grid grid-cols-2 gap-3 mb-5">
+                {/* Go to Billing */}
+                <button
+                    onClick={() =>
+                        router.push(`/pages/landlord/properties/${id}/billing`)
+                    }
+                    className="
+      w-full
+      px-3 py-3 sm:px-5 sm:py-3
+      bg-gradient-to-r from-blue-600 to-emerald-600
+      hover:from-blue-700 hover:to-emerald-700
+      text-white text-sm sm:text-sm font-semibold
+      rounded-xl sm:rounded-2xl
+      shadow-md
+      transition-all
+      active:scale-95
+    "
+                >
+                    Go to Billing
+                </button>
 
-            {/* View Payments */}
-            <button
-              onClick={() =>
-                router.push(`/pages/landlord/properties/${id}/payments`)
-              }
-              className="
-        w-full sm:w-auto
-        px-6 py-4 sm:px-5 sm:py-3
-        bg-white
-        border border-gray-300
-        hover:bg-gray-50
-        text-gray-800 text-base sm:text-sm font-semibold
-        rounded-2xl
-        shadow-sm
-        transition-all
-        active:scale-95
-      "
-            >
-              View Payments
-            </button>
-          </div>
+                {/* View Payments */}
+                <button
+                    onClick={() =>
+                        router.push(`/pages/landlord/properties/${id}/payments`)
+                    }
+                    className="
+      w-full
+      px-3 py-3 sm:px-5 sm:py-3
+      bg-white
+      border border-gray-300
+      hover:bg-gray-50
+      text-gray-800 text-sm sm:text-sm font-semibold
+      rounded-xl sm:rounded-2xl
+      shadow-sm
+      transition-all
+      active:scale-95
+    "
+                >
+                    View Payments
+                </button>
+            </div>
 
           {/* Scorecards */}
           <LeaseScorecards

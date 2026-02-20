@@ -76,7 +76,7 @@ export default function LeaseScorecards({
         delta > 0 ? "green" : delta < 0 ? "red" : undefined;
 
     return (
-        <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-6">
+        <div className="grid grid-cols-4 gap-2 text-center sm:gap-4 mb-6">
             <Card
                 title="Total"
                 value={total}
