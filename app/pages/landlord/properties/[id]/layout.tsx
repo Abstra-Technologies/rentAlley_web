@@ -105,12 +105,12 @@ export default function PropertyLayout({
           href: `/pages/landlord/properties/${id}/assets_management`,
           icon: Videotape,
         },
-        {
-          id: "documents",
-          label: "Documents",
-          href: `/pages/landlord/properties/${id}/documents`,
-          icon: FileText,
-        },
+        // {
+        //   id: "documents",
+        //   label: "Documents",
+        //   href: `/pages/landlord/properties/${id}/documents`,
+        //   icon: FileText,
+        // },
       ],
     },
     {
