@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import mysql from "mysql2/promise";
 import { sendUserNotification } from "@/lib/notifications/sendUserNotification";
+import { safeDecrypt } from "@/lib/safeDecrypt";
 
 /* -------------------------------------------------------------------------- */
 /* ENV                                                                        */
@@ -22,17 +23,6 @@ const {
 } = process.env;
 
 /* -------------------------------------------------------------------------- */
-/* DEBUG                                                                      */
-/* -------------------------------------------------------------------------- */
-
-function debug(stage: string, data?: any) {
-    console.log(`\n================ ${stage} ================`);
-    if (data !== undefined) {
-        console.log(JSON.stringify(data, null, 2));
-    }
-}
-
-/* -------------------------------------------------------------------------- */
 /* DB CONNECTION                                                              */
 /* -------------------------------------------------------------------------- */
 
@@ -46,18 +36,13 @@ async function getDbConnection() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* FETCH TRANSACTION USING payment_id AS transaction_id                      */
+/* FETCH TRANSACTION                                                          */
 /* -------------------------------------------------------------------------- */
 
 async function fetchTransactionDetails(
     transactionId: string,
     subAccountId: string
 ) {
-    debug("FETCHING TRANSACTION USING ID", {
-        transactionId,
-        subAccountId,
-    });
-
     const response = await fetch(
         `https://api.xendit.co/transactions?product_id=${transactionId}`,
         {
@@ -66,7 +51,7 @@ async function fetchTransactionDetails(
                 Authorization:
                     "Basic " +
                     Buffer.from(`${XENDIT_TRANSBAL_KEY}:`).toString("base64"),
-                "for-user-id": subAccountId, // 🔥 REQUIRED FOR XENPLATFORM
+                "for-user-id": subAccountId,
             },
         }
     );
@@ -77,8 +62,6 @@ async function fetchTransactionDetails(
     }
 
     const tx = await response.json();
-
-    debug("TRANSACTION RESPONSE", tx);
 
     return {
         gatewayFee: Number(tx.fee?.xendit_fee || 0),
@@ -95,8 +78,6 @@ export async function POST(req: Request) {
     let conn: mysql.Connection | null = null;
 
     try {
-        debug("WEBHOOK START");
-
         /* ---------------- VERIFY TOKEN ---------------- */
 
         const token = req.headers.get("x-callback-token");
@@ -108,7 +89,6 @@ export async function POST(req: Request) {
         /* ---------------- PARSE PAYLOAD ---------------- */
 
         const payload = await req.json();
-        debug("PAYLOAD RECEIVED", payload);
 
         if (payload.status !== "PAID") {
             return NextResponse.json({ message: "Ignored" });
@@ -117,11 +97,10 @@ export async function POST(req: Request) {
         const {
             external_id,
             paid_at,
-            payment_id,   // 🔥 THIS IS USED AS transaction_id
-            user_id,      // 🔥 SUBACCOUNT ID
+            payment_id,
+            user_id,
             paid_amount,
             amount,
-            payment_method,
             id: invoice_id,
         } = payload;
 
@@ -137,22 +116,12 @@ export async function POST(req: Request) {
         const paidAmount = Number(paid_amount || amount);
         const paidAt = new Date(paid_at);
 
-        debug("EXTRACTED VALUES", {
-            billing_id,
-            transaction_id: payment_id,
-            subaccount: user_id,
-        });
-
-        /* ------------------------------------------------------------------ */
-        /* 1️⃣ FETCH TRANSACTION USING payment_id                             */
-        /* ------------------------------------------------------------------ */
+        /* ---------------- FETCH TRANSACTION DETAILS ---------------- */
 
         const { gatewayFee, gatewayVAT, netAmount } =
             await fetchTransactionDetails(payment_id, user_id);
 
-        /* ------------------------------------------------------------------ */
-        /* 2️⃣ UPDATE DATABASE                                                */
-        /* ------------------------------------------------------------------ */
+        /* ---------------- DB TRANSACTION ---------------- */
 
         conn = await getDbConnection();
         await conn.beginTransaction();
@@ -162,13 +131,20 @@ export async function POST(req: Request) {
       SELECT 
         b.billing_id,
         b.lease_id,
-        u.user_id AS landlord_user_id
+        p.property_id,
+        p.property_name,
+        un.unit_name,
+        landlordUser.user_id AS landlord_user_id,
+        tenantUser.firstName AS tenant_first_name,
+        tenantUser.lastName AS tenant_last_name
       FROM Billing b
       JOIN LeaseAgreement la ON b.lease_id = la.agreement_id
       JOIN Unit un ON la.unit_id = un.unit_id
       JOIN Property p ON un.property_id = p.property_id
       JOIN Landlord l ON p.landlord_id = l.landlord_id
-      JOIN User u ON l.user_id = u.user_id
+      JOIN User landlordUser ON l.user_id = landlordUser.user_id
+      JOIN Tenant t ON la.tenant_id = t.tenant_id
+      JOIN User tenantUser ON t.user_id = tenantUser.user_id
       WHERE b.billing_id = ?
       LIMIT 1
       `,
@@ -182,60 +158,50 @@ export async function POST(req: Request) {
 
         const billing = rows[0];
 
-        /* ---- UPDATE BILLING ---- */
+        /* ---------------- DECRYPT TENANT NAME ---------------- */
+
+        const decryptedFirstName = safeDecrypt(billing.tenant_first_name);
+        const decryptedLastName = safeDecrypt(billing.tenant_last_name);
+
+        const tenantFullName = `${decryptedFirstName} ${decryptedLastName}`;
+
+        /* ---------------- UPDATE BILLING ---------------- */
 
         await conn.execute(
             `UPDATE Billing SET status='paid', paid_at=? WHERE billing_id=?`,
             [paidAt, billing_id]
         );
 
-        /* ---- INSERT PAYMENT ---- */
+        /* ---------------- INSERT PAYMENT ---------------- */
 
         await conn.execute(
             `
       INSERT INTO Payment (
-        bill_id,
         agreement_id,
         payment_type,
         amount_paid,
-        gross_amount,
-        net_amount,
-        gateway_fee,
-        gateway_vat,
-        platform_fee,
         payment_method_id,
         payment_status,
         receipt_reference,
-        gateway_transaction_ref,
-        raw_gateway_payload,
         payment_date,
         created_at,
         updated_at
       )
-      VALUES (?, ?, 'monthly_billing', ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?, NOW(), NOW())
+      VALUES (?, 'billing', ?, 1, 'confirmed', ?, ?, NOW(), NOW())
       `,
-            [
-                billing.billing_id,
-                billing.lease_id,
-                paidAmount,
-                paidAmount,
-                netAmount,
-                gatewayFee,
-                gatewayVAT,
-                0, // platform fee handled separately by split webhook
-                payment_method || "UNKNOWN",
-                invoice_id,
-                payment_id, // 🔥 STORE REAL TRANSACTION ID
-                JSON.stringify(payload),
-                paidAt,
-            ]
+            [billing.lease_id, paidAmount, invoice_id, paidAt]
         );
+
+        /* ---------------- SEND DETAILED NOTIFICATION ---------------- */
 
         await sendUserNotification({
             userId: billing.landlord_user_id,
-            title: "Payment Received",
-            body: `A tenant has paid ₱${paidAmount.toFixed(2)}.`,
-            url: "/pages/landlord/billing",
+            title: "💰 Rent Payment Received",
+            body: `${tenantFullName} from ${billing.property_name} - ${billing.unit_name} paid ₱${paidAmount.toLocaleString(
+                "en-PH",
+                { minimumFractionDigits: 2 }
+            )}.`,
+            url: `/pages/landlord/properties/${billing.property_id}/payments?id=${billing.property_id}`,
             conn,
         });
 
@@ -248,14 +214,11 @@ export async function POST(req: Request) {
     } catch (err: any) {
         if (conn) await conn.rollback();
 
-        debug("ERROR OCCURRED", err.message);
-
         return NextResponse.json(
             { message: "Webhook failed", error: err.message },
             { status: 500 }
         );
     } finally {
         if (conn) await conn.end();
-        debug("WEBHOOK END");
     }
 }
