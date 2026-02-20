@@ -247,58 +247,48 @@ export default function PaymentList({
                     <motion.div
                         key={payment.payment_id}
                         variants={fadeInUp}
-                        className="p-4 hover:bg-gray-50"
+                        className="py-3 px-4"
                     >
-                        <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-xl flex items-center justify-center">
-                                    <Receipt className="w-5 h-5 text-blue-600" />
+                        {/* Top Row */}
+                        <div className="flex items-center justify-between gap-3">
+
+                            {/* Left */}
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+                                    <Receipt className="w-4 h-4 text-blue-600" />
                                 </div>
-                                <div>
-                                    <p className="font-semibold text-gray-900">
+
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-gray-900 truncate">
                                         {payment.tenant_name || "—"}
                                     </p>
-                                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        {new Date(payment.payment_date).toLocaleDateString()}
+                                    <p className="text-[11px] text-gray-500 truncate">
+                                        {payment.property_name} • {payment.unit_name}
                                     </p>
                                 </div>
                             </div>
 
-                            <StatusBadge status={payment.payment_status} />
-                        </div>
-
-                        <p className="text-xs text-gray-500 flex items-center gap-1 mb-3">
-                            <MapPin className="w-3 h-3" />
-                            {payment.property_name} • {payment.unit_name}
-                        </p>
-
-                        {/* Financial Breakdown */}
-                        <div className="grid grid-cols-2 gap-4 border-t pt-3">
-                            <div>
-                                <p className="text-xs text-gray-500">Tenant Paid</p>
-                                <p className="text-base font-semibold text-gray-900">
-                                    {formatCurrency(payment.gross_amount || payment.amount_paid)}
-                                </p>
-                            </div>
-
-                            <div className="text-right">
-                                <p className="text-xs text-gray-500">Landlord Receives</p>
-                                <p className="text-lg font-bold text-emerald-600">
+                            {/* Amount */}
+                            <div className="text-right shrink-0">
+                                <p className="text-sm font-bold text-emerald-600">
                                     {formatCurrency(payment.net_amount || payment.amount_paid)}
                                 </p>
+                                <p className="text-[10px] text-gray-400">
+                                    {new Date(payment.payment_date).toLocaleDateString()}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="mt-4 flex justify-end">
+                        {/* Bottom Row */}
+                        <div className="mt-2 flex items-center justify-between">
+                            <StatusBadge status={payment.payment_status} />
+
                             <button
                                 onClick={() => openDetails(payment)}
-                                className="flex items-center gap-2 px-4 py-2
-              bg-gradient-to-r from-blue-600 to-emerald-600
-              text-white text-sm font-semibold rounded-xl"
+                                className="text-xs text-blue-600 font-semibold flex items-center gap-1"
                             >
-                                View
-                                <ArrowRight className="w-4 h-4" />
+                                Details
+                                <ArrowRight className="w-3 h-3" />
                             </button>
                         </div>
                     </motion.div>
