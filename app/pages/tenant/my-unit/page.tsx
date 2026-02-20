@@ -351,7 +351,7 @@ export default function MyUnit() {
                 </div>
             </header>
 
-            {error && <ErrorBoundary error={error} onRetry={refetch} />}
+            {error && <ErrorBoundary error={error} onRetry={handleRefresh} />}
 
             {!error && (
                 <>

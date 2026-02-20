@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import mysql from "mysql2/promise";
 import { sendUserNotification } from "@/lib/notifications/sendUserNotification";
-import { safeDecrypt } from "@/lib/safeDecrypt";
+import { safeDecrypt } from "@/utils/decrypt/safeDecrypt";
 
 /* -------------------------------------------------------------------------- */
 /* ENV                                                                        */
