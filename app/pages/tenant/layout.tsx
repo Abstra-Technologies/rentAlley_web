@@ -35,32 +35,45 @@ export default function TenantLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, fetchSession, signOut } = useAuthStore();
-
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-
   // Portal context state
   const [isInPortalMode, setIsInPortalMode] = useState(false);
   const [portalAgreementId, setPortalAgreementId] = useState(null);
   const [portalPropertyInfo, setPortalPropertyInfo] = useState(null);
 
-  // Auth check
-  useEffect(() => {
-    async function checkAuth() {
-      if (!user) {
-        await fetchSession();
-      }
-      setIsAuthChecking(false);
-    }
-    checkAuth();
-  }, [user, fetchSession]);
+  const [isAuthChecking, setIsAuthChecking] = useState(!user);
 
-  useEffect(() => {
-    if (!isAuthChecking && user && user.userType !== "tenant") {
-      router.replace("/pages/auth/login");
-    }
-  }, [user, isAuthChecking, router]);
+    useEffect(() => {
+        let mounted = true;
+
+        async function initAuth() {
+            if (user) {
+                if (mounted) setIsAuthChecking(false);
+                return;
+            }
+
+            try {
+                await fetchSession();
+            } finally {
+                if (mounted) setIsAuthChecking(false);
+            }
+        }
+
+        initAuth();
+
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (isAuthChecking) return;
+
+        if (!user || user.userType !== "tenant") {
+            router.replace("/pages/auth/login");
+        }
+    }, [isAuthChecking, user, router]);
 
   // Check portal context on route changes
   useEffect(() => {
@@ -90,7 +103,8 @@ export default function TenantLayout({ children }) {
         });
 
         setIsInPortalMode(true);
-        setPortalAgreementId(agreementId);
+        // @ts-ignore
+          setPortalAgreementId(agreementId);
         setPortalPropertyInfo(res.data);
       } catch {
         localStorage.removeItem("portalAgreementId");
@@ -154,7 +168,8 @@ export default function TenantLayout({ children }) {
     },
   ];
 
-  const isActive = (href) => {
+  // @ts-ignore
+    const isActive = (href) => {
     if (href.includes("/rentalPortal/")) {
       return pathname === href;
     }
