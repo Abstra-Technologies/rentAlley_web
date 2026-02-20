@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/* PAYMENT GATEWAY INITIALIZATION ON XENDIT (SPLIT OPTIONAL BUILD)          */
+/* PAYMENT GATEWAY INITIALIZATION ON XENDIT (SUBACCOUNT REQUIRED BUILD)     */
 /* -------------------------------------------------------------------------- */
 
 export const runtime = "nodejs";
@@ -9,6 +9,10 @@ import { NextRequest, NextResponse } from "next/server";
 import mysql from "mysql2/promise";
 import crypto from "crypto";
 import { createXenditCustomer } from "@/lib/payments/xenditCustomer";
+
+/* -------------------------------------------------------------------------- */
+/* Environment                                                                */
+/* -------------------------------------------------------------------------- */
 
 const {
     DB_HOST,
@@ -21,14 +25,14 @@ const {
 const XENDIT_API_URL = "https://api.xendit.co/v2/invoices";
 const CURRENCY = "PHP";
 
-/* ---------------- DEBUG LOGGER ---------------- */
+/* -------------------------------------------------------------------------- */
+/* Debug Logger                                                               */
+/* -------------------------------------------------------------------------- */
 
 function debug(label: string, data?: any) {
-    console.log(`\n========== XENDIT DEBUG :: ${label} ==========`);
-
+    console.log(`\n=========== XENDIT DEBUG :: ${label} ===========`);
     if (data) console.log(JSON.stringify(data, null, 2));
-
-    console.log("=============================================\n");
+    console.log("================================================\n");
 }
 
 function httpError(status: number, message: string, extra?: any) {
@@ -57,7 +61,7 @@ function formatBillingPeriod(date: string | Date) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* POST                                                                       */
+/* POST: CREATE INVOICE                                                       */
 /* -------------------------------------------------------------------------- */
 
 export async function POST(req: NextRequest) {
@@ -78,6 +82,8 @@ export async function POST(req: NextRequest) {
             lastName,
             emailAddress,
         } = body;
+
+        /* ---------------- VALIDATION ---------------- */
 
         if (!amount || !billing_id || !tenant_id) {
             return httpError(400, "Missing required fields.");
@@ -147,6 +153,8 @@ export async function POST(req: NextRequest) {
         let xenditCustomerId = tenantRows?.[0]?.xendit_customer_id ?? null;
 
         if (!xenditCustomerId) {
+            debug("CREATING XENDIT CUSTOMER");
+
             xenditCustomerId = await createXenditCustomer({
                 referenceId: `tenant-${tenant_id}`,
                 firstName,
@@ -168,6 +176,8 @@ export async function POST(req: NextRequest) {
             .update(`billing-${billing.billing_id}`)
             .digest("hex");
 
+        debug("IDEMPOTENCY KEY", idempotencyKey);
+
         /* ---------------- REDIRECTS ---------------- */
 
         const successRedirectUrl =
@@ -175,6 +185,11 @@ export async function POST(req: NextRequest) {
 
         const failureRedirectUrl =
             `${redirectUrl.failure}?billing_id=${billing.billing_id}`;
+
+        debug("REDIRECT URLS", {
+            successRedirectUrl,
+            failureRedirectUrl,
+        });
 
         /* ---------------- PAYLOAD ---------------- */
 
@@ -201,17 +216,17 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
                 "Basic " +
                 Buffer.from(`${XENDIT_SECRET_KEY}:`).toString("base64"),
             "Idempotency-Key": idempotencyKey,
+
+            // 🔥 ALWAYS SEND TO SUBACCOUNT
+            "for-user-id": billing.xendit_account_id,
         };
 
-        /* 🔥 CONDITIONAL SPLIT RULE LOGIC */
-
+        // 🔥 APPLY SPLIT RULE ONLY IF EXISTS
         if (billing.split_rule_id) {
             debug("SPLIT RULE DETECTED", billing.split_rule_id);
-
-            headers["for-user-id"] = billing.xendit_account_id;
             headers["with-split-rule"] = billing.split_rule_id;
         } else {
-            debug("NO SPLIT RULE — PLATFORM FEE DISABLED");
+            debug("NO SPLIT RULE — 100% TO LANDLORD");
         }
 
         /* ---------------- CALL XENDIT ---------------- */
