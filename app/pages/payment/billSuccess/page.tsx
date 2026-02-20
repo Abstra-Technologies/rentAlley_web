@@ -5,9 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import html2canvas from "html2canvas";
 
-/* -------------------------------------------------------------------------- */
-/* Page Wrapper                                                                */
-/* -------------------------------------------------------------------------- */
 export default function SecSucceedPage() {
     return (
         <Suspense fallback={<div className="p-6 text-center">Loading...</div>}>
@@ -16,224 +13,145 @@ export default function SecSucceedPage() {
     );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Main Component                                                              */
-/* -------------------------------------------------------------------------- */
 function SecSuccess() {
     const router = useRouter();
     const searchParams = useSearchParams();
-
     const billing_id = searchParams.get("billing_id");
-    const agreement_id = searchParams.get("agreement_id");
-    const amount = searchParams.get("amount");
-    const requestReferenceNumber =
-        searchParams.get("requestReferenceNumber") ??
-        (billing_id ? `billing-${billing_id}` : "");
 
     const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState(
-        "Confirming your payment. Please wait..."
-    );
-    const [status, setStatus] = useState<
-        "success" | "pending" | "error" | null
-    >(null);
+    const [paymentData, setPaymentData] = useState<any>(null);
+    const [status, setStatus] = useState<string | null>(null);
 
     const receiptRef = useRef<HTMLDivElement>(null);
 
-    /* ------------------------------------------------------------------------ */
-    /* Fetch Payment Status (Webhook-first)                                     */
-    /* ------------------------------------------------------------------------ */
     useEffect(() => {
-        async function fetchStatus() {
-            if (!billing_id) {
-                setMessage("Invalid payment reference.");
-                setStatus("error");
-                setLoading(false);
-                return;
-            }
+        async function fetchPayment() {
+            if (!billing_id) return;
 
             try {
                 const res = await axios.get(
                     `/api/tenant/payment/xendit/status?billing_id=${billing_id}`
                 );
 
-                if (res.data?.status === "paid") {
-                    setStatus("success");
-                    setMessage("Payment confirmed successfully.");
-                } else {
-                    setStatus("pending");
-                    setMessage("Payment is still being processed.");
-                }
+                setPaymentData(res.data.payment);
+                setStatus(res.data.status);
             } catch (err) {
-                console.error("Payment verification failed:", err);
-                setStatus("error");
-                setMessage("Unable to verify payment at this time.");
+                console.error("Payment fetch error:", err);
             } finally {
                 setLoading(false);
             }
         }
 
-        fetchStatus();
+        fetchPayment();
     }, [billing_id]);
 
-    /* ------------------------------------------------------------------------ */
-    /* Download Receipt                                                         */
-    /* ------------------------------------------------------------------------ */
     const handleDownloadImage = async () => {
         if (!receiptRef.current) return;
 
         const canvas = await html2canvas(receiptRef.current, {
             scale: 3,
             backgroundColor: "#ffffff",
-            useCORS: true,
         });
 
-        const image = canvas.toDataURL("image/png");
         const link = document.createElement("a");
-        link.href = image;
-        link.download = `UpKyp_Receipt_${requestReferenceNumber}.png`;
+        link.download = `Upkyp_Receipt_${paymentData?.receipt_reference || paymentData?.payment_id}.png`;
+        link.href = canvas.toDataURL("image/png");
         link.click();
     };
 
-    /* ------------------------------------------------------------------------ */
-    /* UI                                                                        */
-    /* ------------------------------------------------------------------------ */
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                Processing payment...
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-            <div className="max-w-md w-full bg-white shadow-xl rounded-2xl p-8 text-center border border-gray-100">
-                {/* Status Icon */}
-                <div className="mx-auto mb-6 w-20 h-20 flex items-center justify-center rounded-full shadow-inner">
-                    {loading && (
-                        <div className="rounded-full bg-yellow-50 text-yellow-500 p-4">
-                            <svg
-                                className="animate-spin w-10 h-10"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                            >
-                                <circle
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                    className="opacity-25"
-                                />
-                                <path
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v8z"
-                                    className="opacity-75"
-                                />
-                            </svg>
-                        </div>
-                    )}
+        <div className="min-h-screen bg-gray-100 p-6 flex justify-center items-center">
+            <div className="w-full max-w-lg bg-white shadow-2xl rounded-2xl p-8">
 
-                    {!loading && status === "success" && (
-                        <div className="rounded-full bg-green-50 text-green-600 p-4">
-                            <svg
-                                className="w-10 h-10"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M5 13l4 4L19 7"
-                                />
-                            </svg>
-                        </div>
-                    )}
-
-                    {!loading && status === "error" && (
-                        <div className="rounded-full bg-red-50 text-red-600 p-4">
-                            <svg
-                                className="w-10 h-10"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2}
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                        </div>
-                    )}
-                </div>
-
-                {/* Title */}
-                <h2
-                    className={`text-2xl font-extrabold mb-2 ${
-                        status === "success"
-                            ? "text-green-600"
-                            : status === "error"
-                                ? "text-red-600"
-                                : "text-yellow-600"
-                    }`}
-                >
-                    {loading
-                        ? "Processing Payment"
-                        : status === "success"
-                            ? "Payment Successful"
-                            : status === "error"
-                                ? "Payment Error"
-                                : "Payment Pending"}
-                </h2>
-
-                {/* Message */}
-                <p className="text-gray-600 text-sm mb-6">{message}</p>
-
-                {/* Receipt */}
-                {status === "success" && (
+                {status === "confirmed" && paymentData && (
                     <div
                         ref={receiptRef}
-                        className="mt-4 text-left bg-gray-50 border border-gray-200 rounded-xl p-5 shadow-sm"
+                        className="bg-white border border-gray-200 rounded-xl p-8 space-y-6"
                     >
-                        <h2 className="text-center font-semibold">UpKyp Rent Systems</h2>
-                        <h3 className="text-lg text-center font-bold text-gray-800 mb-3">
-                            Payment Receipt
-                        </h3>
+                        {/* Header */}
+                        <div className="text-center border-b pb-6">
+                            <h1 className="text-2xl font-bold tracking-wide">
+                               Upkyp
+                            </h1>
+                            <p className="text-gray-500 text-sm mt-1">
+                                Official Payment Receipt
+                            </p>
+                        </div>
 
-                        <div className="space-y-2 text-sm text-gray-700">
-                            <p>
-                                <strong>Reference No:</strong>{" "}
-                                <span>{requestReferenceNumber}</span>
-                            </p>
-                            <p>
-                                <strong>Billing ID:</strong> <span>{billing_id}</span>
+                        {/* Receipt Details */}
+                        <div className="grid grid-cols-2 gap-y-3 text-sm">
+                            <span className="text-gray-500">Receipt No.</span>
+                            <span className="text-right font-medium">
+                {paymentData.receipt_reference ||
+                    `RCPT-${paymentData.payment_id}`}
+              </span>
 
+                            <span className="text-gray-500">Billing ID</span>
+                            <span className="text-right font-medium">
+                {paymentData.bill_id}
+              </span>
+
+                            <span className="text-gray-500">Gateway Payment Reference</span>
+                            <span className="text-right font-medium">
+                {paymentData.gateway_transaction_ref}
+              </span>
+
+                            <span className="text-gray-500">Property</span>
+                            <span className="text-right font-medium">
+                {paymentData.property_name}
+              </span>
+
+                            <span className="text-gray-500">Unit</span>
+                            <span className="text-right font-medium">
+                {paymentData.unit_name}
+              </span>
+
+                            <span className="text-gray-500">Billing Period</span>
+                            <span className="text-right font-medium">
+                {new Date(paymentData.billing_period).toLocaleDateString(
+                    "en-PH",
+                    { month: "long", year: "numeric" }
+                )}
+              </span>
+
+                            <span className="text-gray-500">Payment Date</span>
+                            <span className="text-right font-medium">
+                {new Date(paymentData.payment_date).toLocaleString()}
+              </span>
+                        </div>
+
+                        {/* Amount */}
+                        <div className="border-t pt-6 text-center">
+                            <p className="text-gray-500 text-sm">Total Amount Paid</p>
+                            <p className="text-3xl font-bold text-green-600 mt-1">
+                                ₱
+                                {Number(paymentData.amount_paid).toLocaleString("en-PH", {
+                                    minimumFractionDigits: 2,
+                                })}
                             </p>
-                            <p>
-                                <strong>Date:</strong>{" "}
-                                <span>{new Date().toLocaleString()}</span>
-                            </p>
-                            <p>
-                                <strong>Amount Paid:</strong>{" "}
-                                <span className="text-green-600 font-bold">
-                  ₱
-                                    {Number(amount ?? 0).toLocaleString("en-PH", {
-                                        minimumFractionDigits: 2,
-                                    })}
-                </span>
-                            </p>
-                            <p>
-                                <strong>Status:</strong>{" "}
-                                <span className="text-green-600 font-semibold">Confirmed</span>
-                            </p>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="text-center text-xs text-gray-400 pt-6 border-t">
+                            This receipt confirms that your payment has been successfully
+                            received. Thank you for your prompt payment.
                         </div>
                     </div>
                 )}
 
                 {/* Actions */}
-                <div className="my-6 border-t border-gray-200" />
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <div className="mt-8 flex flex-col gap-3">
                     <button
                         onClick={handleDownloadImage}
-                        disabled={status !== "success"}
-                        className="px-6 py-2.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                        className="bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition"
                     >
                         Download Receipt
                     </button>
@@ -241,14 +159,13 @@ function SecSuccess() {
                     <button
                         onClick={() =>
                             router.replace(
-                                `/pages/tenant/rentalPortal/${agreement_id}/billing?agreement_id=${agreement_id}`
+                                `/pages/tenant/rentalPortal/${paymentData?.agreement_id}/billing?agreement_id=${paymentData?.agreement_id}`
                             )
                         }
-                        className="px-6 py-2.5 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow hover:from-blue-700 hover:to-emerald-700"
+                        className="border py-2.5 rounded-lg hover:bg-gray-100 transition"
                     >
-                        Go Back
+                        Back to Billing
                     </button>
-
                 </div>
             </div>
         </div>
