@@ -7,6 +7,8 @@ export async function verifyAdmin(request: NextRequest) {
         const cookieHeader = request.headers.get("cookie");
         const cookies = cookieHeader ? parse(cookieHeader) : null;
 
+
+
         if (!cookies?.token) {
             return { error: "Unauthorized", status: 401 };
         }

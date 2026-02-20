@@ -1,22 +1,14 @@
 /* -------------------------------------------------------------------------- */
-/* PAYMENT GATEWAY INITIALIZATION ON XENDIT (DEBUG BUILD)                   */
+/* PAYMENT GATEWAY INITIALIZATION ON XENDIT (SPLIT OPTIONAL BUILD)          */
 /* -------------------------------------------------------------------------- */
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/* -------------------------------------------------------------------------- */
-/* Imports                                                                    */
-/* -------------------------------------------------------------------------- */
-
 import { NextRequest, NextResponse } from "next/server";
 import mysql from "mysql2/promise";
 import crypto from "crypto";
 import { createXenditCustomer } from "@/lib/payments/xenditCustomer";
-
-/* -------------------------------------------------------------------------- */
-/* Environment                                                                */
-/* -------------------------------------------------------------------------- */
 
 const {
     DB_HOST,
@@ -29,21 +21,15 @@ const {
 const XENDIT_API_URL = "https://api.xendit.co/v2/invoices";
 const CURRENCY = "PHP";
 
-/* -------------------------------------------------------------------------- */
-/* Debug Logger                                                               */
-/* -------------------------------------------------------------------------- */
+/* ---------------- DEBUG LOGGER ---------------- */
 
 function debug(label: string, data?: any) {
-    console.log(
-        `\n================ XENDIT DEBUG :: ${label} ================`
-    );
-    if (data) console.log(JSON.stringify(data, null, 2));
-    console.log("=========================================================\n");
-}
+    console.log(`\n========== XENDIT DEBUG :: ${label} ==========`);
 
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
-/* -------------------------------------------------------------------------- */
+    if (data) console.log(JSON.stringify(data, null, 2));
+
+    console.log("=============================================\n");
+}
 
 function httpError(status: number, message: string, extra?: any) {
     debug("HTTP ERROR", { status, message, extra });
@@ -54,16 +40,7 @@ function httpError(status: number, message: string, extra?: any) {
     );
 }
 
-function formatBillingPeriod(date: string | Date) {
-    return new Date(date).toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-    });
-}
-
 async function getDbConnection() {
-    debug("DB CONNECTION INIT");
-
     return mysql.createConnection({
         host: DB_HOST,
         user: DB_USER,
@@ -72,8 +49,15 @@ async function getDbConnection() {
     });
 }
 
+function formatBillingPeriod(date: string | Date) {
+    return new Date(date).toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+    });
+}
+
 /* -------------------------------------------------------------------------- */
-/* POST: CREATE INVOICE                                                       */
+/* POST                                                                       */
 /* -------------------------------------------------------------------------- */
 
 export async function POST(req: NextRequest) {
@@ -95,8 +79,6 @@ export async function POST(req: NextRequest) {
             emailAddress,
         } = body;
 
-        /* ---------------- VALIDATION ---------------- */
-
         if (!amount || !billing_id || !tenant_id) {
             return httpError(400, "Missing required fields.");
         }
@@ -112,8 +94,6 @@ export async function POST(req: NextRequest) {
         /* ---------------- DATABASE ---------------- */
 
         conn = await getDbConnection();
-
-        debug("QUERYING BILLING CONTEXT");
 
         const [rows]: any = await conn.execute(
             `
@@ -157,17 +137,7 @@ export async function POST(req: NextRequest) {
             return httpError(400, "Landlord subaccount not configured.");
         }
 
-        if (!billing.is_active) {
-            return httpError(400, "Landlord has no active subscription.");
-        }
-
-        if (!billing.split_rule_id) {
-            return httpError(400, "Split rule not configured for plan.");
-        }
-
         /* ---------------- CUSTOMER ---------------- */
-
-        debug("FETCHING TENANT CUSTOMER");
 
         const [tenantRows]: any = await conn.execute(
             `SELECT xendit_customer_id FROM Tenant WHERE tenant_id = ? LIMIT 1`,
@@ -176,11 +146,7 @@ export async function POST(req: NextRequest) {
 
         let xenditCustomerId = tenantRows?.[0]?.xendit_customer_id ?? null;
 
-        debug("EXISTING CUSTOMER ID", xenditCustomerId);
-
         if (!xenditCustomerId) {
-            debug("CREATING XENDIT CUSTOMER");
-
             xenditCustomerId = await createXenditCustomer({
                 referenceId: `tenant-${tenant_id}`,
                 firstName,
@@ -193,8 +159,6 @@ export async function POST(req: NextRequest) {
                 `UPDATE Tenant SET xendit_customer_id = ? WHERE tenant_id = ?`,
                 [xenditCustomerId, tenant_id]
             );
-
-            debug("NEW CUSTOMER CREATED", xenditCustomerId);
         }
 
         /* ---------------- IDEMPOTENCY ---------------- */
@@ -204,9 +168,7 @@ export async function POST(req: NextRequest) {
             .update(`billing-${billing.billing_id}`)
             .digest("hex");
 
-        debug("IDEMPOTENCY KEY", idempotencyKey);
-
-        /* ---------------- REDIRECT URLS ---------------- */
+        /* ---------------- REDIRECTS ---------------- */
 
         const successRedirectUrl =
             `${redirectUrl.success}?billing_id=${billing.billing_id}`;
@@ -214,12 +176,7 @@ export async function POST(req: NextRequest) {
         const failureRedirectUrl =
             `${redirectUrl.failure}?billing_id=${billing.billing_id}`;
 
-        debug("REDIRECT URLS", {
-            successRedirectUrl,
-            failureRedirectUrl,
-        });
-
-        /* ---------------- INVOICE PAYLOAD ---------------- */
+        /* ---------------- PAYLOAD ---------------- */
 
         const invoicePayload = {
             external_id: `billing-${billing.billing_id}`,
@@ -230,41 +187,38 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
             customer: {
                 customer_id: xenditCustomerId,
             },
-            metadata: {
-                billing_id: billing.billing_id,
-                agreement_id: billing.agreement_id,
-                tenant_id,
-                landlord_id: billing.landlord_id,
-                plan_code: billing.plan_code,
-            },
-            items: [
-                {
-                    name: `Monthly Billing – ${billing.unit_name}`,
-                    quantity: 1,
-                    price: Number(amount),
-                },
-            ],
             success_redirect_url: successRedirectUrl,
             failure_redirect_url: failureRedirectUrl,
         };
 
         debug("INVOICE PAYLOAD", invoicePayload);
 
-        /* ---------------- CALL XENDIT ---------------- */
+        /* ---------------- HEADERS ---------------- */
 
-        debug("CALLING XENDIT API");
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            Authorization:
+                "Basic " +
+                Buffer.from(`${XENDIT_SECRET_KEY}:`).toString("base64"),
+            "Idempotency-Key": idempotencyKey,
+        };
+
+        /* 🔥 CONDITIONAL SPLIT RULE LOGIC */
+
+        if (billing.split_rule_id) {
+            debug("SPLIT RULE DETECTED", billing.split_rule_id);
+
+            headers["for-user-id"] = billing.xendit_account_id;
+            headers["with-split-rule"] = billing.split_rule_id;
+        } else {
+            debug("NO SPLIT RULE — PLATFORM FEE DISABLED");
+        }
+
+        /* ---------------- CALL XENDIT ---------------- */
 
         const response = await fetch(XENDIT_API_URL, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization:
-                    "Basic " +
-                    Buffer.from(`${XENDIT_SECRET_KEY}:`).toString("base64"),
-                "for-user-id": billing.xendit_account_id,
-                "with-split-rule": billing.split_rule_id,
-                "Idempotency-Key": idempotencyKey,
-            },
+            headers,
             body: JSON.stringify(invoicePayload),
         });
 
@@ -282,13 +236,11 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
 
         if (!response.ok) {
             return httpError(
-                response.status === 429 ? 503 : response.status,
+                response.status,
                 "Xendit invoice creation failed.",
                 responseData
             );
         }
-
-        /* ---------------- SUCCESS ---------------- */
 
         debug("INVOICE CREATED SUCCESSFULLY");
 

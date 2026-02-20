@@ -5,14 +5,14 @@ import { verifyAdmin } from "@/lib/auth/adminAuth";
 export async function GET(request: NextRequest) {
     try {
         // 🔐 Verify Admin
-        const auth = await verifyAdmin(request);
-
-        if ("error" in auth) {
-            return NextResponse.json(
-                { success: false, message: auth.error },
-                { status: auth.status }
-            );
-        }
+        // const auth = await verifyAdmin(request);
+        //
+        // if ("error" in auth) {
+        //     return NextResponse.json(
+        //         { success: false, message: auth.error },
+        //         { status: auth.status }
+        //     );
+        // }
 
         // Optional: role restriction
         // if (auth.role !== "super_admin") {
