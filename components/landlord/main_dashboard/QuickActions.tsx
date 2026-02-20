@@ -91,12 +91,12 @@ export default function QuickActions({
          MOBILE MENU ACTIONS
       ================================= */
     const mobileActions = [
-        {
-            label: "Scan Unit",
-            icon: QrCode,
-            gradient: "from-slate-700 to-slate-900",
-            onClick: () => setScanOpen(true),
-        },
+        // {
+        //     label: "Scan Unit",
+        //     icon: QrCode,
+        //     gradient: "from-slate-700 to-slate-900",
+        //     onClick: () => setScanOpen(true),
+        // },
         {
             label: "Income",
             href: "/pages/landlord/payouts",

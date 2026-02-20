@@ -188,13 +188,13 @@ export default function ViewPropertyDetailedPage() {
                             </button>
 
                             {/* 🆕 Generate QR Codes */}
-                            <button
-                                onClick={handleGenerateQRCodes}
-                                className="px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-gray-800 to-black text-white hover:shadow-md active:scale-95 flex items-center gap-2"
-                            >
-                                <QrCode className="w-4 h-4" />
-                                Generate QR Codes
-                            </button>
+                            {/*<button*/}
+                            {/*    onClick={handleGenerateQRCodes}*/}
+                            {/*    className="px-3 py-2 rounded-lg font-semibold bg-gradient-to-r from-gray-800 to-black text-white hover:shadow-md active:scale-95 flex items-center gap-2"*/}
+                            {/*>*/}
+                            {/*    <QrCode className="w-4 h-4" />*/}
+                            {/*    Generate QR Codes*/}
+                            {/*</button>*/}
                         </div>
                     </div>
 
