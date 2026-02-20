@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/* PAYMENT GATEWAY INITIALIZATION - XENDIT PLATFORM V3                       */
+/* PAYMENT GATEWAY INITIALIZATION - XENDIT V2 INVOICE (SUBACCOUNT SAFE)     */
 /* -------------------------------------------------------------------------- */
 
 export const runtime = "nodejs";
@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import mysql from "mysql2/promise";
+import crypto from "crypto";
 
 /* -------------------------------------------------------------------------- */
 /* ENV                                                                        */
@@ -19,6 +20,8 @@ const {
     DB_NAME,
     XENDIT_TEXT_SECRET_KEY,
 } = process.env;
+
+const XENDIT_API_URL = "https://api.xendit.co/v2/invoices";
 
 /* -------------------------------------------------------------------------- */
 /* HELPERS                                                                    */
@@ -53,10 +56,12 @@ export async function POST(req: NextRequest) {
     let conn: mysql.Connection | null = null;
 
     try {
-        log("START PAYMENT INIT");
+        log("START INVOICE INITIALIZATION");
 
         const body = await req.json();
         const { billing_id, redirectUrl } = body;
+
+        /* ---------------- VALIDATION ---------------- */
 
         if (!billing_id) {
             return httpError(400, "Missing billing_id");
@@ -67,7 +72,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (!XENDIT_TEXT_SECRET_KEY) {
-            return httpError(500, "Missing Xendit Secret Key");
+            return httpError(500, "Xendit secret key not configured");
         }
 
         conn = await getDbConnection();
@@ -108,74 +113,105 @@ export async function POST(req: NextRequest) {
         }
 
         const data = rows[0];
-        log("DATABASE RESULT", data);
+        log("BILLING DATA", data);
+
+        /* ---------------- BUSINESS RULES ---------------- */
 
         if (!data.xendit_account_id) {
-            return httpError(400, "Landlord sub-account not configured");
+            return httpError(400, "Landlord subaccount not configured");
         }
 
         if (!data.is_active) {
             return httpError(400, "No active subscription");
         }
 
-        if (!data.split_rule_id) {
-            return httpError(400, "Split rule missing in plan");
+        const grossAmount = parseFloat(data.total_amount_due);
+
+        if (!grossAmount || isNaN(grossAmount) || grossAmount <= 0) {
+            return httpError(400, "Invalid billing amount");
         }
 
-        const grossAmount = Number(data.total_amount_due);
-
         /* ------------------------------------------------------------------ */
-        /* BUILD V3 PAYMENT REQUEST BODY (NO SPLIT RULE HERE)                */
+        /* BUILD REDIRECT URLS                                                */
         /* ------------------------------------------------------------------ */
 
-        const paymentPayload = {
-            reference_id: `billing-${data.billing_id}-${Date.now()}`,
-            type: "PAY",
-            country: "PH",
+        const successRedirectUrl =
+            `${redirectUrl.success}?billing_id=${data.billing_id}` +
+            `&agreement_id=${data.agreement_id}` +
+            `&amount=${grossAmount}`;
+
+        const failureRedirectUrl =
+            `${redirectUrl.failure}?billing_id=${data.billing_id}` +
+            `&agreement_id=${data.agreement_id}` +
+            `&amount=${grossAmount}`;
+
+        log("REDIRECT URLS", {
+            successRedirectUrl,
+            failureRedirectUrl,
+        });
+
+        /* ------------------------------------------------------------------ */
+        /* IDEMPOTENCY                                                        */
+        /* ------------------------------------------------------------------ */
+
+        const idempotencyKey = crypto
+            .createHash("sha256")
+            .update(`billing-${data.billing_id}`)
+            .digest("hex");
+
+        /* ------------------------------------------------------------------ */
+        /* BUILD INVOICE PAYLOAD                                             */
+        /* ------------------------------------------------------------------ */
+
+        const invoicePayload = {
+            external_id: `billing-${data.billing_id}-${Date.now()}`,
+            amount: grossAmount,
             currency: "PHP",
-            request_amount: grossAmount,
-            capture_method: "AUTOMATIC",
-            channel_code: "GCASH",
-
-            channel_properties: {
-                success_return_url:
-                    `${redirectUrl.success}?billing_id=${data.billing_id}`,
-                failure_return_url:
-                    `${redirectUrl.failure}?billing_id=${data.billing_id}`,
-            },
-
+            description: `Billing Payment`,
+            success_redirect_url: successRedirectUrl,
+            failure_redirect_url: failureRedirectUrl,
             metadata: {
                 billing_id: data.billing_id,
-                landlord_id: data.landlord_id,
                 agreement_id: data.agreement_id,
+                landlord_id: data.landlord_id,
                 plan_code: data.plan_code,
             },
         };
 
-        log("XENDIT REQUEST BODY", paymentPayload);
+        log("INVOICE PAYLOAD", invoicePayload);
 
         /* ------------------------------------------------------------------ */
-        /* CALL XENDIT (V3 CORRECT HEADERS)                                  */
+        /* HEADERS                                                            */
         /* ------------------------------------------------------------------ */
 
-        const response = await fetch(
-            "https://api.xendit.co/v3/payment_requests",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "api-version": "2024-11-11",
-                    Authorization:
-                        "Basic " +
-                        Buffer.from(`${XENDIT_TEXT_SECRET_KEY}:`).toString("base64"),
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            Authorization:
+                "Basic " +
+                Buffer.from(`${XENDIT_TEXT_SECRET_KEY}:`).toString("base64"),
+            "Idempotency-Key": idempotencyKey,
 
-                    // 🔥 CORRECT V3 HEADERS
-                    "for-user-id": data.xendit_account_id,
-                    "with-split-rule": data.split_rule_id,
-                },
-                body: JSON.stringify(paymentPayload),
-            }
-        );
+            // 🔥 ALWAYS ROUTE TO SUBACCOUNT
+            "for-user-id": data.xendit_account_id,
+        };
+
+        // 🔥 APPLY SPLIT RULE ONLY IF EXISTS
+        if (data.split_rule_id) {
+            headers["with-split-rule"] = data.split_rule_id;
+            log("SPLIT RULE APPLIED", data.split_rule_id);
+        } else {
+            log("NO SPLIT RULE — 100% TO LANDLORD SUBACCOUNT");
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* CALL XENDIT                                                        */
+        /* ------------------------------------------------------------------ */
+
+        const response = await fetch(XENDIT_API_URL, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(invoicePayload),
+        });
 
         const result = await response.json();
         log("XENDIT RESPONSE", result);
@@ -185,61 +221,21 @@ export async function POST(req: NextRequest) {
         }
 
         /* ------------------------------------------------------------------ */
-        /* STORE PAYMENT INIT RECORD                                          */
+        /* RETURN CHECKOUT                                                    */
         /* ------------------------------------------------------------------ */
-
-        await conn.execute(
-            `
-      INSERT INTO Payment (
-        bill_id,
-        agreement_id,
-        payment_type,
-        amount_paid,
-        payment_method_id,
-        payment_status,
-        gross_amount,
-        gateway_transaction_ref,
-        raw_gateway_payload
-      )
-      VALUES (?, ?, 'monthly_billing', ?, 'xendit', 'pending', ?, ?, ?)
-      `,
-            [
-                data.billing_id,
-                data.agreement_id,
-                grossAmount,
-                grossAmount,
-                result.payment_request_id, // ✅ correct field
-                JSON.stringify(result),
-            ]
-        );
-
-        log("PAYMENT INIT STORED");
-
-        /* ------------------------------------------------------------------ */
-        /* EXTRACT CHECKOUT URL                                               */
-        /* ------------------------------------------------------------------ */
-
-        let checkoutUrl = null;
-
-        if (result.actions) {
-            const redirect = result.actions.find(
-                (a: any) =>
-                    a.type === "REDIRECT_CUSTOMER" &&
-                    a.descriptor === "WEB_URL"
-            );
-            checkoutUrl = redirect?.value || null;
-        }
 
         return NextResponse.json({
             success: true,
-            paymentRequestId: result.payment_request_id,
-            checkoutUrl,
+            invoiceId: result.id,
+            checkoutUrl: result.invoice_url,
+            billing_id: data.billing_id,
+            agreement_id: data.agreement_id,
         });
 
     } catch (error: any) {
         log("FATAL ERROR", error);
         return httpError(500, "Payment initialization failed", error.message);
     } finally {
-        if (conn) await conn.end();
+        if (conn) await conn.end().catch(() => {});
     }
 }
