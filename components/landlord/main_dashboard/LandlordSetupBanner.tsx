@@ -151,11 +151,11 @@ export default function LandlordSetupBanner({ landlordId }: Props) {
 
                     {/* ORIGINAL STEP 2 */}
                     <StepCard
-                        title="Payout Setup"
+                        title="Connect Bank"
                         description={
                             payoutDone
                                 ? "Completed"
-                                : "Set up payout method"
+                                : "Set up payout method to received directly into your account"
                         }
                         status={
                             payoutDone ? "completed" : "pending"
