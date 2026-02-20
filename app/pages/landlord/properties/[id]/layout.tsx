@@ -327,7 +327,7 @@ export default function PropertyLayout({
       />
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 lg:pl-72 pt-14 lg:pt-0">
+      <main className="flex-1 lg:pl-72 pt-8 lg:pt-0">
         <div className="p-4 lg:p-6">{children}</div>
       </main>
     </div>
