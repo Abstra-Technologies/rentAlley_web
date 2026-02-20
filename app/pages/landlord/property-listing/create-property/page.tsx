@@ -191,7 +191,7 @@ export default function AddNewProperty() {
       Swal.fire("Success!", "Property submitted successfully!", "success").then(
         () => {
           reset();
-          router.replace("/pages/landlord/property-listing/review-listing");
+          router.replace("/pages/landlord/property-listing");
         },
       );
     } catch (error: any) {

@@ -7,21 +7,28 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { propertyBillingSteps } from "@/lib/onboarding/propertyBilling";
+import useAuthStore from "@/zustand/authStore"; // ✅ important
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export function usePropertyBilling(property_id: string) {
     const router = useRouter();
+    const { user } = useAuthStore();
+
+    const landlord_id = user?.landlord_id;
 
     /* ================= STATE ================= */
+
     const [openMeterList, setOpenMeterList] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [propertyDetails, setPropertyDetails] = useState<any>(null);
     const [billingData, setBillingData] = useState<any>(null);
     const [hasBillingForMonth, setHasBillingForMonth] = useState(false);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
+
     const [configMissing, setConfigMissing] = useState(false);
     const [configModal, setConfigModal] = useState(false);
+    const [payoutMissing, setPayoutMissing] = useState(false);
 
     const [billingForm, setBillingForm] = useState({
         billingPeriod: "",
@@ -34,6 +41,7 @@ export function usePropertyBilling(property_id: string) {
     });
 
     /* ================= ONBOARDING ================= */
+
     const { startTour } = useOnboarding({
         tourId: "property-billing",
         steps: propertyBillingSteps,
@@ -41,6 +49,7 @@ export function usePropertyBilling(property_id: string) {
     });
 
     /* ================= DATA ================= */
+
     const { data: billsData, isLoading: loadingBills } = useSWR(
         property_id
             ? `/api/landlord/billing/current?property_id=${property_id}`
@@ -50,25 +59,31 @@ export function usePropertyBilling(property_id: string) {
 
     const bills = billsData?.bills || [];
 
-    /* ================= EFFECTS ================= */
+    /* ================= INITIAL LOAD ================= */
+
     useEffect(() => {
-        if (!property_id) return;
+        if (!property_id || !landlord_id) return;
 
         const load = async () => {
-            setIsInitialLoad(true);
-            await Promise.all([
-                checkPropertyConfig(),
-                fetchPropertyDetails(),
-                fetchBillingData(),
-            ]);
-            setIsInitialLoad(false);
+            try {
+                setIsInitialLoad(true);
+
+                await Promise.all([
+                    checkPropertyConfig(),
+                    checkDefaultPayoutAccount(landlord_id),
+                    fetchPropertyDetails(),
+                    fetchBillingData(),
+                ]);
+            } finally {
+                setIsInitialLoad(false);
+            }
         };
 
         load();
-    }, [property_id]);
+    }, [property_id, landlord_id]);
 
     /* ================= HELPERS ================= */
-    //  this is for the property configurtation only
+
     const checkPropertyConfig = async () => {
         try {
             const res = await axios.get("/api/properties/configuration", {
@@ -84,6 +99,28 @@ export function usePropertyBilling(property_id: string) {
         } catch {
             setConfigMissing(true);
             setConfigModal(true);
+        }
+    };
+
+    /* 🔥 FIXED Payout Check */
+    const checkDefaultPayoutAccount = async (landlord_id: string) => {
+        try {
+            const { data } = await axios.get(
+                "/api/landlord/payout/getAccount",
+                { params: { landlord_id } }
+            );
+
+            const isValid =
+                data &&
+                data.hasDefaultPayout === true &&
+                data.account &&
+                Number(data.account.is_active) === 1;
+
+            setPayoutMissing(!isValid);
+
+        } catch (err) {
+            console.error("Default payout validation error:", err);
+            setPayoutMissing(true);
         }
     };
 
@@ -105,6 +142,7 @@ export function usePropertyBilling(property_id: string) {
             const data = res.data.billingData;
             setBillingData(data);
             setHasBillingForMonth(true);
+
             setBillingForm({
                 billingPeriod: data.billing_period || "",
                 electricityTotal: data.electricity?.total || "",
@@ -125,61 +163,68 @@ export function usePropertyBilling(property_id: string) {
         setBillingForm(prev => ({ ...prev, [name]: value }));
     };
 
+    /* ================= GUARD ================= */
+
+    const guardBillingAction = (action: () => void) => {
+        if (configMissing) {
+            Swal.fire(
+                "Configuration Required",
+                "Please complete the property configuration first.",
+                "warning"
+            );
+            return;
+        }
+
+        if (payoutMissing) {
+            Swal.fire({
+                title: "Payout Account Required",
+                text: "Set your default payout account before issuing billing.",
+                icon: "warning",
+                confirmButtonText: "Set Up Now",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.push("/pages/commons/landlord/payoutDetails");
+                }
+            });
+            return;
+        }
+
+        action();
+    };
+
+    /* ================= SAVE ================= */
+
     const handleSaveorUpdateRates = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (configMissing) {
-            Swal.fire(
-                "Configuration Required",
-                "Please complete the property configuration before saving billing rates.",
-                "warning"
+        guardBillingAction(async () => {
+            await axios.post(
+                "/api/landlord/billing/savePropertyConcessionaireRates",
+                {
+                    property_id,
+                    period_start: billingForm.periodStart,
+                    period_end: billingForm.periodEnd,
+                    electricityConsumption:
+                        +billingForm.electricityConsumption || 0,
+                    electricityTotal: +billingForm.electricityTotal || 0,
+                    waterConsumption: +billingForm.waterConsumption || 0,
+                    waterTotal: +billingForm.waterTotal || 0,
+                }
             );
-            return;
-        }
 
-        await axios.post(
-            "/api/landlord/billing/savePropertyConcessionaireRates",
-            {
-                property_id,
-                period_start: billingForm.periodStart,
-                period_end: billingForm.periodEnd,
-                electricityConsumption: +billingForm.electricityConsumption || 0,
-                electricityTotal: +billingForm.electricityTotal || 0,
-                waterConsumption: +billingForm.waterConsumption || 0,
-                waterTotal: +billingForm.waterTotal || 0,
-            }
-        );
+            await fetchBillingData();
 
-        await fetchBillingData();
-        Swal.fire("Success", "Billing saved successfully.", "success");
+            Swal.fire("Success", "Billing saved successfully.", "success");
+        });
     };
 
     const handleDownloadSummary = () => {
-        if (configMissing) {
-            Swal.fire(
-                "Configuration Required",
-                "Please complete the property configuration first.",
-                "warning"
+        guardBillingAction(() => {
+            window.open(
+                `/api/landlord/billing/downloadSummary?property_id=${property_id}`,
+                "_blank"
             );
-            return;
-        }
-
-        window.open(
-            `/api/landlord/billing/downloadSummary?property_id=${property_id}`,
-            "_blank"
-        );
-    };
-
-    const guardActionWithConfig = (action: () => void) => {
-        if (configMissing) {
-            Swal.fire(
-                "Configuration Required",
-                "Please complete the property configuration first.",
-                "warning"
-            );
-            return;
-        }
-        action();
+        });
     };
 
     const getStatusConfig = (status: string) => {
@@ -196,11 +241,11 @@ export function usePropertyBilling(property_id: string) {
     };
 
     /* ================= EXPORT ================= */
+
     return {
         property_id,
         router,
 
-        // state
         isInitialLoad,
         propertyDetails,
         billingData,
@@ -208,23 +253,22 @@ export function usePropertyBilling(property_id: string) {
         hasBillingForMonth,
         configMissing,
         configModal,
+        payoutMissing,
         bills,
         loadingBills,
         openMeterList,
         isModalOpen,
 
-        // setters
         setIsModalOpen,
         setOpenMeterList,
         setConfigModal,
         setBillingData,
         setHasBillingForMonth,
 
-        // handlers
         handleInputChange,
         handleSaveorUpdateRates,
         handleDownloadSummary,
-        guardActionWithConfig,
+        guardBillingAction,
         getStatusConfig,
         startTour,
     };
