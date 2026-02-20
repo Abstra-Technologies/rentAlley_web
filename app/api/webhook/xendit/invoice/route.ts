@@ -4,10 +4,6 @@ import { sendUserNotification } from "@/lib/notifications/sendUserNotification";
 
 export const runtime = "nodejs";
 
-/* -------------------------------------------------------------------------- */
-/* ENV                                                                        */
-/* -------------------------------------------------------------------------- */
-
 const {
     DB_HOST,
     DB_USER,
@@ -31,12 +27,12 @@ async function getDbConnection() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* FETCH TRANSACTION DETAILS                                                  */
+/* FETCH TRANSACTION USING payment_id                                         */
 /* -------------------------------------------------------------------------- */
 
-async function fetchTransactionDetails(invoiceId: string) {
+async function fetchTransactionDetails(paymentId: string) {
     const response = await fetch(
-        `https://api.xendit.co/transactions?reference_id=${invoiceId}`,
+        `https://api.xendit.co/transactions?payment_id=${paymentId}`,
         {
             headers: {
                 Authorization:
@@ -47,14 +43,14 @@ async function fetchTransactionDetails(invoiceId: string) {
     );
 
     if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`Transaction fetch failed: ${err}`);
+        const errText = await response.text();
+        throw new Error(`Transaction API error: ${errText}`);
     }
 
     const data = await response.json();
 
     if (!Array.isArray(data.data) || data.data.length === 0) {
-        throw new Error("No transaction found");
+        throw new Error("No PAYMENT transaction found");
     }
 
     const paymentTx =
@@ -92,10 +88,18 @@ export async function POST(req: Request) {
             external_id,
             paid_at,
             id: invoice_id,
+            payment_id, // 🔥 THIS IS WHAT WE USE
             paid_amount,
             amount,
             payment_method,
         } = payload;
+
+        if (!payment_id) {
+            return NextResponse.json(
+                { message: "Missing payment_id" },
+                { status: 400 }
+            );
+        }
 
         const paidAmount = Number(paid_amount || amount);
         const paidAt = new Date(paid_at);
@@ -145,12 +149,13 @@ export async function POST(req: Request) {
                 [paidAt, billing_id]
             );
 
-            /* ---------------- FETCH TRANSACTION FEES ---------------- */
+            /* ---------------- FETCH GATEWAY FEES ---------------- */
 
             const { gatewayFee, gatewayVAT, netAmount } =
-                await fetchTransactionDetails(invoice_id);
+                await fetchTransactionDetails(payment_id);
 
-            /* No split rule = no platform fee */
+            /* Platform fee default = 0
+               (split webhook handles commission if exists) */
             const platformFee = 0;
 
             /* ---------------- INSERT PAYMENT RECORD ---------------- */
@@ -189,7 +194,7 @@ export async function POST(req: Request) {
                     platformFee,
                     payment_method || "UNKNOWN",
                     invoice_id,
-                    invoice_id,
+                    payment_id, // 🔥 store actual Xendit payment ID
                     JSON.stringify(payload),
                     paidAt,
                 ]
@@ -215,7 +220,7 @@ export async function POST(req: Request) {
     } catch (err: any) {
         if (conn) await conn.rollback();
 
-        console.error("❌ Invoice Webhook Error:", err);
+        console.error("Invoice Webhook Error:", err);
 
         return NextResponse.json(
             { message: "Webhook failed", error: err.message },
