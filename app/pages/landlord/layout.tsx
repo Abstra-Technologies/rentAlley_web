@@ -296,15 +296,15 @@ export default function LandlordLayout({
             </div>
 
             {/* MOBILE SIDENAV (COMPONENT) */}
-            {/*<MobileLandlordSidenav*/}
-            {/*    isOpen={isSidebarOpen}*/}
-            {/*    onClose={() => setIsSidebarOpen(false)}*/}
-            {/*    navGroups={navGroups}*/}
-            {/*    landlordId={user.landlord_id}*/}
-            {/*    InviteModal={SendTenantInviteModal}*/}
-            {/*    onLogoutClick={() => setShowLogoutConfirm(true)}*/}
-            {/*    user={user}*/}
-            {/*/>*/}
+            <MobileLandlordSidenav
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+                navGroups={navGroups}
+                landlordId={user.landlord_id}
+                // InviteModal={SendTenantInviteModal}
+                onLogoutClick={() => setShowLogoutConfirm(true)}
+                user={user}
+            />
 
 
             {/* LOGOUT CONFIRM */}
