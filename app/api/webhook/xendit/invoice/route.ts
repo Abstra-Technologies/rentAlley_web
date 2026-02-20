@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/* XENDIT INVOICE.PAID WEBHOOK (PAYMENT_ID BASED)                            */
+/* XENDIT INVOICE.PAID WEBHOOK (TRANSACTION_ID VERSION)                      */
 /* -------------------------------------------------------------------------- */
 
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ const {
 } = process.env;
 
 /* -------------------------------------------------------------------------- */
-/* DEBUG HELPER                                                               */
+/* DEBUG                                                                      */
 /* -------------------------------------------------------------------------- */
 
 function debug(stage: string, data?: any) {
@@ -46,19 +46,27 @@ async function getDbConnection() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* FETCH TRANSACTION USING payment_id                                         */
+/* FETCH TRANSACTION BY ID                                                    */
 /* -------------------------------------------------------------------------- */
 
-async function fetchTransactionDetails(paymentId: string) {
-    debug("FETCHING TRANSACTION", paymentId);
+async function fetchTransactionDetails(
+    transactionId: string,
+    subAccountId: string
+) {
+    debug("FETCHING TRANSACTION BY ID", {
+        transactionId,
+        subAccountId,
+    });
 
     const response = await fetch(
-        `https://api.xendit.co/transactions?payment_id=${paymentId}`,
+        `https://api.xendit.co/transactions/${transactionId}`,
         {
+            method: "GET",
             headers: {
                 Authorization:
                     "Basic " +
                     Buffer.from(`${XENDIT_TRANSBAL_KEY}:`).toString("base64"),
+                "for-user-id": subAccountId, // 🔥 REQUIRED for xenPlatform
             },
         }
     );
@@ -68,27 +76,15 @@ async function fetchTransactionDetails(paymentId: string) {
         throw new Error(`Transaction API error: ${errText}`);
     }
 
-    const data = await response.json();
+    const tx = await response.json();
 
-    if (!Array.isArray(data.data) || data.data.length === 0) {
-        throw new Error("No PAYMENT transaction found");
-    }
+    debug("TRANSACTION RESPONSE", tx);
 
-    const paymentTx =
-        data.data.find((tx: any) => tx.type === "PAYMENT") ||
-        data.data[0];
-
-    const gatewayFee = Number(paymentTx.fee?.xendit_fee || 0);
-    const gatewayVAT = Number(paymentTx.fee?.value_added_tax || 0);
-    const netAmount = Number(paymentTx.net_amount || 0);
-
-    debug("TRANSACTION DETAILS", {
-        gatewayFee,
-        gatewayVAT,
-        netAmount,
-    });
-
-    return { gatewayFee, gatewayVAT, netAmount };
+    return {
+        gatewayFee: Number(tx.fee?.xendit_fee || 0),
+        gatewayVAT: Number(tx.fee?.value_added_tax || 0),
+        netAmount: Number(tx.net_amount || 0),
+    };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -106,11 +102,8 @@ export async function POST(req: Request) {
         const token = req.headers.get("x-callback-token");
 
         if (token !== XENDIT_WEBHOOK_TOKEN) {
-            debug("INVALID TOKEN");
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
-
-        debug("TOKEN VERIFIED");
 
         /* ---------------- PARSE PAYLOAD ---------------- */
 
@@ -118,25 +111,25 @@ export async function POST(req: Request) {
         debug("PAYLOAD RECEIVED", payload);
 
         if (payload.status !== "PAID") {
-            debug("NOT PAID STATUS");
             return NextResponse.json({ message: "Ignored" });
         }
 
         const {
             external_id,
             paid_at,
-            payment_id,   // 🔥 DIRECTLY FROM PAYLOAD
+            payment_id,      // 🔥 THIS IS TRANSACTION ID
+            user_id,         // 🔥 THIS IS SUBACCOUNT ID
             paid_amount,
             amount,
             payment_method,
             id: invoice_id,
         } = payload;
 
-        if (!payment_id) {
-            throw new Error("Missing payment_id in webhook payload");
+        if (!payment_id || !user_id) {
+            throw new Error("Missing payment_id or user_id in webhook");
         }
 
-        if (!external_id || !external_id.startsWith("billing-")) {
+        if (!external_id.startsWith("billing-")) {
             throw new Error("Invalid external_id format");
         }
 
@@ -147,15 +140,15 @@ export async function POST(req: Request) {
         debug("EXTRACTED VALUES", {
             billing_id,
             payment_id,
-            paidAmount,
+            user_id,
         });
 
         /* ------------------------------------------------------------------ */
-        /* 1️⃣ FETCH TRANSACTION DETAILS                                      */
+        /* 1️⃣ FETCH TRANSACTION DETAILS                                     */
         /* ------------------------------------------------------------------ */
 
         const { gatewayFee, gatewayVAT, netAmount } =
-            await fetchTransactionDetails(payment_id);
+            await fetchTransactionDetails(payment_id, user_id);
 
         /* ------------------------------------------------------------------ */
         /* 2️⃣ UPDATE DATABASE                                                */
@@ -229,10 +222,10 @@ export async function POST(req: Request) {
                 netAmount,
                 gatewayFee,
                 gatewayVAT,
-                0, // 🔥 platform fee default (split webhook updates if exists)
+                0, // platform fee handled by split webhook if exists
                 payment_method || "UNKNOWN",
                 invoice_id,
-                payment_id, // 🔥 store real Xendit payment_id
+                payment_id, // 🔥 REAL transaction_id
                 JSON.stringify(payload),
                 paidAt,
             ]
@@ -249,19 +242,15 @@ export async function POST(req: Request) {
         });
 
         await conn.commit();
-        debug("DB COMMIT SUCCESS");
 
         return NextResponse.json({
             message: "Invoice reconciliation complete",
         });
 
     } catch (err: any) {
-        debug("ERROR OCCURRED", err.message);
+        if (conn) await conn.rollback();
 
-        if (conn) {
-            await conn.rollback();
-            debug("DB ROLLBACK");
-        }
+        debug("ERROR OCCURRED", err.message);
 
         return NextResponse.json(
             { message: "Webhook failed", error: err.message },
@@ -269,11 +258,7 @@ export async function POST(req: Request) {
         );
 
     } finally {
-        if (conn) {
-            await conn.end();
-            debug("DB CLOSED");
-        }
-
+        if (conn) await conn.end();
         debug("WEBHOOK END");
     }
 }
