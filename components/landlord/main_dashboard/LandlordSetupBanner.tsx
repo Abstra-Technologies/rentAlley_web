@@ -73,6 +73,12 @@ export default function LandlordOnboarding({ landlordId }: Props) {
     const hasProperty =
         Array.isArray(propertiesRes) && propertiesRes.length > 0;
 
+    const allCompleted =
+        agreementDone && verificationDone && payoutDone && hasProperty;
+
+    // ✅ Hide onboarding if everything completed
+    if (allCompleted) return null;
+
     const completedSteps =
         (agreementDone ? 1 : 0) +
         (verificationDone ? 1 : 0) +
@@ -86,13 +92,7 @@ export default function LandlordOnboarding({ landlordId }: Props) {
                 ? "verification"
                 : !payoutDone
                     ? "payout"
-                    : !hasProperty
-                        ? "property"
-                        : null;
-
-    /* -------------------------------------------------------------------------- */
-    /* Create Property Guard */
-    /* -------------------------------------------------------------------------- */
+                    : "property";
 
     const isFullyVerified =
         agreementDone && verificationDone && payoutDone;
@@ -127,7 +127,7 @@ export default function LandlordOnboarding({ landlordId }: Props) {
     return (
         <>
             {/* 🔵 OUTER WRAPPER WITH BG + HOVER */}
-            <div className="mb-6 rounded-3xl bg-gradient-to-br from-blue-50 to-emerald-50 p-1 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+            <div className="mb-6 rounded-3xl bg-gradient-to-br from-blue-50 to-emerald-50 p-1 transition-all duration-300 hover:shadow-2xl hover:scale-[1.01]">
                 <div className="rounded-3xl bg-white p-6 border border-gray-100 shadow-sm">
                     {/* Header */}
                     <div className="mb-6">
@@ -264,9 +264,7 @@ export default function LandlordOnboarding({ landlordId }: Props) {
     );
 }
 
-/* -------------------------------------------------------------------------- */
 /* STEP CARD */
-/* -------------------------------------------------------------------------- */
 
 function StepCard({
                       title,
@@ -298,7 +296,9 @@ function StepCard({
             className={`relative w-full rounded-2xl border p-5 text-left transition-all duration-200 ${
                 styles[status]
             } ${isNext ? "ring-2 ring-blue-500" : ""} ${
-                disabled ? "opacity-50 cursor-not-allowed" : "hover:shadow-md"
+                disabled
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:shadow-md"
             }`}
         >
             {isNext && (
@@ -322,9 +322,7 @@ function StepCard({
     );
 }
 
-/* -------------------------------------------------------------------------- */
 /* UTILITIES */
-/* -------------------------------------------------------------------------- */
 
 function getVerificationText(status: VerificationStatus) {
     switch (status) {

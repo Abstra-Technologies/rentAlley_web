@@ -287,413 +287,350 @@ Floor Area: ${p.floorArea} sqm
   /* =========================================================
      RENDER
   ========================================================= */
-  return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* ===== PROPERTY TYPE ===== */}
-      <div id="property-type-section">
-        <SectionHeader
-          number={1}
-          icon={Building2}
-          title="Property Type"
-          subtitle="Select the type that best describes your property"
-          required
-        />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-          {PROPERTY_TYPES.map((type) => {
-            const active = property.propertyType === type.value;
-            return (
-              <button
-                key={type.value}
-                type="button"
-                onClick={() =>
-                  setProperty({ ...property, propertyType: type.value })
-                }
-                className={`relative p-3 sm:p-4 rounded-xl transition-all ${
-                  active
-                    ? "bg-gradient-to-br from-blue-500 to-emerald-500 text-white shadow-lg shadow-blue-500/30 scale-[1.02]"
-                    : "bg-white border-2 border-gray-100 hover:border-blue-300 hover:shadow-md"
-                }`}
-              >
-                {active && (
-                  <div className="absolute top-2 right-2">
-                    <CheckCircle className="w-4 h-4" />
-                  </div>
-                )}
-                <span className="text-2xl sm:text-3xl block mb-1">
-                  {type.icon}
-                </span>
-                <p className="text-xs sm:text-sm font-semibold">{type.label}</p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+    return (
+        <div className="space-y-6 sm:space-y-8">
 
-      {/* ===== PROPERTY NAME ===== */}
-      <div id="property-name-section">
-        <SectionHeader
-          number={2}
-          icon={Building2}
-          title="Property Name"
-          subtitle="Give your property a memorable name"
-          required
-        />
-        <InputField
-          label="Property Name"
-          name="propertyName"
-          value={property.propertyName}
-          onChange={handleChange}
-          placeholder="e.g., Sunshine Residences"
-          required
-        />
-      </div>
+            {/* ===================================================== */}
+            {/* 1️⃣ PROPERTY TYPE – SQUARE CARDS */}
+            {/* ===================================================== */}
+            <div id="property-type-section" className="space-y-3">
+                <SectionHeader
+                    number={1}
+                    icon={Building2}
+                    title="Property Type"
+                    subtitle="Select the type that best describes your property"
+                    required
+                />
 
-      {/* ===== LOCATION (MAP) ===== */}
-      <div id="location-section">
-        <SectionHeader
-          number={3}
-          icon={MapPin}
-          title="Property Location"
-          subtitle="Search, click on map, or use your current location"
-          required
-        />
+                <div className="
+    grid
+    grid-cols-3
+    sm:grid-cols-4
+    md:grid-cols-5
+    gap-2
+    sm:gap-3
+    max-w-2xl
+  ">
+                    {PROPERTY_TYPES.map((type) => {
+                        const active = property.propertyType === type.value;
 
-        {/* Map Container */}
-        <div className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm h-64 sm:h-80 lg:h-96 relative z-0 mb-4">
-          <PropertyMapWrapper
-            coordinates={
-              coords.lat && coords.lng ? [coords.lat, coords.lng] : null
-            }
-            setFields={mapSetFields}
-          />
-        </div>
+                        return (
+                            <button
+                                key={type.value}
+                                type="button"
+                                onClick={() => setProperty({ propertyType: type.value })}
+                                className={`
+            relative
+            h-20 sm:h-24 md:h-24
+            flex flex-col items-center justify-center
+            rounded-lg border
+            text-center
+            transition-all duration-150
+            active:scale-95
+            ${
+                                    active
+                                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                        : "bg-white border-gray-200 text-gray-700 hover:border-blue-400"
+                                }
+          `}
+                            >
+                                {active && (
+                                    <CheckCircle className="absolute top-1 right-1 w-3.5 h-3.5" />
+                                )}
 
-        {/* Address Fields */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <InputField
-            label="Street"
-            name="street"
-            value={property.street}
-            onChange={handleChange}
-            placeholder="Street address"
-            required
-          />
-          <InputField
-            label="Barangay / District"
-            name="brgyDistrict"
-            value={property.brgyDistrict}
-            onChange={handleChange}
-            placeholder="Barangay"
-            readOnly
-          />
-          <InputField
-            label="City / Municipality"
-            name="city"
-            value={property.city}
-            onChange={handleChange}
-            placeholder="City"
-            required
-          />
-          <InputField
-            label="Province"
-            name="province"
-            value={property.province}
-            onChange={handleChange}
-            placeholder="Province"
-            readOnly
-          />
-          <InputField
-            label="ZIP Code"
-            name="zipCode"
-            value={property.zipCode}
-            onChange={handleChange}
-            placeholder="ZIP Code"
-            required
-          />
-        </div>
-      </div>
+                                <div className="text-lg sm:text-xl">
+                                    {type.icon}
+                                </div>
 
-      {/* ===== AMENITIES ===== */}
-      <div id="amenities-section">
-        <SectionHeader
-          number={4}
-          icon={CheckCircle}
-          title="Amenities"
-          subtitle="Select all amenities available in your property"
-        />
-        <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 p-3 sm:p-4 border border-gray-200 rounded-xl">
-          <AmenitiesSelector
-            selectedAmenities={property.amenities || []}
-            onAmenityChange={toggleAmenity}
-          />
-        </div>
-      </div>
-
-      {/* ===== DESCRIPTION ===== */}
-      <div id="description-section">
-        <SectionHeader
-          number={5}
-          icon={FileText}
-          title="Description"
-          subtitle="Write a compelling description or let AI help you"
-          required
-        />
-        <div className="space-y-3">
-          <textarea
-            name="propDesc"
-            rows={5}
-            onChange={handleChange}
-            value={property.propDesc || ""}
-            placeholder="Describe what makes your property special..."
-            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
-          />
-          <button
-            type="button"
-            onClick={handleGenerateDescription}
-            disabled={loadingAI}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-purple-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-          >
-            {loadingAI ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                <span>Generate with AI</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* ===== FLOOR AREA ===== */}
-      <div id="floor-area-section">
-        <SectionHeader
-          number={6}
-          icon={Ruler}
-          title="Property Size"
-          subtitle="Total floor area of your property"
-          required
-        />
-        <div className="max-w-xs">
-          <InputField
-            label="Floor Area (sqm)"
-            name="floorArea"
-            value={property.floorArea}
-            onChange={handleChange}
-            placeholder="e.g., 150"
-            type="number"
-            required
-          />
-        </div>
-      </div>
-
-      {/* ===== PREFERENCES ===== */}
-      <div id="preferences-section">
-        <SectionHeader
-          number={7}
-          icon={Heart}
-          title="Property Preferences"
-          subtitle="Set rules and preferences for tenants"
-        />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-          {PROPERTY_PREFERENCES.map((pref) => {
-            const Icon = pref.icon;
-            const active = property.propertyPreferences?.includes(pref.key);
-            return (
-              <button
-                key={pref.key}
-                type="button"
-                onClick={() => togglePreference(pref.key)}
-                className={`relative p-3 sm:p-4 rounded-xl transition-all ${
-                  active
-                    ? "bg-gradient-to-br from-blue-500 to-emerald-500 text-white shadow-lg shadow-blue-500/30"
-                    : "bg-white border-2 border-gray-100 hover:border-blue-300 hover:shadow-md"
-                }`}
-              >
-                {active && (
-                  <div className="absolute top-2 right-2">
-                    <CheckCircle className="w-4 h-4" />
-                  </div>
-                )}
-                <Icon className="text-xl sm:text-2xl mb-1 mx-auto" />
-                <p className="text-xs sm:text-sm font-semibold">{pref.label}</p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ===== UTILITY BILLING ===== */}
-      <div id="utility-billing-section">
-        <SectionHeader
-          number={8}
-          icon={Zap}
-          title="Utility Billing"
-          subtitle="How are utilities billed to tenants?"
-          required
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-700">
-              <span className="text-blue-500">💧</span> Water Billing
-              <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="waterBillingType"
-              onChange={handleChange}
-              value={property.waterBillingType || ""}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 0.75rem center",
-                backgroundSize: "1.25rem",
-              }}
-            >
-              <option value="">Select type</option>
-              {UTILITY_BILLING_TYPES.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-700">
-              <span className="text-amber-500">⚡</span> Electricity Billing
-              <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="electricityBillingType"
-              onChange={handleChange}
-              value={property.electricityBillingType || ""}
-              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 0.75rem center",
-                backgroundSize: "1.25rem",
-              }}
-            >
-              <option value="">Select type</option>
-              {UTILITY_BILLING_TYPES.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Info Box */}
-        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-          <div className="flex items-start gap-2">
-            <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-blue-700">
-              <p className="font-semibold">Billing Types:</p>
-              <ul className="mt-1 space-y-0.5">
-                <li>
-                  <strong>Submetered:</strong> Each unit has its own meter,
-                  billed based on usage
-                </li>
-                <li>
-                  <strong>Inclusive:</strong> Utilities included in rent
-                </li>
-                <li>
-                  <strong>Fixed:</strong> Fixed monthly utility fee
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ===== PHOTOS ===== */}
-      <div id="photos-section">
-        <SectionHeader
-          number={9}
-          icon={ImagePlus}
-          title="Property Photos"
-          subtitle="Add photos to showcase your property (min 3 required)"
-          required
-        />
-
-        {/* Upload Zone */}
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed p-6 sm:p-8 rounded-xl cursor-pointer transition-all ${
-            isDragActive
-              ? "border-blue-500 bg-blue-50 shadow-inner"
-              : "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/50"
-          }`}
-        >
-          <input {...getInputProps()} />
-          <div className="text-center">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto bg-gradient-to-br from-blue-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25 mb-3">
-              <Camera className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-            </div>
-            <p className="text-sm sm:text-base font-semibold text-gray-700 mb-1">
-              {isDragActive ? "Drop images here" : "Drag & drop images"}
-            </p>
-            <p className="text-xs sm:text-sm text-gray-500">
-              or click to browse • PNG, JPG up to 10MB
-            </p>
-          </div>
-        </div>
-
-        {/* Photo Grid */}
-        {photos.length > 0 && (
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-gray-700">
-                {photos.length} photo{photos.length !== 1 ? "s" : ""} uploaded
-              </p>
-              {photos.length < 3 && (
-                <p className="text-xs text-amber-600 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  Add at least 3 photos
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {photos.map((photo: any, index: number) => (
-                <div
-                  key={index}
-                  className="relative group aspect-square rounded-xl overflow-hidden border-2 border-gray-200"
-                >
-                  <img
-                    src={photo.preview}
-                    alt={`Property photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-
-                  {/* Overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all" />
-
-                  {/* Delete Button */}
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(index)}
-                    className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all shadow-lg"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-
-                  {/* Photo Number */}
-                  <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/50 text-white text-xs rounded-md">
-                    {index + 1}
-                  </div>
+                                <p className="text-[11px] sm:text-xs font-medium mt-1 px-1 leading-tight">
+                                    {type.label}
+                                </p>
+                            </button>
+                        );
+                    })}
                 </div>
-              ))}
+            </div>            {/* 2️⃣ PROPERTY NAME */}
+            {/* ===================================================== */}
+            <div id="property-name-section">
+                <SectionHeader
+                    number={2}
+                    icon={Building2}
+                    title="Property Name"
+                    subtitle="Give your property a memorable name"
+                    required
+                />
+
+                <InputField
+                    label="Property Name"
+                    name="propertyName"
+                    value={property.propertyName}
+                    onChange={handleChange}
+                    placeholder="e.g., Sunshine Residences"
+                    required
+                />
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+
+            {/* ===================================================== */}
+            {/* 3️⃣ LOCATION */}
+            {/* ===================================================== */}
+            <div id="location-section">
+                <SectionHeader
+                    number={3}
+                    icon={MapPin}
+                    title="Property Location"
+                    subtitle="Search or click on the map"
+                    required
+                />
+
+                <div className="rounded-xl overflow-hidden border border-gray-200 h-56 sm:h-72 md:h-80 mb-4">
+                    <PropertyMapWrapper
+                        coordinates={
+                            coords.lat && coords.lng ? [coords.lat, coords.lng] : null
+                        }
+                        setFields={mapSetFields}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <InputField label="Street" name="street" value={property.street} onChange={handleChange} required />
+                    <InputField label="Barangay / District" name="brgyDistrict" value={property.brgyDistrict} onChange={handleChange} readOnly />
+                    <InputField label="City" name="city" value={property.city} onChange={handleChange} required />
+                    <InputField label="Province" name="province" value={property.province} onChange={handleChange} readOnly />
+                    <InputField label="ZIP Code" name="zipCode" value={property.zipCode} onChange={handleChange} required />
+                </div>
+            </div>
+
+            {/* ===================================================== */}
+            {/* 4️⃣ AMENITIES */}
+            {/* ===================================================== */}
+            <div id="amenities-section">
+                <SectionHeader
+                    number={4}
+                    icon={CheckCircle}
+                    title="Amenities"
+                    subtitle="Select all amenities available"
+                />
+
+                <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <AmenitiesSelector
+                        selectedAmenities={property.amenities || []}
+                        onAmenityChange={toggleAmenity}
+                    />
+                </div>
+            </div>
+
+            {/* ===================================================== */}
+            {/* 5️⃣ DESCRIPTION (OPTIONAL) */}
+            {/* ===================================================== */}
+            <div id="description-section">
+                <SectionHeader
+                    number={5}
+                    icon={FileText}
+                    title="Description"
+                    subtitle="Optional – describe your property"
+                />
+
+                <textarea
+                    name="propDesc"
+                    rows={4}
+                    onChange={handleChange}
+                    value={property.propDesc || ""}
+                    placeholder="Describe what makes your property special..."
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                />
+            </div>
+
+            {/* ===================================================== */}
+            {/* 6️⃣ FLOOR AREA (OPTIONAL) */}
+            {/* ===================================================== */}
+            <div id="floor-area-section">
+                <SectionHeader
+                    number={6}
+                    icon={Ruler}
+                    title="Property Size"
+                    subtitle="Optional – total floor area (sqm)"
+                />
+
+                <div className="max-w-full sm:max-w-xs">
+                    <InputField
+                        label="Floor Area (sqm)"
+                        name="floorArea"
+                        value={property.floorArea}
+                        onChange={handleChange}
+                        type="number"
+                    />
+                </div>
+            </div>
+
+            {/* ===================================================== */}
+            {/* 7️⃣ PREFERENCES */}
+            {/* ===================================================== */}
+            <div id="preferences-section">
+                <SectionHeader
+                    number={7}
+                    icon={Heart}
+                    title="Property Preferences"
+                    subtitle="Set tenant rules"
+                />
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {PROPERTY_PREFERENCES.map((pref) => {
+                        const Icon = pref.icon;
+                        const active = property.propertyPreferences?.includes(pref.key);
+
+                        return (
+                            <button
+                                key={pref.key}
+                                type="button"
+                                onClick={() => togglePreference(pref.key)}
+                                className={`relative p-3 rounded-lg border text-xs font-medium transition-all ${
+                                    active
+                                        ? "bg-blue-600 text-white border-blue-600"
+                                        : "bg-white border-gray-200 text-gray-700"
+                                }`}
+                            >
+                                {active && (
+                                    <CheckCircle className="absolute top-1 right-1 w-3.5 h-3.5" />
+                                )}
+                                <Icon className="text-lg mx-auto mb-1" />
+                                {pref.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* ===================================================== */}
+            {/* 8️⃣ UTILITY BILLING */}
+            {/* ===================================================== */}
+            <div id="utility-billing-section" className="space-y-4">
+                <SectionHeader
+                    number={8}
+                    icon={Zap}
+                    title="Utility Billing"
+                    subtitle="How are utilities billed?"
+                    required
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    {/* WATER BILLING */}
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-gray-700">
+                            💧 Water Billing <span className="text-red-500">*</span>
+                        </label>
+
+                        <select
+                            name="waterBillingType"
+                            onChange={handleChange}
+                            value={property.waterBillingType || ""}
+                            className="
+          w-full px-3 py-2.5 text-sm
+          border border-gray-200 rounded-xl
+          bg-gray-50 focus:bg-white
+          focus:outline-none focus:ring-2 focus:ring-blue-500/20
+          focus:border-blue-500 transition-all
+        "
+                        >
+                            <option value="">Select billing type</option>
+                            {UTILITY_BILLING_TYPES.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* ELECTRICITY BILLING */}
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-gray-700">
+                            ⚡ Electricity Billing <span className="text-red-500">*</span>
+                        </label>
+
+                        <select
+                            name="electricityBillingType"
+                            onChange={handleChange}
+                            value={property.electricityBillingType || ""}
+                            className="
+          w-full px-3 py-2.5 text-sm
+          border border-gray-200 rounded-xl
+          bg-gray-50 focus:bg-white
+          focus:outline-none focus:ring-2 focus:ring-blue-500/20
+          focus:border-blue-500 transition-all
+        "
+                        >
+                            <option value="">Select billing type</option>
+                            {UTILITY_BILLING_TYPES.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                </div>
+
+                {/* INFO BOX */}
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                    <div className="flex items-start gap-2">
+                        <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-xs sm:text-sm text-blue-700">
+                            <p className="font-semibold mb-1">Billing Types Explained:</p>
+                            <ul className="space-y-1 list-disc list-inside">
+                                <li>
+                                    <strong>Submetered:</strong> Each unit has its own meter and tenants pay based on actual usage.
+                                </li>
+                                <li>
+                                    <strong>Inclusive:</strong> Utilities are included in the rent.
+                                </li>
+
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>            {/* ===================================================== */}
+            {/* 9️⃣ PHOTOS (OPTIONAL) */}
+            {/* ===================================================== */}
+            <div id="photos-section">
+                <SectionHeader
+                    number={9}
+                    icon={ImagePlus}
+                    title="Property Photos"
+                    subtitle="Optional – upload images to showcase your property"
+                />
+
+                <div
+                    {...getRootProps()}
+                    className={`border-2 border-dashed p-5 rounded-xl transition ${
+                        isDragActive
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-300 bg-gray-50"
+                    }`}
+                >
+                    <input {...getInputProps()} />
+                    <p className="text-sm font-medium text-gray-700 text-center">
+                        Drag & drop images or click to upload
+                    </p>
+                </div>
+
+                {photos.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mt-3">
+                        {photos.map((photo: any, index: number) => (
+                            <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                                <img src={photo.preview} className="w-full h-full object-cover" />
+                                <button
+                                    type="button"
+                                    onClick={() => removePhoto(index)}
+                                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-md"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+        </div>
+    );
 }

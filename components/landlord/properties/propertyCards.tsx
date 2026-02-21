@@ -110,15 +110,7 @@ const PropertyCard = ({
                 )}
 
                 {/* Status Badge */}
-                <div className="absolute top-1.5 right-1.5">
-                    <div
-                        className={`flex items-center space-x-1 px-1.5 py-0.5 rounded-full
-              text-[10px] font-semibold ${statusConfig.badge}`}
-                    >
-                        {statusConfig.icon}
-                        <span>{statusConfig.text}</span>
-                    </div>
-                </div>
+
             </div>
 
             {/* Main Content */}

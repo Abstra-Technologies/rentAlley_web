@@ -8,28 +8,24 @@ const s3Client = new S3Client({
     region: process.env.NEXT_AWS_REGION!,
     credentials: {
         accessKeyId: process.env.NEXT_AWS_ACCESS_KEY_ID!,
-        secretAccessKey:
-            process.env.NEXT_AWS_SECRET_ACCESS_KEY!,
+        secretAccessKey: process.env.NEXT_AWS_SECRET_ACCESS_KEY!,
     },
 });
 
-const encryptionSecret =
-    process.env.ENCRYPTION_SECRET!;
+const encryptionSecret = process.env.ENCRYPTION_SECRET!;
 
 /* =====================================================
    UTILS
 ===================================================== */
 
-function sanitizeFilename(filename: string): string {
+function sanitizeFilename(filename: string) {
     return filename
         .replace(/[^a-zA-Z0-9.]/g, "_")
         .replace(/\s+/g, "_");
 }
 
 async function uploadToS3(file: File, folder: string) {
-    const buffer = Buffer.from(
-        await file.arrayBuffer()
-    );
+    const buffer = Buffer.from(await file.arrayBuffer());
 
     const sanitizedFilename = sanitizeFilename(
         file.name ?? "upload"
@@ -39,13 +35,11 @@ async function uploadToS3(file: File, folder: string) {
 
     await s3Client.send(
         new PutObjectCommand({
-            Bucket:
-                process.env.NEXT_S3_BUCKET_NAME!,
+            Bucket: process.env.NEXT_S3_BUCKET_NAME!,
             Key: key,
             Body: buffer,
             ContentType:
-                file.type ??
-                "application/octet-stream",
+                file.type ?? "application/octet-stream",
         })
     );
 
@@ -55,7 +49,7 @@ async function uploadToS3(file: File, folder: string) {
 }
 
 /* =====================================================
-   POST – CREATE PROPERTY (ENTERPRISE VERSION)
+   POST – CREATE PROPERTY (SIMPLIFIED)
 ===================================================== */
 
 export async function POST(req: NextRequest) {
@@ -75,39 +69,23 @@ export async function POST(req: NextRequest) {
     }
 
     const property = JSON.parse(propertyRaw);
-    const photos =
-        formData.getAll("photos") as File[];
-
-    const docType =
-        formData.get("docType")?.toString();
-
-    const submittedDoc =
-        formData.get("submittedDoc") as File;
-    const govID =
-        formData.get("govID") as File;
-    const indoor =
-        formData.get("indoor") as File;
-    const outdoor =
-        formData.get("outdoor") as File;
-
-    let connection;
+    const photos = formData.getAll("photos") as File[];
 
     try {
         /* =====================================================
-           1️⃣ Generate Unique Property ID (FAST)
+           1️⃣ Generate Unique Property ID
         ===================================================== */
-        let propertyId: string = "";
+
+        let propertyId = "";
         let unique = false;
 
         while (!unique) {
-            const idCandidate =
-                generatePropertyId();
+            const idCandidate = generatePropertyId();
 
-            const [rows]: any =
-                await db.execute(
-                    `SELECT COUNT(*) AS count FROM Property WHERE property_id = ?`,
-                    [idCandidate]
-                );
+            const [rows]: any = await db.execute(
+                `SELECT COUNT(*) AS count FROM Property WHERE property_id = ?`,
+                [idCandidate]
+            );
 
             if (rows[0].count === 0) {
                 propertyId = idCandidate;
@@ -116,21 +94,35 @@ export async function POST(req: NextRequest) {
         }
 
         /* =====================================================
-           2️⃣ Insert Property FIRST (FAST COMMIT)
+           2️⃣ Insert Property (Nullable Safe)
         ===================================================== */
+
         await db.execute(
             `
       INSERT INTO Property (
-        property_id, landlord_id, property_name, property_type, amenities,
-        street, brgy_district, city, zip_code, province,
-        water_billing_type, electricity_billing_type,
-        description, floor_area, late_fee, assoc_dues,
-        status, flexipay_enabled, property_preferences,
-        accepted_payment_methods, latitude, longitude,
-        rent_increase_percent, created_at, updated_at
+        property_id,
+        landlord_id,
+        property_name,
+        property_type,
+        amenities,
+        street,
+        brgy_district,
+        city,
+        zip_code,
+        province,
+        water_billing_type,
+        electricity_billing_type,
+        description,
+        floor_area,
+        latitude,
+        longitude,
+        rent_increase_percent,
+        status,
+        created_at,
+        updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, NOW(), NOW())
-    `,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())
+      `,
             [
                 propertyId,
                 landlord_id,
@@ -144,76 +136,33 @@ export async function POST(req: NextRequest) {
                 property.province || null,
                 property.waterBillingType || null,
                 property.electricityBillingType || null,
-                property.propDesc || null,
-                property.floorArea || null,
-                property.lateFee || null,
-                property.assocDues || null,
-                property.flexipayEnabled ? 1 : 0,
-                JSON.stringify(
-                    property.propertyPreferences || []
-                ),
-                JSON.stringify(
-                    property.paymentMethodsAccepted || []
-                ),
-                property.latitude || null,
-                property.longitude || null,
-                property.rentIncreasePercent || 0.0,
+                property.propDesc ?? null,
+                property.floorArea ?? null,
+                property.latitude ?? null,
+                property.longitude ?? null,
+                property.rentIncreasePercent ?? 0.0,
             ]
         );
 
         /* =====================================================
-           3️⃣ Upload ALL Files in Parallel (FAST)
+           3️⃣ Upload Photos (Parallel)
         ===================================================== */
-        const photoUploads =
-            photos?.length > 0
-                ? Promise.all(
-                    photos.map((file) =>
-                        uploadToS3(
-                            file,
-                            "property-photo"
-                        )
-                    )
+
+        if (photos?.length > 0) {
+            const uploadedPhotos = await Promise.all(
+                photos.map((file) =>
+                    uploadToS3(file, "property-photo")
                 )
-                : [];
+            );
 
-        const verificationUploads =
-            docType &&
-            submittedDoc &&
-            govID &&
-            indoor &&
-            outdoor
-                ? Promise.all([
-                    uploadToS3(
-                        submittedDoc,
-                        "property-docs"
-                    ),
-                    uploadToS3(
-                        govID,
-                        "property-docs"
-                    ),
-                    uploadToS3(
-                        indoor,
-                        "property-indoor"
-                    ),
-                    uploadToS3(
-                        outdoor,
-                        "property-outdoor"
-                    ),
-                ])
-                : null;
-
-        const uploadedPhotos =
-            await photoUploads;
-
-        /* =====================================================
-           4️⃣ Insert Photos (FAST)
-        ===================================================== */
-        if (uploadedPhotos.length > 0) {
             await Promise.all(
                 uploadedPhotos.map((url) =>
                     db.execute(
-                        `INSERT INTO PropertyPhoto (property_id, photo_url, created_at, updated_at)
-             VALUES (?, ?, NOW(), NOW())`,
+                        `
+            INSERT INTO PropertyPhoto
+            (property_id, photo_url, created_at, updated_at)
+            VALUES (?, ?, NOW(), NOW())
+            `,
                         [propertyId, url]
                     )
                 )
@@ -221,67 +170,24 @@ export async function POST(req: NextRequest) {
         }
 
         /* =====================================================
-           5️⃣ Insert Verification
-        ===================================================== */
-        if (verificationUploads) {
-            const [
-                submittedDocUrl,
-                govIdUrl,
-                indoorUrl,
-                outdoorUrl,
-            ] = await verificationUploads;
-
-            await db.execute(
-                `
-        INSERT INTO PropertyVerification (
-          property_id, doc_type, submitted_doc, gov_id,
-          outdoor_photo, indoor_photo, status,
-          created_at, updated_at, verified, attempts
-        )
-        VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 1)
-        ON DUPLICATE KEY UPDATE
-          doc_type = VALUES(doc_type),
-          submitted_doc = VALUES(submitted_doc),
-          gov_id = VALUES(gov_id),
-          outdoor_photo = VALUES(outdoor_photo),
-          indoor_photo = VALUES(indoor_photo),
-          status = 'Pending',
-          updated_at = NOW(),
-          attempts = attempts + 1
-      `,
-                [
-                    propertyId,
-                    docType,
-                    submittedDocUrl,
-                    govIdUrl,
-                    outdoorUrl,
-                    indoorUrl,
-                ]
-            );
-        }
-
-        /* =====================================================
            SUCCESS
         ===================================================== */
+
         return NextResponse.json(
             {
                 success: true,
-                message:
-                    "Property created successfully",
+                message: "Property created successfully",
                 propertyId,
             },
             { status: 201 }
         );
+
     } catch (err: any) {
-        console.error(
-            "Property creation failed:",
-            err
-        );
+        console.error("Property creation failed:", err);
 
         return NextResponse.json(
             {
-                error:
-                    "Failed to create property",
+                error: "Failed to create property",
                 details: err?.message,
             },
             { status: 500 }

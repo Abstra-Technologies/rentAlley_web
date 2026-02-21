@@ -265,15 +265,24 @@ const Navbar = () => {
               href={user?.userType === "tenant" ? "/pages/tenant/feeds" : "/"}
               className="flex items-center space-x-2 transition-opacity hover:opacity-80"
             >
-              <span
-                className={`text-2xl typographica font-bold tracking-tight ${
-                  scrolled
-                    ? "bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent"
-                    : "text-white"
-                }`}
-              >
-                Upkyp
-              </span>
+             <span
+                 className={`text-xl font-bold ${
+                     scrolled || mobileMenuOpen
+                         ? "bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent"
+                         : "text-white"
+                 }`}
+             >
+  Upkyp
+  <span
+      className={`ml-1 text-xs align-super font-semibold ${
+          scrolled || mobileMenuOpen
+              ? "text-emerald-600"
+              : "text-emerald-200"
+      }`}
+  >
+    Beta
+  </span>
+</span>
             </Link>
 
             {/* Right Side: Navigation + Actions */}
@@ -565,15 +574,24 @@ const Navbar = () => {
                 href={user?.userType === "tenant" ? "/pages/tenant/feeds" : "/"}
                 className="flex items-center"
               >
-                <span
-                  className={`text-xl font-bold ${
-                    scrolled || mobileMenuOpen
-                      ? "bg-gradient-to-r from-blue-600 typographica to-emerald-600 bg-clip-text text-transparent"
-                      : "text-white"
-                  }`}
-                >
-                  Upkyp
-                </span>
+             <span
+                 className={`text-xl font-bold ${
+                     scrolled || mobileMenuOpen
+                         ? "bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent"
+                         : "text-white"
+                 }`}
+             >
+  Upkyp
+  <span
+      className={`ml-1 text-xs align-super font-semibold ${
+          scrolled || mobileMenuOpen
+              ? "text-emerald-600"
+              : "text-emerald-200"
+      }`}
+  >
+    Beta
+  </span>
+</span>
               </Link>
 
               {/* Right Actions */}

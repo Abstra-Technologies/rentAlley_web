@@ -78,7 +78,7 @@ export default function PropertyListingPage() {
   if (error) {
     return (
       <ErrorBoundary
-        error={error.message || "Failed to load properties."}
+        error={error?.message || "Failed to load properties."}
         onRetry={() => window.location.reload()}
       />
     );
@@ -136,14 +136,14 @@ export default function PropertyListingPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
               <Building2 className="w-6 h-6 text-white" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Property Listings
-              </h1>
-              <p className="text-gray-600 text-sm">
-                Manage your properties and attract tenants
-              </p>
-            </div>
+              <div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                      Portfolio Overview
+                  </h1>
+                  <p className="text-gray-600 text-sm">
+                      Track and manage all your rental assets in one place
+                  </p>
+              </div>
           </div>
 
           {/* Counter + CTA */}

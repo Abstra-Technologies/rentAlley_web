@@ -49,7 +49,7 @@ export default function EditProperty() {
           text: "Unable to load property details.",
           icon: "error",
         });
-        router.push("/pages/landlord/property-listing");
+        router.push(`/pages/landlord/properties/${propertyId}`);
       });
   }, [propertyId]);
 
@@ -110,7 +110,7 @@ export default function EditProperty() {
         icon: "success",
         confirmButtonColor: "#10b981",
       }).then(() => {
-        router.replace("/pages/landlord/property-listing");
+        router.replace(`/pages/landlord/properties/${propertyId}`);
       });
     } catch (error) {
       console.error("Error updating property:", error);
