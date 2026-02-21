@@ -71,7 +71,7 @@ export default function PropertyListingPage() {
     verificationStatus,
     isFetchingVerification,
     hasReachedLimit,
-    isAddDisabled,
+    // isAddDisabled,
     maxProperties,
   } = usePropertyListingPage();
 
@@ -146,61 +146,71 @@ export default function PropertyListingPage() {
               </div>
           </div>
 
-          {/* Counter + CTA */}
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl border border-blue-200 px-4 py-2.5">
-              <span className="text-sm font-bold text-gray-900">
-                {totalCount} /{" "}
-                {subscription
-                  ? maxProperties === null
-                    ? "∞"
-                    : maxProperties
-                  : "—"}
-              </span>
-              <span className="text-xs text-gray-500 ml-1">properties</span>
-            </div>
-
             <button
-              aria-disabled={isAddDisabled}
-              disabled={isAddDisabled}
-              onClick={handleAddProperty}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 ${
-                isAddDisabled
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5"
-              }`}
+                onClick={handleAddProperty}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5"
             >
-              <Plus className="w-5 h-5" />
-              Add Property
+                <Plus className="w-5 h-5" />
+                Add Property
             </button>
-          </div>
+
+          {/* Counter + CTA */}
+          {/*<div className="flex items-center gap-3">*/}
+          {/*  <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl border border-blue-200 px-4 py-2.5">*/}
+          {/*    <span className="text-sm font-bold text-gray-900">*/}
+          {/*      {totalCount} /{" "}*/}
+          {/*      {subscription*/}
+          {/*        ? maxProperties === null*/}
+          {/*          ? "∞"*/}
+          {/*          : maxProperties*/}
+          {/*        : "—"}*/}
+          {/*    </span>*/}
+          {/*    <span className="text-xs text-gray-500 ml-1">properties</span>*/}
+          {/*  </div>*/}
+
+          {/*    <button*/}
+          {/*        aria-disabled={isAddDisabled}*/}
+          {/*        disabled={isAddDisabled}*/}
+          {/*        onClick={handleAddProperty}*/}
+          {/*        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 ${*/}
+          {/*            isAddDisabled*/}
+          {/*                ? "bg-gray-100 text-gray-400 cursor-not-allowed"*/}
+          {/*                : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5"*/}
+          {/*        }`}*/}
+          {/*    >*/}
+          {/*        <Plus className="w-5 h-5" />*/}
+          {/*        Add Property*/}
+          {/*    </button>*/}
+          {/*</div>*/}
+
         </div>
 
-        {/* Warnings */}
-        <div className="space-y-3 mb-4">
-          {isNotSubscribed && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
-            >
-              <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
-              <span className="flex-1 text-sm text-amber-800">
-                An active subscription is required to add properties.
-              </span>
-              <button
-                onClick={() =>
-                  router.push("/pages/landlord/subsciption_plan/pricing")
-                }
-                className="text-amber-900 text-sm font-semibold underline hover:text-amber-700"
-              >
-                Subscribe now
-              </button>
-            </motion.div>
-          )}
+        {/* Warnings flows for veri/subsrition */}
 
-          <LandlordProfileStatus landlord_id={user?.landlord_id} />
-        </div>
+        {/*<div className="space-y-3 mb-4">*/}
+        {/*  {isNotSubscribed && (*/}
+        {/*    <motion.div*/}
+        {/*      initial={{ opacity: 0, y: 10 }}*/}
+        {/*      animate={{ opacity: 1, y: 0 }}*/}
+        {/*      className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"*/}
+        {/*    >*/}
+        {/*      <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />*/}
+        {/*      <span className="flex-1 text-sm text-amber-800">*/}
+        {/*        An active subscription is required to add properties.*/}
+        {/*      </span>*/}
+        {/*      <button*/}
+        {/*        onClick={() =>*/}
+        {/*          router.push("/pages/landlord/subsciption_plan/pricing")*/}
+        {/*        }*/}
+        {/*        className="text-amber-900 text-sm font-semibold underline hover:text-amber-700"*/}
+        {/*      >*/}
+        {/*        Subscribe now*/}
+        {/*      </button>*/}
+        {/*    </motion.div>*/}
+        {/*  )}*/}
+
+        {/*  <LandlordProfileStatus landlord_id={user?.landlord_id} />*/}
+        {/*</div>*/}
 
         {/* Search */}
         <div className="max-w-2xl relative">
