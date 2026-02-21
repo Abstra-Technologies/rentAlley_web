@@ -9,7 +9,6 @@ interface OnboardingOptions {
   onComplete?: () => void;
 }
 
-// Inject custom styles for UpKyp theme
 const injectCustomStyles = () => {
   const styleId = "upkyp-driver-styles";
 
@@ -28,6 +27,45 @@ const injectCustomStyles = () => {
        covers the cutout and makes everything dark.
        Use overlayColor in the driver() config instead.
     ======================================== */
+
+    /* ========================================
+       WELCOME STEP - Special override
+    ======================================== */
+    .driverjs-welcome {
+      max-width: 380px !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+    }
+
+    /* Hide the empty title wrapper entirely */
+    .driverjs-welcome .driver-popover-title {
+      display: none !important;
+    }
+
+    /* Description holds all content including the gradient header */
+    .driverjs-welcome .driver-popover-description {
+      padding: 0 !important;
+    }
+
+    /* Close button floats over the gradient header */
+    .driverjs-welcome .driver-popover-close-btn {
+      position: absolute !important;
+      top: 12px !important;
+      right: 12px !important;
+      background: rgba(255,255,255,0.2) !important;
+      border: 1px solid rgba(255,255,255,0.35) !important;
+      color: #ffffff !important;
+      z-index: 10 !important;
+    }
+
+    .driverjs-welcome .driver-popover-close-btn:hover {
+      background: rgba(255,255,255,0.35) !important;
+      color: #ffffff !important;
+    }
+
+    .driverjs-welcome .driver-popover-footer {
+      padding: 12px 16px 16px 16px !important;
+    }
 
     /* ========================================
        HIGHLIGHTED ELEMENT
@@ -191,7 +229,8 @@ export const useOnboarding = ({
       prevBtnText: "← Back",
       doneBtnText: "Done",
       allowClose: true,
-
+      // ✅ Use overlayColor here instead of CSS override
+      // This lets Driver.js manage its SVG cutout properly
       overlayColor: "rgba(0, 0, 0, 0.65)",
       stagePadding: 15,
       stageRadius: 12,
