@@ -134,7 +134,7 @@ const Navbar = () => {
       return [
         { href: "/pages/public/how-it-works", label: "How It Works" },
         { href: "/pages/find-rent", label: "Find Rent" },
-        { href: "/pages/public/pricing", label: "Pricing" },
+        // { href: "/pages/public/pricing", label: "Pricing" },
       ];
     } else if (user?.userType === "tenant") {
       return [
