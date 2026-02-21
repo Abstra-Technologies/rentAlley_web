@@ -19,52 +19,13 @@ export async function PUT(req: NextRequest) {
             );
         }
 
-        /* ---------- SAFEGUARD: PROPERTY MUST BE VERIFIED ---------- */
-        if (publish === true) {
-            const [[verification]]: any = await db.query(
-                `
-                SELECT pv.verified, pv.status
-                FROM rentalley_db.Unit u
-                INNER JOIN rentalley_db.Property p
-                    ON p.property_id = u.property_id
-                LEFT JOIN rentalley_db.PropertyVerification pv
-                    ON pv.property_id = p.property_id
-                WHERE u.unit_id = ?
-                LIMIT 1
-                `,
-                [unit_id]
-            );
-
-            if (!verification) {
-                return NextResponse.json(
-                    { success: false, message: "Unit or property not found." },
-                    { status: 404 }
-                );
-            }
-
-            const isVerified =
-                verification.verified === 1 ||
-                verification.status === "Verified";
-
-            if (!isVerified) {
-                return NextResponse.json(
-                    {
-                        success: false,
-                        message:
-                            "This property is not verified. You must verify the property before publishing units.",
-                    },
-                    { status: 403 } // Forbidden is correct
-                );
-            }
-        }
-
         /* ---------- UPDATE UNIT ---------- */
         const [result]: any = await db.execute(
             `
-            UPDATE rentalley_db.Unit
-            SET publish = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE unit_id = ?
-            `,
+      UPDATE rentalley_db.Unit
+      SET publish = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE unit_id = ?
+      `,
             [publish ? 1 : 0, unit_id]
         );
 
@@ -84,6 +45,7 @@ export async function PUT(req: NextRequest) {
 
     } catch (error: any) {
         console.error("🔥 Publish toggle failed:", error);
+
         return NextResponse.json(
             {
                 success: false,
