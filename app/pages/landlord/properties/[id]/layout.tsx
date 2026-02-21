@@ -58,26 +58,29 @@ export default function PropertyLayout({
   const province = property?.province || "";
 
   /* ============================
-       MENU GROUPS (BY IMPORTANCE)
-    ============================ */
+     MENU GROUPS — navId added for Driver.js targeting
+  ============================ */
   const menuGroups = [
     {
       title: "Property Setup",
       items: [
         {
           id: "edit",
+          navId: "prop-nav-edit",
           label: "Edit Property",
           href: `/pages/landlord/properties/${id}/editPropertyDetails?${id}`,
           icon: CopyMinus,
         },
         {
           id: "policy",
+          navId: "prop-nav-policy",
           label: "House Policy",
           href: `/pages/landlord/properties/${id}/house-policy?${id}`,
           icon: NotebookText,
         },
         {
           id: "units",
+          navId: "prop-nav-units",
           label: "Units",
           href: `/pages/landlord/properties/${id}`,
           icon: Home,
@@ -89,18 +92,21 @@ export default function PropertyLayout({
       items: [
         {
           id: "active-lease",
+          navId: "prop-nav-active-lease",
           label: "Active Lease",
           href: `/pages/landlord/properties/${id}/activeLease`,
           icon: ScrollText,
         },
         {
           id: "prospectives",
+          navId: "prop-nav-prospectives",
           label: "Prospectives",
           href: `/pages/landlord/properties/${id}/prospectives`,
           icon: Users,
         },
         {
           id: "assets",
+          navId: "prop-nav-assets",
           label: "Assets",
           href: `/pages/landlord/properties/${id}/assets_management`,
           icon: Videotape,
@@ -118,24 +124,28 @@ export default function PropertyLayout({
       items: [
         {
           id: "billing",
+          navId: "prop-nav-billing",
           label: "Billing",
           href: `/pages/landlord/properties/${id}/billing`,
           icon: CreditCard,
         },
         {
           id: "payments",
+          navId: "prop-nav-payments",
           label: "Payments",
           href: `/pages/landlord/properties/${id}/payments`,
           icon: Wallet,
         },
         {
           id: "pdc-management",
+          navId: "prop-nav-pdc-management",
           label: "PDC Management",
           href: `/pages/landlord/properties/${id}/pdcManagement`,
           icon: FileText,
         },
         {
           id: "finance",
+          navId: "prop-nav-finance",
           label: "Financials",
           href: `/pages/landlord/properties/${id}/financials`,
           icon: HandCoins,
@@ -147,12 +157,14 @@ export default function PropertyLayout({
       items: [
         {
           id: "utilities",
+          navId: "prop-nav-utilities",
           label: "Utilities",
           href: `/pages/landlord/properties/${id}/utilities`,
           icon: Zap,
         },
         {
           id: "configuration",
+          navId: "prop-nav-configuration",
           label: "Configuration",
           href: `/pages/landlord/properties/${id}/configurations`,
           icon: SlidersHorizontal,
@@ -178,8 +190,8 @@ export default function PropertyLayout({
   }, [isSidebarOpen]);
 
   /* ============================
-       SIDEBAR CONTENT
-    ============================ */
+     SIDEBAR CONTENT
+  ============================ */
   const SidebarContent = () => (
     <>
       {/* Header */}
@@ -212,7 +224,7 @@ export default function PropertyLayout({
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation — navId applied to each Link for Driver.js */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-4">
         {menuGroups.map((group) => (
           <div key={group.title}>
@@ -220,37 +232,40 @@ export default function PropertyLayout({
               {group.title}
             </p>
             <ul className="space-y-1">
-              {group.items.map(({ id, label, href, icon: Icon }) => {
-                const active = isActive(id, href);
-                return (
-                  <motion.li
-                    key={id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                  >
-                    <Link
-                      href={href}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
-                        active
-                          ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-blue-500/25"
-                          : "text-gray-700 hover:bg-gray-100"
-                      }`}
+              {group.items.map(
+                ({ id: menuId, navId, label, href, icon: Icon }) => {
+                  const active = isActive(menuId, href);
+                  return (
+                    <motion.li
+                      key={menuId}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
                     >
-                      <Icon
-                        className={`w-5 h-5 ${
+                      <Link
+                        href={href}
+                        id={navId}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                           active
-                            ? ""
-                            : "text-gray-400 group-hover:text-blue-600"
+                            ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-blue-500/25"
+                            : "text-gray-700 hover:bg-gray-100"
                         }`}
-                      />
-                      <span className="flex-1 text-sm font-medium">
-                        {label}
-                      </span>
-                      {active && <ChevronRight className="w-4 h-4" />}
-                    </Link>
-                  </motion.li>
-                );
-              })}
+                      >
+                        <Icon
+                          className={`w-5 h-5 ${
+                            active
+                              ? ""
+                              : "text-gray-400 group-hover:text-blue-600"
+                          }`}
+                        />
+                        <span className="flex-1 text-sm font-medium">
+                          {label}
+                        </span>
+                        {active && <ChevronRight className="w-4 h-4" />}
+                      </Link>
+                    </motion.li>
+                  );
+                },
+              )}
             </ul>
           </div>
         ))}
@@ -280,6 +295,7 @@ export default function PropertyLayout({
 
       {/* MOBILE HEADER */}
       <div
+        id="prop-mobile-header"
         className="lg:hidden fixed top-0 left-0 right-0 h-14
                       bg-gradient-to-r from-blue-600 to-emerald-600
                       flex items-center justify-between px-4 z-50 shadow-lg"
@@ -305,6 +321,7 @@ export default function PropertyLayout({
         <div className="flex gap-2 shrink-0">
           <NotificationSection user={user} admin={null} />
           <button
+            id="prop-mobile-menu-btn"
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 rounded-lg hover:bg-white/10 transition-colors"
           >
