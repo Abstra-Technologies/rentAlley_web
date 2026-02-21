@@ -121,34 +121,43 @@ export default function usePropertyListingPage() {
     );
 
     const handleAddProperty = useCallback(() => {
-        if (verificationStatus !== "approved") {
-            Swal.fire(
-                "Verification Required",
-                "Please verify your profile first.",
-                "warning"
-            );
-            return;
-        }
-
+        // if (verificationStatus !== "approved") {
+        //     Swal.fire(
+        //         "Verification Required",
+        //         "Please verify your profile first.",
+        //         "warning"
+        //     );
+        //     return;
+        // }
+        //
         if (!subscription || subscription.is_active !== 1) {
-            Swal.fire(
-                "Subscription Required",
-                "You need an active subscription to add properties.",
-                "info"
-            );
-            return;
-        }
+            Swal.fire({
+                title: "Join Our Beta Program",
+                text: "Property publishing is currently available through our Beta Program.",
+                icon: "info",
+                showCancelButton: true,
+                confirmButtonText: "Join Beta",
+                cancelButtonText: "Maybe Later",
+                confirmButtonColor: "#2563eb",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.push("/pages/landlord/beta-program/joinForm");
+                }
+            });
 
-        if (hasReachedLimit) {
-            Swal.fire(
-                "Limit Reached",
-                `You've reached your plan limit of ${
-                    maxProperties ?? "∞"
-                } properties.`,
-                "error"
-            );
             return;
         }
+        //
+        // if (hasReachedLimit) {
+        //     Swal.fire(
+        //         "Limit Reached",
+        //         `You've reached your plan limit of ${
+        //             maxProperties ?? "∞"
+        //         } properties.`,
+        //         "error"
+        //     );
+        //     return;
+        // }
 
         setIsNavigating(true);
         router.push(

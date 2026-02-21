@@ -268,7 +268,7 @@ export default function PropertyListingPage() {
                 ? "Try adjusting your search or add a new property."
                 : "Start by adding your first property to get started."}
             </p>
-            {!searchQuery && !isAddDisabled && (
+            {!searchQuery && (
               <button
                 onClick={handleAddProperty}
                 className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all"

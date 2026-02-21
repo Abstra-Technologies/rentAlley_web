@@ -9,7 +9,7 @@ export async function GET() {
             `
             SELECT COUNT(*) as total
             FROM rentalley_db.BetaUsers
-            WHERE is_activated = 1
+       
             `
         );
 
@@ -17,8 +17,8 @@ export async function GET() {
             {
                 success: true,
                 count: rows[0].total,
-                max: 50,
-                remaining: 50 - rows[0].total,
+                max: 20,
+                remaining: 20 - rows[0].total,
             },
             { status: 200 }
         );
