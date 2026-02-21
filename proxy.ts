@@ -68,6 +68,10 @@ const permissionMapping: Record<string, string> = {
 export async function proxy(req: NextRequest) {
     const { pathname, search } = req.nextUrl;
 
+    if (pathname === VERIFY_PAGE) {
+        return NextResponse.next();
+    }
+
     const userToken = req.cookies.get("token")?.value;
     const adminToken = req.cookies.get("admin_token")?.value;
 
