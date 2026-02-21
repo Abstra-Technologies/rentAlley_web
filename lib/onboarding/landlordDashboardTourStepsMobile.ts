@@ -2,11 +2,51 @@ export const landlordDashboardTourStepsMobile = [
   // ─── WELCOME ───────────────────────────────────────────────────────────
   {
     popover: {
-      title: "👋 Welcome to UpKyp!",
-      description:
-        "Let's take a quick tour so you know your way around. You can skip anytime by pressing the × button.",
+      title: "",
+      description: `
+        <div style="margin: -12px -12px 0 -12px;">
+          <div style="
+            padding: 40px 24px 28px 24px;
+            background: linear-gradient(135deg, #1d4ed8 0%, #0f766e 100%);
+            text-align: center;
+            border-radius: 14px 14px 0 0;
+            position: relative;
+          ">
+            <div style="
+              width: 72px;
+              height: 72px;
+              background: rgba(255,255,255,0.15);
+              border-radius: 20px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0 auto 16px auto;
+              border: 1px solid rgba(255,255,255,0.25);
+              padding: 10px;
+            ">
+              <img src="/upkeep_blue.png" alt="UpKyp" style="width: 100%; height: 100%; object-fit: contain; filter: brightness(0) invert(1);" />
+            </div>
+            <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.3px;">Welcome to UpKyp!</h2>
+            <p style="color: rgba(255,255,255,0.8); font-size: 13px; margin: 0;">Your Landlord Portal is ready</p>
+          </div>
+          <div style="padding: 20px 20px 8px 20px; text-align: center;">
+            <p style="color: #374151; font-size: 14px; line-height: 1.7; margin: 0 0 16px 0;">
+              UpKyp is your <strong>all-in-one property management platform</strong>.
+              Manage properties, collect rent, communicate with tenants,
+              track maintenance, and monitor your revenue — all in one place.
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px;">
+              <div style="background: #eff6ff; border-radius: 10px; padding: 10px; font-size: 12px; color: #1d4ed8; font-weight: 600;">🏢 Properties</div>
+              <div style="background: #ecfdf5; border-radius: 10px; padding: 10px; font-size: 12px; color: #0f766e; font-weight: 600;">💳 Payments</div>
+              <div style="background: #faf5ff; border-radius: 10px; padding: 10px; font-size: 12px; color: #7c3aed; font-weight: 600;">👥 Tenants</div>
+              <div style="background: #fff7ed; border-radius: 10px; padding: 10px; font-size: 12px; color: #c2410c; font-weight: 600;">🔧 Maintenance</div>
+            </div>
+          </div>
+        </div>
+      `,
       side: "over",
       align: "center",
+      popoverClass: "driverjs-theme-upkyp driverjs-welcome",
     },
   },
 
