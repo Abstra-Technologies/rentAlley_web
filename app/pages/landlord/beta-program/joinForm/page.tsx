@@ -109,7 +109,7 @@ export default function JoinBetaPage() {
                     </h1>
 
                     <p className="mt-3 text-sm text-gray-600">
-                        Exclusive early access for selected landlords.
+                        Exclusive early access for landlords.
                     </p>
                 </div>
 
@@ -140,7 +140,7 @@ export default function JoinBetaPage() {
                         </div>
 
                         <p className="text-xs text-gray-500 mt-2">
-                            {slotsTaken} / 50 beta slots claimed
+                            {slotsTaken} / 20 beta slots claimed
                         </p>
                     </div>
                 )}
@@ -150,14 +150,9 @@ export default function JoinBetaPage() {
                     <Feature
                         icon={<Sparkles className="w-5 h-5 text-blue-600" />}
                         title="60 Days Free Premium Access"
-                        description="Unlock premium subscription features at no cost for 60 days."
+                        description="Unlock premium  features at no cost for 60 days."
                     />
 
-                    <Feature
-                        icon={<ShieldCheck className="w-5 h-5 text-emerald-600" />}
-                        title="Discounted Transaction Fees"
-                        description="Enjoy reduced transaction processing fees during beta."
-                    />
 
                     <Feature
                         icon={<Rocket className="w-5 h-5 text-purple-600" />}
