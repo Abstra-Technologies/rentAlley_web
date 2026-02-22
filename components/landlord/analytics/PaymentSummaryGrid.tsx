@@ -79,13 +79,15 @@ export default function PaymentSummaryGrid({ landlord_id }: Props) {
                 const CardBody = (
                     <div
                         className={`relative ${card.bg}
-                    rounded-lg sm:rounded-xl
-                    border ${card.border}
-                    p-2 sm:p-4
-                    min-w-0
-                    ${card.link ? "cursor-pointer group hover:shadow-md transition-all" : ""}`}
+    aspect-square sm:aspect-auto
+    rounded-lg sm:rounded-xl
+    border ${card.border}
+    p-3 sm:p-4
+    min-w-0
+    flex items-center justify-center sm:block
+    ${card.link ? "cursor-pointer group hover:shadow-md transition-all" : ""}`}
                     >
-                        <div className="flex flex-col">
+                        <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
 
                             {/* Icon */}
                             <card.icon
@@ -94,16 +96,16 @@ export default function PaymentSummaryGrid({ landlord_id }: Props) {
 
                             {/* Value */}
                             <span
-                                className={`text-xs sm:text-2xl font-bold ${card.valueColor}
-                            truncate leading-tight`}
+                                className={`text-sm sm:text-2xl font-bold ${card.valueColor}
+            truncate leading-tight`}
                             >
-                            {card.value}
-                        </span>
+            {card.value}
+        </span>
 
                             {/* Title */}
                             <p
-                                className={`text-[9px] sm:text-sm ${card.iconColor}
-                            leading-tight mt-1 line-clamp-2`}
+                                className={`text-[10px] sm:text-sm ${card.iconColor}
+            leading-tight mt-1 line-clamp-2`}
                             >
                                 {card.title}
                             </p>
@@ -112,11 +114,11 @@ export default function PaymentSummaryGrid({ landlord_id }: Props) {
                         {card.link && (
                             <span
                                 className="hidden sm:block absolute bottom-3 right-4
-                            text-xs font-medium text-amber-700
-                            opacity-0 group-hover:opacity-100 transition-opacity"
+            text-xs font-medium text-amber-700
+            opacity-0 group-hover:opacity-100 transition-opacity"
                             >
-                            {card.helper}
-                        </span>
+            {card.helper}
+        </span>
                         )}
                     </div>
                 );

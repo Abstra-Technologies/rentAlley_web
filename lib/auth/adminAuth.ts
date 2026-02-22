@@ -8,14 +8,14 @@ export async function verifyAdmin(request: NextRequest) {
         const cookies = cookieHeader ? parse(cookieHeader) : null;
 
 
-
-        if (!cookies?.token) {
+        // should be the same as the set token name.
+        if (!cookies?.admin_token) {
             return { error: "Unauthorized", status: 401 };
         }
 
         const secretKey = new TextEncoder().encode(process.env.JWT_SECRET!);
 
-        const { payload } = await jwtVerify(cookies.token, secretKey);
+        const { payload } = await jwtVerify(cookies.admin_token, secretKey);
 
         if (!payload.admin_id) {
             return { error: "Invalid token", status: 401 };

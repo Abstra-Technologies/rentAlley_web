@@ -360,7 +360,6 @@ export default function LandlordLayout({
           </div>
         </div>
       )}
-
             {/* MAIN */}
             <main className="flex-1 lg:pl-72  lg:pt-0">{children}</main>
         </div>

@@ -153,7 +153,7 @@ export default function PaymentsPage() {
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white border-b border-gray-200 pt-20 pb-6 px-6"
+                className="bg-white border-b border-gray-200 pt-20 sm:pt-10 md:pt-6 pb-4 sm:pb-6 px-4 sm:px-6"
             >
                 {/* Title */}
                 <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">

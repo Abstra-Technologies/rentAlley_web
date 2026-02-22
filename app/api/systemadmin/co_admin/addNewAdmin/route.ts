@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     const secretKey = new TextEncoder().encode(process.env.JWT_SECRET!);
     const { payload } = await jwtVerify(cookies.token, secretKey);
-    currentLoggedAdmin = payload.admin_id;
+    currentLoggedAdmin = payload?.admin_id;
 
     const body = await req.json();
     const {
