@@ -209,13 +209,13 @@ export const propertyUnitsTourSteps = [
   },
 
   // ─── DONE ──────────────────────────────────────────────────────────────
-  {
-    popover: {
-      title: "🎉 You're ready!",
-      description:
-        "You now know your way around this property. Start by adding your first unit, then set up billing and invite a tenant. Click the Show Guide button anytime to replay this tour.",
-      side: "over",
-      align: "center",
+    {
+        popover: {
+            title: "You're all set!",
+            description:
+                "You're now familiar with your property dashboard. Start by adding your first unit, then set up billing and invite your tenant. You can click 'Show Guide' anytime if you'd like a quick refresher.",
+            side: "over",
+            align: "center",
+        },
     },
-  },
 ];

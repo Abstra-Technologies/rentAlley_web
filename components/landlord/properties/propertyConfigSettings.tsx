@@ -122,7 +122,7 @@ export default function PropertyConfiguration({
 
             Swal.fire(
                 "Saved!",
-                "Property configuration updated successfully.",
+                "Property configuration updated.",
                 "success"
             ).then(() => {
                 if (onUpdate) onUpdate();

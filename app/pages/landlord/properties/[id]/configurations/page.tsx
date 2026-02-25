@@ -6,6 +6,7 @@ import { useState } from "react";
 import Swal from "sweetalert2";
 import PropertyConfiguration from "@/components/landlord/properties/propertyConfigSettings";
 import { Settings, HelpCircle } from "lucide-react";
+import RecurringCharges from "@/components/landlord/properties/RecurringCharges";
 
 export default function PropertyConfigurationPage() {
   const { id } = useParams();
@@ -25,7 +26,7 @@ export default function PropertyConfigurationPage() {
       Swal.fire({
         icon: "success",
         title: "Updated!",
-        text: "Utility settings updated and rates reloaded.",
+        text: "Utility settings updated.",
         timer: 1500,
         showConfirmButton: false,
       });
@@ -79,6 +80,10 @@ export default function PropertyConfigurationPage() {
             </button>
           </div>
         </div>
+
+          {/*<div className="mt-6">*/}
+          {/*    <RecurringCharges propertyId={property_id} />*/}
+          {/*</div>*/}
 
         {/* Configuration Component */}
         <PropertyConfiguration
