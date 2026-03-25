@@ -121,11 +121,14 @@ async function transferToSubaccount({
             "Content-Type": "application/json",
             Authorization:
                 "Basic " +
-                Buffer.from(`${XENDIT_SECRET_KEY}:`).toString("base64"),
+                Buffer.from(`${process.env.XENDIT_SECRET_KEY}:`).toString("base64"),
         },
         body: JSON.stringify({
             reference,
             amount,
+
+            // 🔥 REQUIRED NOW
+            source_user_id: process.env.XENDIT_MAIN_ACCOUNT_ID, // 👈 ADD THIS
             destination_user_id: destinationUserId,
         }),
     });
