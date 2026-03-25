@@ -110,17 +110,9 @@ export default function PaymentPartnersMarquee() {
                                         alt={partner.name}
                                         width={120}
                                         height={50}
-                                        className="
-                                            h-6
-                                            sm:h-8
-                                            md:h-9
-                                            w-auto
-                                            object-contain
-                                            opacity-80
-                                            hover:opacity-100
-                                            transition-opacity
-                                            duration-300
-                                        "
+                                        className="h-6 sm:h-8 md:h-9 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-300"
+                                        sizes="120px"
+                                        priority={index < 6}
                                     />
                                 </div>
                             ))}
@@ -138,17 +130,9 @@ export default function PaymentPartnersMarquee() {
                                         alt={partner.name}
                                         width={120}
                                         height={50}
-                                        className="
-                                            h-6
-                                            sm:h-8
-                                            md:h-9
-                                            w-auto
-                                            object-contain
-                                            opacity-80
-                                            hover:opacity-100
-                                            transition-opacity
-                                            duration-300
-                                        "
+                                        className="h-6 sm:h-8 md:h-9 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-300"
+                                        sizes="120px"
+                                        priority={index < 6}
                                     />
                                 </div>
                             ))}

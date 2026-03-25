@@ -7,7 +7,7 @@ import PaymentPartnersMarquee from "@/components/Commons/PaymentPartnersMarquee"
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden will-change-transform">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-900 to-emerald-900" />
 
@@ -20,18 +20,10 @@ export default function HeroSection() {
       {/* Grid Pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
 
-      {/* Floating Elements */}
+      {/* Floating Elements - CSS Animated for better performance */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{ y: [0, -20, 0], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/4 left-[10%] w-72 h-72 bg-blue-500/10 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ y: [0, 20, 0], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute bottom-1/4 right-[10%] w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"
-        />
+        <div className="absolute top-1/4 left-[10%] w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-float-slow" />
+        <div className="absolute bottom-1/4 right-[10%] w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-float" />
       </div>
 
         <div className="absolute top-2 left-0 right-0 z-30">

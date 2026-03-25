@@ -59,6 +59,8 @@ export default function RootLayout({
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
         <Head>
             <link rel="manifest" href="/manifest.json"/>
+            <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+            <link rel="preconnect" href="https://res.cloudinary.com" />
             <meta name="theme-color" content="#ffffff"/>
             <script
           dangerouslySetInnerHTML={{

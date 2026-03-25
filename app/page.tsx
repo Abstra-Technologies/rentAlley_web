@@ -1,22 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import Page_footer from "@/components/navigation/page_footer";
 import LoadingScreen from "@/components/loadingScreen";
-import AnimatedFeatures from "@/components/ui/Process";
 import HeroSection from "@/components/landing/HeroSection";
 import PainPointsSection from "@/components/landing/PainPointsSection";
-import FeaturesShowcase from "@/components/landing/FeaturesShowcase";
-import CTASection from "@/components/landing/CTASection";
 import "@/app/styles/landing-animations.css";
-import PhilippineMarketSection from "@/components/landing/MarketSection";
+
+const AnimatedFeatures = lazy(() => import("@/components/ui/Process"));
+const FeaturesShowcase = lazy(() => import("@/components/landing/FeaturesShowcase"));
+const CTASection = lazy(() => import("@/components/landing/CTASection"));
+const PhilippineMarketSection = lazy(() => import("@/components/landing/MarketSection"));
+const Page_footer = lazy(() => import("@/components/navigation/page_footer"));
+
+function SectionSkeleton() {
+  return (
+    <div className="w-full h-64 bg-gray-50 animate-pulse">
+      <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-center">
+        <div className="text-gray-400">Loading...</div>
+      </div>
+    </div>
+  );
+}
 
 export default function SplashScreen() {
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Check authentication and redirect if logged in
   useEffect(() => {
     async function redirectIfAuthenticated() {
       try {
@@ -45,26 +55,29 @@ export default function SplashScreen() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white overflow-hidden">
-      {/* Hero Section */}
       <HeroSection />
 
-      {/* Pain Points */}
       <PainPointsSection />
 
-      {/* How It Works (Existing AnimatedFeatures) */}
-      <AnimatedFeatures />
+      <Suspense fallback={<SectionSkeleton />}>
+        <AnimatedFeatures />
+      </Suspense>
 
-      {/* Features Showcase */}
-      <FeaturesShowcase />
+      <Suspense fallback={<SectionSkeleton />}>
+        <FeaturesShowcase />
+      </Suspense>
 
-      {/* Testimonials */}
-      <PhilippineMarketSection />
+      <Suspense fallback={<SectionSkeleton />}>
+        <PhilippineMarketSection />
+      </Suspense>
 
-      {/* CTA Section */}
-      <CTASection />
+      <Suspense fallback={<SectionSkeleton />}>
+        <CTASection />
+      </Suspense>
 
-      {/* Footer */}
-      <Page_footer />
+      <Suspense fallback={<div className="h-64" />}>
+        <Page_footer />
+      </Suspense>
     </div>
   );
 }
