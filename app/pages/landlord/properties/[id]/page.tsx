@@ -15,6 +15,7 @@ import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 import AIUnitGenerator from "@/components/landlord/ai/AIUnitGenerator";
 import InviteTenantModal from "@/components/landlord/properties/InviteTenantModalPerProperty";
 import BulkImportUnitModal from "@/components/landlord/properties/BulkImportUnitModal";
+import AddUnitModal from "@/components/landlord/properties/AddUnitModal";
 
 import { usePropertyUnitsPage } from "@/hooks/landlord/usePropertyUnitsPage";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -54,6 +55,8 @@ export default function ViewPropertyDetailedPage() {
     setInviteModalOpen,
     bulkImportModal,
     setBulkImportModal,
+    addUnitModalOpen,
+    setAddUnitModalOpen,
   } = usePropertyUnitsPage();
 
   const currentUnitsCount = units.length;
@@ -190,18 +193,18 @@ export default function ViewPropertyDetailedPage() {
             </button>
 
             {/* Bulk Import */}
-            <button
-              onClick={() => setBulkImportModal(true)}
-              className="group relative overflow-hidden rounded-xl p-4 bg-gradient-to-br from-emerald-500 to-emerald-600 border border-emerald-400 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-            >
-              <div className="absolute top-2 right-2 w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                <FileSpreadsheet className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex flex-col items-start gap-1 text-white">
-                <span className="text-xs font-medium opacity-90">Import</span>
-                <span className="text-sm font-bold">Bulk Units</span>
-              </div>
-            </button>
+            {/*<button*/}
+            {/*  onClick={() => setBulkImportModal(true)}*/}
+            {/*  className="group relative overflow-hidden rounded-xl p-4 bg-gradient-to-br from-emerald-500 to-emerald-600 border border-emerald-400 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"*/}
+            {/*>*/}
+            {/*  <div className="absolute top-2 right-2 w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">*/}
+            {/*    <FileSpreadsheet className="w-4 h-4 text-white" />*/}
+            {/*  </div>*/}
+            {/*  <div className="flex flex-col items-start gap-1 text-white">*/}
+            {/*    <span className="text-xs font-medium opacity-90">Import</span>*/}
+            {/*    <span className="text-sm font-bold">Bulk Units</span>*/}
+            {/*  </div>*/}
+            {/*</button>*/}
 
             {/* Invite Tenant */}
             <button
@@ -342,6 +345,14 @@ export default function ViewPropertyDetailedPage() {
           isOpen={bulkImportModal}
           onClose={() => setBulkImportModal(false)}
           propertyId={property_id}
+        />
+      )}
+
+      {addUnitModalOpen && property_id && (
+        <AddUnitModal
+          property_id={property_id}
+          landlord_id={landlordId || ""}
+          onClose={() => setAddUnitModalOpen(false)}
         />
       )}
     </div>

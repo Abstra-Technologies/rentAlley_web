@@ -19,6 +19,39 @@ export async function PUT(req: NextRequest) {
             );
         }
 
+        /* ---------- CHECK LANDLORD VERIFICATION ---------- */
+        // Only check when trying to publish (not when unpublishing)
+        if (publish) {
+            const [unitRows]: any = await db.execute(
+                `SELECT p.landlord_id FROM rentalley_db.Unit u 
+                 JOIN rentalley_db.Property p ON u.property_id = p.property_id 
+                 WHERE u.unit_id = ?`,
+                [unit_id]
+            );
+
+            if (!unitRows.length) {
+                return NextResponse.json(
+                    { success: false, message: "Unit not found." },
+                    { status: 404 }
+                );
+            }
+
+            const landlord_id = unitRows[0].landlord_id;
+
+            // Check if landlord is verified
+            const [landlordRows]: any = await db.execute(
+                `SELECT is_verified FROM Landlord WHERE landlord_id = ?`,
+                [landlord_id]
+            );
+
+            if (!landlordRows.length || landlordRows[0].is_verified !== 1) {
+                return NextResponse.json(
+                    { success: false, message: "Your account must be verified before publishing units. Please complete your identity verification first." },
+                    { status: 403 }
+                );
+            }
+        }
+
         /* ---------- UPDATE UNIT ---------- */
         const [result]: any = await db.execute(
             `

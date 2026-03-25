@@ -80,21 +80,30 @@ export async function POST(req: NextRequest) {
         /* -----------------------------------------------
            1️⃣ Update lease dates (NO side effects)
         ----------------------------------------------- */
-        if (body.lease_start_date || body.lease_end_date) {
-            await db.query(
-                `
-                UPDATE rentalley_db.LeaseAgreement
-                SET
-                    start_date = COALESCE(?, start_date),
-                    end_date   = COALESCE(?, end_date)
-                WHERE agreement_id = ?
-                `,
-                [
-                    body.lease_start_date ?? null,
-                    body.lease_end_date ?? null,
-                    agreement_id,
-                ]
-            );
+        const startDate = body.lease_start_date && body.lease_start_date !== "" ? body.lease_start_date : null;
+        const endDate = body.lease_end_date && body.lease_end_date !== "" ? body.lease_end_date : null;
+
+        if (startDate || endDate) {
+            // Build dynamic update query based on what's provided
+            const updates: string[] = [];
+            const values: any[] = [];
+
+            if (startDate) {
+                updates.push("start_date = ?");
+                values.push(startDate);
+            }
+            if (endDate) {
+                updates.push("end_date = ?");
+                values.push(endDate);
+            }
+
+            if (updates.length > 0) {
+                values.push(agreement_id);
+                await db.query(
+                    `UPDATE rentalley_db.LeaseAgreement SET ${updates.join(", ")} WHERE agreement_id = ?`,
+                    values
+                );
+            }
         }
 
         /* -----------------------------------------------

@@ -22,13 +22,15 @@ export async function POST(req: Request) {
     const formData = await req.formData();
 
     const property_id = formData.get("property_id") as string;
-    const unitName = formData.get("unitName") as string;
-    const unitSize = formData.get("unitSize") as string;
-    const rentAmt = formData.get("rentAmt") as string;
+    const unitName = formData.get("unit_name") as string;
+    const unitSize = formData.get("unit_size") as string;
+    const rentAmt = formData.get("rent_amount") as string;
     const furnish = formData.get("furnish") as string;
     const amenities = formData.get("amenities") as string;
     const status = (formData.get("status") as string) || "unoccupied";
     const unitType = formData.get("unitType") as string;
+
+    console.log('property id:')
 
 
     // Extract 360 photo directly
@@ -43,7 +45,7 @@ export async function POST(req: Request) {
 
     const files: File[] = [];
     for (const entry of formData.entries()) {
-        if (entry[0] === "photos" && entry[1] instanceof File) {
+        if ((entry[0] === "photos" || entry[0] === "photo") && entry[1] instanceof File) {
             files.push(entry[1]);
         }
     }

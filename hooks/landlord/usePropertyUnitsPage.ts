@@ -51,6 +51,7 @@ export function usePropertyUnitsPage() {
     const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
     const [inviteModalOpen, setInviteModalOpen] = useState(false);
     const [bulkImportModal, setBulkImportModal] = useState(false);
+    const [addUnitModalOpen, setAddUnitModalOpen] = useState(false);
 
     /* ---------------- SEARCH ---------------- */
 
@@ -103,9 +104,7 @@ export function usePropertyUnitsPage() {
             return;
         }
 
-        router.push(
-            `/pages/landlord/properties/${property_id}/units/create?property_id=${property_id}`
-        );
+        setAddUnitModalOpen(true);
     };
 
     const handleEditUnit = (unitId: number) => {
@@ -159,6 +158,8 @@ export function usePropertyUnitsPage() {
         setInviteModalOpen,
         bulkImportModal,
         setBulkImportModal,
+        addUnitModalOpen,
+        setAddUnitModalOpen,
     };
 
 }
