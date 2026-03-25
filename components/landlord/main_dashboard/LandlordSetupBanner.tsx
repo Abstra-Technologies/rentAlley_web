@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import Swal from "sweetalert2";
@@ -31,6 +31,7 @@ export default function LandlordOnboarding({ landlordId }: Props) {
 
     const [showPayoutModal, setShowPayoutModal] = useState(false);
     const [showAgreementModal, setShowAgreementModal] = useState(false);
+    const [dismissed, setDismissed] = useState(false);
 
     const [payoutMethod, setPayoutMethod] = useState("");
     const [accountName, setAccountName] = useState("");
@@ -63,21 +64,40 @@ export default function LandlordOnboarding({ landlordId }: Props) {
         fetcher
     );
 
-    if (!verification || !payoutRes || !agreementRes) return null;
-
-    const agreementDone = agreementRes.accepted === true;
+    const agreementDone = agreementRes?.accepted === true;
     const verificationStatus: VerificationStatus =
-        verification.status ?? "incomplete";
+        verification?.status ?? "incomplete";
     const verificationDone = verificationStatus === "verified";
-    const payoutDone = payoutRes.status === "completed";
+    const payoutDone = payoutRes?.status === "completed";
     const hasProperty =
         Array.isArray(propertiesRes) && propertiesRes.length > 0;
 
     const allCompleted =
         agreementDone && verificationDone && payoutDone && hasProperty;
 
-    // ✅ Hide onboarding if everything completed
-    if (allCompleted) return null;
+    const shouldShowBanner = !allCompleted && !dismissed;
+
+    useEffect(() => {
+        if (!landlordId) return;
+
+        const storageKey = `setupBannerDismissed_${landlordId}`;
+        const allDoneKey = `setupBannerAllDone_${landlordId}`;
+
+        if (allCompleted) {
+            localStorage.setItem(allDoneKey, "true");
+            localStorage.removeItem(storageKey);
+            return;
+        }
+
+        const wasAllDone = localStorage.getItem(allDoneKey) === "true";
+        const isDismissed = localStorage.getItem(storageKey) === "true";
+
+        if (wasAllDone || isDismissed) {
+            setDismissed(true);
+        }
+    }, [landlordId, allCompleted]);
+
+    if (!shouldShowBanner) return null;
 
     const completedSteps =
         (agreementDone ? 1 : 0) +
@@ -96,6 +116,11 @@ export default function LandlordOnboarding({ landlordId }: Props) {
 
     const isFullyVerified =
         agreementDone && verificationDone && payoutDone;
+
+    const handleDismiss = () => {
+        localStorage.setItem(`setupBannerDismissed_${landlordId}`, "true");
+        setDismissed(true);
+    };
 
     const handleCreateProperty = () => {
         if (!isFullyVerified) {
@@ -126,12 +151,17 @@ export default function LandlordOnboarding({ landlordId }: Props) {
 
     return (
         <>
-            {/* 🔵 OUTER WRAPPER WITH BG + HOVER */}
             <div className="mb-6 rounded-3xl bg-gradient-to-br from-blue-50 to-emerald-50 p-1 transition-all duration-300 hover:shadow-2xl hover:scale-[1.01]">
-                <div className="rounded-3xl bg-white p-6 border border-gray-100 shadow-sm">
-                    {/* Header */}
+                <div className="rounded-3xl bg-white p-6 border border-gray-100 shadow-sm relative">
+                    <button
+                        onClick={handleDismiss}
+                        className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+                    >
+                        <X className="w-4 h-4 text-gray-500" />
+                    </button>
+
                     <div className="mb-6">
-                        <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center justify-between flex-wrap gap-3 pr-8">
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900">
                                     Welcome to Upkyp 👋
@@ -153,7 +183,6 @@ export default function LandlordOnboarding({ landlordId }: Props) {
                         </div>
                     </div>
 
-                    {/* Steps */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <StepCard
                             title="Accept Platform Terms"
@@ -219,7 +248,6 @@ export default function LandlordOnboarding({ landlordId }: Props) {
                 </div>
             </div>
 
-            {/* Agreement Modal */}
             {showAgreementModal && (
                 <PlatformAgreementModal
                     landlordId={landlordId}
@@ -228,7 +256,6 @@ export default function LandlordOnboarding({ landlordId }: Props) {
                 />
             )}
 
-            {/* Bank Modal */}
             {showPayoutModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                     <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl">
@@ -263,8 +290,6 @@ export default function LandlordOnboarding({ landlordId }: Props) {
         </>
     );
 }
-
-/* STEP CARD */
 
 function StepCard({
                       title,
@@ -303,8 +328,8 @@ function StepCard({
         >
             {isNext && (
                 <span className="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-600 text-white">
-          Next Step
-        </span>
+                    Next Step
+                </span>
             )}
 
             <div className="flex items-start gap-4">
@@ -321,8 +346,6 @@ function StepCard({
         </button>
     );
 }
-
-/* UTILITIES */
 
 function getVerificationText(status: VerificationStatus) {
     switch (status) {
