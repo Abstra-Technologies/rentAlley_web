@@ -42,7 +42,7 @@ export default function BetaDecisionTemplate({
                     </p>
 
                     <a
-                        href={`https://www.upkyp.com/`}
+                        href={`https://upkyp.com/`}
                         style={{
                             display: "inline-block",
                             padding: "12px 18px",

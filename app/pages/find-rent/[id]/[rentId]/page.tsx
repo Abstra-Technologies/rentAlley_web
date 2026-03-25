@@ -10,7 +10,7 @@ function getBaseUrl() {
     }
 
     // safe dev fallback
-    return "https://www.upkyp.com";
+    return "https://upkyp.com";
 }
 
 

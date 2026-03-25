@@ -94,7 +94,7 @@ const baseConfig: NextConfig = {
         headers: [
           {
             key: "Access-Control-Allow-Origin",
-            value: "https://www.upkyp.com",
+            value: "https://upkyp.com",
           },
         ],
       },

@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { encryptData } from "@/crypto/encrypt";
-import webpush from "web-push";
 import { fcm } from "@/lib/firebase-admin";
 import sanitizeHtml from "sanitize-html";
+import { sendUserNotification } from "@/lib/notifications/sendUserNotification";
 
 const s3Client = new S3Client({
     region: process.env.NEXT_AWS_REGION,
@@ -17,26 +17,12 @@ const s3Client = new S3Client({
 });
 
 const encryptionSecret = process.env.ENCRYPTION_SECRET!;
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
-webpush.setVapidDetails("mailto:support@upkyp.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 function sanitizeFilename(filename: string) {
     return filename.replace(/[^a-zA-Z0-9.]/g, "_").replace(/\s+/g, "_");
 }
 
-function detectDevice(ua: string) {
-    const agent = ua.toLowerCase();
-    if (agent.includes("mobile")) return "mobile";
-    if (agent.includes("tablet") || agent.includes("ipad")) return "tablet";
-    return "web";
-}
-
 export async function POST(req: NextRequest) {
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0";
-    const userAgent = req.headers.get("user-agent") || "unknown";
-    const deviceType = detectDevice(userAgent);
-
     try {
         const formData = await req.formData();
         const property_ids = formData.getAll("property_ids[]").map(String);
@@ -139,36 +125,12 @@ export async function POST(req: NextRequest) {
             );
 
             for (const tenant of tenants) {
-                await db.execute(
-                    `INSERT INTO Notification (user_id, title, body, is_read, created_at)
-           VALUES (?, ?, ?, 0, NOW())`,
-                    [tenant.user_id, subject, truncatedDescription]
-                );
-
-                // Web push
-                const [subs]: any = await db.execute(
-                    `SELECT endpoint, p256dh, auth FROM user_push_subscriptions WHERE user_id = ?`,
-                    [tenant.user_id]
-                );
-                if (subs.length > 0) {
-                    const payload = JSON.stringify({
-                        title: subject,
-                        body: truncatedDescription,
-                        url: "/pages/tenant/feeds",
-                    });
-                    for (const sub of subs) {
-                        try {
-                            await webpush.sendNotification(
-                                { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-                                payload
-                            );
-                        } catch (err: any) {
-                            if (err.statusCode === 410 || err.statusCode === 404) {
-                                await db.execute(`DELETE FROM user_push_subscriptions WHERE endpoint = ?`, [sub.endpoint]);
-                            }
-                        }
-                    }
-                }
+                await sendUserNotification({
+                    userId: tenant.user_id,
+                    title: subject,
+                    body: truncatedDescription,
+                    url: "/pages/tenant/feeds",
+                });
 
                 // Android FCM
                 const [androidTokens]: any = await db.execute(

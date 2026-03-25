@@ -27,6 +27,7 @@ const io = new Server(server, {
             "https://upkyp-chatserver.onrender.com",
             "http://localhost:3000",
             "https://www.upkyp.com",
+            "https://upkyp.com"
         ],
         methods: ["GET", "POST"],
     },
