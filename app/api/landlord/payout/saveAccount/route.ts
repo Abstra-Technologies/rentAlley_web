@@ -53,6 +53,20 @@ export async function POST(req: NextRequest) {
         connection = await db.getConnection();
         await connection.beginTransaction();
 
+        /* ================= CHECK EXISTING ACCOUNT ================= */
+        const [existingLandlord]: any = await connection.query(
+            `SELECT xendit_account_id FROM Landlord WHERE landlord_id = ? LIMIT 1`,
+            [landlord_id]
+        );
+
+        if (existingLandlord.length > 0 && existingLandlord[0].xendit_account_id) {
+            await connection.rollback();
+            return NextResponse.json(
+                { error: "Payout account already exists. Please contact support to update." },
+                { status: 409 }
+            );
+        }
+
         console.log("🔎 Fetching user info...");
 
         /* ================= FETCH USER INFO ================= */
