@@ -183,7 +183,6 @@ export async function POST(req: Request) {
             payment_channel: payment_channel || null,
             ewallet_type: ewallet_type || null,
             payment_method: payment_method || null,
-            payment_method_id: payment_method_id || null,
         });
 
         await conn.execute(
@@ -209,7 +208,7 @@ export async function POST(req: Request) {
                 billing_id,
                 paymentType,
                 paidAmount,
-                1,
+                payment_channel || null,
                 invoice_id,
                 paidAt,
                 JSON.stringify(payload),
