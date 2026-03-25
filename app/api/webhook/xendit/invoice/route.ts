@@ -40,9 +40,39 @@ async function getDbConnection() {
 /* FETCH TRANSACTION                                                          */
 /* -------------------------------------------------------------------------- */
 
+// async function fetchTransactionDetails(
+//     transactionId: string,
+//     subAccountId: string
+// ) {
+//     const response = await fetch(
+//         `https://api.xendit.co/transactions?product_id=${transactionId}`,
+//         {
+//             method: "GET",
+//             headers: {
+//                 Authorization:
+//                     "Basic " +
+//                     Buffer.from(`${XENDIT_TRANSBAL_KEY}:`).toString("base64"),
+//                 "for-user-id": subAccountId,
+//             },
+//         }
+//     );
+//
+//     if (!response.ok) {
+//         const errText = await response.text();
+//         throw new Error(`Transaction API error: ${errText}`);
+//     }
+//
+//     const tx = await response.json();
+//
+//     return {
+//         gatewayFee: Number(tx.fee?.xendit_fee || 0),
+//         gatewayVAT: Number(tx.fee?.value_added_tax || 0),
+//         netAmount: Number(tx.net_amount || 0),
+//     };
+// }
+
 async function fetchTransactionDetails(
-    transactionId: string,
-    subAccountId: string
+    transactionId: string
 ) {
     const response = await fetch(
         `https://api.xendit.co/transactions?product_id=${transactionId}`,
@@ -52,7 +82,6 @@ async function fetchTransactionDetails(
                 Authorization:
                     "Basic " +
                     Buffer.from(`${XENDIT_TRANSBAL_KEY}:`).toString("base64"),
-                "for-user-id": subAccountId,
             },
         }
     );
@@ -70,6 +99,8 @@ async function fetchTransactionDetails(
         netAmount: Number(tx.net_amount || 0),
     };
 }
+
+
 
 /* -------------------------------------------------------------------------- */
 /* 🔥 TRANSFER FUNCTION                                                       */
