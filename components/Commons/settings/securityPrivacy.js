@@ -133,15 +133,17 @@ export default function SecurityPage() {
     }
   };
 
-  const checkPushStatus = async () => {
+  const checkPushStatus = () => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setPushEnabled(Notification.permission === "granted");
     }
   };
 
   useEffect(() => {
-    checkPushStatus();
-  }, []);
+    if (user) {
+      checkPushStatus();
+    }
+  }, [user]);
 
   const urlBase64ToUint8Array = (base64String) => {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -375,11 +377,11 @@ export default function SecurityPage() {
                 </ul>
                 <button
                   onClick={setupWebPush}
-                  disabled={pushLoading || pushEnabled || !user}
+                  disabled={pushLoading || pushEnabled || !user || loading}
                   className={`w-full mt-4 py-3 rounded-xl font-semibold text-sm transition-all ${
                     pushEnabled
                       ? "bg-green-100 text-green-700 cursor-default"
-                      : pushLoading || !user
+                      : pushLoading || !user || loading
                       ? "bg-gray-100 text-gray-500 cursor-not-allowed"
                       : "bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/25"
                   }`}
@@ -388,7 +390,7 @@ export default function SecurityPage() {
                     ? "Enabling..."
                     : pushEnabled
                     ? "Notifications Enabled"
-                    : !user
+                    : !user || loading
                     ? "Loading..."
                     : "Enable Push Notifications"}
                 </button>
