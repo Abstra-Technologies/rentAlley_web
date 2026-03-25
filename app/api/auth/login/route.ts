@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        if (user.status !== "active") {
+        if (user.status !== "active" && user.status !== "pending" && user.status !== "unverified") {
             return NextResponse.json(
                 { error: `Your account is ${user.status}. Contact support.` },
                 { status: 403 }
@@ -105,6 +105,33 @@ export async function POST(req: NextRequest) {
                 { error: "Invalid credentials" },
                 { status: 401 }
             );
+        }
+
+        /* ================= CHECK EMAIL VERIFICATION ================= */
+        if (!user.emailVerified) {
+            const token = await new SignJWT({
+                user_id: user.user_id,
+                userType: user.userType,
+                emailVerified: false,
+                status: user.status,
+                displayName: email,
+            })
+                .setProtectedHeader({ alg: "HS256" })
+                .setIssuedAt()
+                .setExpirationTime("2h")
+                .setSubject(user.user_id)
+                .sign(new TextEncoder().encode(JWT_SECRET));
+
+            const verifyUrl = new URL("/pages/auth/verify-email", req.url);
+            const response = NextResponse.redirect(verifyUrl, { status: 303 });
+            response.cookies.set("token", token, {
+                httpOnly: true,
+                secure: IS_PROD,
+                sameSite: "lax",
+                maxAge: 60 * 60 * 2,
+                path: "/",
+            });
+            return response;
         }
 
         /* ================= DISPLAY NAME ================= */

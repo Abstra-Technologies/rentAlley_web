@@ -137,7 +137,8 @@ export async function proxy(req: NextRequest) {
 
         const { role, permissions = [], ip_hash, status } = decodedAdmin;
 
-        if (status && status !== "active") {
+        const validStatuses = ["active", "pending", "unverified"];
+        if (status && !validStatuses.includes(status)) {
             return safeRedirect("/pages/error/accountSuspended", req);
         }
 

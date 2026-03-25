@@ -178,7 +178,8 @@ export async function GET() {
                     );
                 }
 
-                if (rawUser.status !== "active") {
+                const validStatuses = ["active", "pending", "unverified"];
+                if (rawUser.status && !validStatuses.includes(rawUser.status)) {
                     return NextResponse.json(
                         { error: `Account is ${rawUser.status}` },
                         { status: 403 }

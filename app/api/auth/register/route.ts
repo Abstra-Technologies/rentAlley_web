@@ -238,6 +238,7 @@ export async function POST(req: NextRequest) {
             userType: role,
             role: null, // only system admins have role
             emailVerified,
+            status: "pending",
             permissions: [],
             ip_hash: null,
         };
@@ -261,7 +262,7 @@ export async function POST(req: NextRequest) {
         response.cookies.set("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
+            sameSite: "lax",
             path: "/",
             maxAge: 60 * 60 * 2,
         });

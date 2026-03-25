@@ -209,7 +209,7 @@ const Navbar = () => {
     if (user?.userType === "tenant") {
       return [
         { href: "/pages/tenant/my-unit", label: "My Units", icon: Building2 },
-          { href: "/pages/tenant/kypId", label: "My Kyp ID", icon: IdCardLanyard  },
+          // { href: "/pages/tenant/kypId", label: "My Kyp ID", icon: IdCardLanyard  },
           {
           href: "/pages/tenant/myApplications",
           label: "My Applications",
@@ -449,23 +449,23 @@ const Navbar = () => {
                           </div>
 
                           {/* Points Section */}
-                          {user?.points !== undefined && (
-                            <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-100">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 bg-amber-100 rounded-lg">
-                                    <Star className="w-4 h-4 text-amber-600" />
-                                  </div>
-                                  <span className="text-sm font-medium text-gray-700">
-                                    Reward Points
-                                  </span>
-                                </div>
-                                <span className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                                  {user.points}
-                                </span>
-                              </div>
-                            </div>
-                          )}
+                          {/*{user?.points !== undefined && (*/}
+                          {/*  <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-100">*/}
+                          {/*    <div className="flex items-center justify-between">*/}
+                          {/*      <div className="flex items-center gap-2">*/}
+                          {/*        <div className="p-1.5 bg-amber-100 rounded-lg">*/}
+                          {/*          <Star className="w-4 h-4 text-amber-600" />*/}
+                          {/*        </div>*/}
+                          {/*        <span className="text-sm font-medium text-gray-700">*/}
+                          {/*          Reward Points*/}
+                          {/*        </span>*/}
+                          {/*      </div>*/}
+                          {/*      <span className="text-xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">*/}
+                          {/*        {user.points}*/}
+                          {/*      </span>*/}
+                          {/*    </div>*/}
+                          {/*  </div>*/}
+                          {/*)}*/}
 
                           {/* Quick Navigation */}
                           {dropdownLinks.length > 0 && (
