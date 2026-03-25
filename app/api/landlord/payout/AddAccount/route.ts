@@ -27,16 +27,6 @@ export async function POST(req: NextRequest) {
         connection = await db.getConnection();
         await connection.beginTransaction();
 
-        /* ================= DEACTIVATE OLD PAYOUT ================= */
-        await connection.query(
-            `
-            UPDATE LandlordPayoutAccount
-            SET is_active = 0
-            WHERE landlord_id = ?
-            `,
-            [landlord_id]
-        );
-
         /* ================= INSERT NEW PAYOUT ================= */
         await connection.query(
             `
