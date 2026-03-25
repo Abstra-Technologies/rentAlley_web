@@ -47,7 +47,23 @@ export default function BillingUnitTableDesktop({
               <td className="px-4 py-3 font-bold">
                 ₱{Number(bill.total_amount_due).toLocaleString("en-PH")}
               </td>
-              <td className="px-4 py-3">{bill.billing_status}</td>
+              <td className="px-4 py-3">
+                <span
+                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    bill.billing_status === "paid"
+                      ? "bg-green-100 text-green-700"
+                      : bill.billing_status === "partial"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : bill.billing_status === "draft"
+                      ? "bg-gray-100 text-gray-700"
+                      : bill.billing_status === "no_bill"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {bill.billing_status === "no_bill" ? "No Bill" : bill.billing_status}
+                </span>
+              </td>
               <td className="px-4 py-3">
                 <button
                   onClick={() =>

@@ -102,6 +102,11 @@ export async function POST(req: Request) {
             paid_amount,
             amount,
             id: invoice_id,
+            payment_channel,
+            ewallet_type,
+            payment_method,
+            payment_method_id,
+            description,
         } = payload;
 
         if (!payment_id || !user_id) {
@@ -174,22 +179,42 @@ export async function POST(req: Request) {
 
         /* ---------------- INSERT PAYMENT ---------------- */
 
+        const paymentType = JSON.stringify({
+            payment_channel: payment_channel || null,
+            ewallet_type: ewallet_type || null,
+            payment_method: payment_method || null,
+            payment_method_id: payment_method_id || null,
+        });
+
         await conn.execute(
             `
       INSERT INTO Payment (
         agreement_id,
+        bill_id,
         payment_type,
         amount_paid,
         payment_method_id,
         payment_status,
         receipt_reference,
         payment_date,
+        raw_gateway_payload,
+        gateway_transaction_ref,
         created_at,
         updated_at
       )
-      VALUES (?, 'billing', ?, 1, 'confirmed', ?, ?, NOW(), NOW())
+      VALUES (?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?, NOW(), NOW())
       `,
-            [billing.lease_id, paidAmount, invoice_id, paidAt]
+            [
+                billing.lease_id,
+                billing_id,
+                paymentType,
+                paidAmount,
+                1,
+                invoice_id,
+                paidAt,
+                JSON.stringify(payload),
+                payment_id,
+            ]
         );
 
         /* ---------------- SEND DETAILED NOTIFICATION ---------------- */
