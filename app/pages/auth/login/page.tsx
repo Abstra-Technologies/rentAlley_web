@@ -1,10 +1,12 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import LoadingScreen from "@/components/loadingScreen";
 import LoginForm from "@/components/authentication/loginForm";
 import MobileLoginForm from "@/components/authentication/mobileLoginForm";
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import useAuthStore from "@/zustand/authStore";
 
 export default function LoginPage() {
     return (
@@ -15,9 +17,27 @@ export default function LoginPage() {
 }
 
 function Login() {
-
+    const router = useRouter();
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get("callbackUrl");
+    const { user, fetchSession } = useAuthStore();
+
+    useEffect(() => {
+        fetchSession();
+    }, []);
+
+    useEffect(() => {
+        if (user?.landlord_id) {
+            const pendingPlan = localStorage.getItem("pendingPlan");
+            if (pendingPlan) {
+                const plan = JSON.parse(pendingPlan);
+                localStorage.removeItem("pendingPlan");
+                router.push(
+                    `/pages/landlord/subsciption_plan/payment/review?planId=${plan.planId}&amount=${plan.amount}&prorated=${plan.prorated}&addons=${encodeURIComponent(plan.addons)}`
+                );
+            }
+        }
+    }, [user, router]);
 
     return (
         <div

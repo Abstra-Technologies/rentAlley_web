@@ -11,7 +11,7 @@ export default function MobileLandlordDashboard({ landlordId }: Props) {
     const landlordIdNumber = parseInt(landlordId, 10);
 
     return (
-        <div className="block md:hidden w-full space-y-6 pb-6">
+        <div className="block md:hidden w-full space-y-6 pb-6 pt-10">
             {/* Property Carousel */}
             <LandlordPropertyMarqueeMobile landlordId={landlordIdNumber} />
         </div>

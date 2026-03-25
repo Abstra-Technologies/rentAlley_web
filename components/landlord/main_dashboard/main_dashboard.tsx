@@ -19,11 +19,12 @@ import NewWorkOrderModal from "../maintenance_management/NewWorkOrderModal";
 import LeaseOccupancyCard from "./LeaseOccupancyCard";
 import EndingLeaseCard from "@/components/landlord/main_dashboard/EndingLeaseCard";
 import LandlordSetupBanner from "@/components/landlord/main_dashboard/LandlordSetupBanner";
+import LandlordPropertyQuickView from "./LandlordPropertyQuickView";
 
 const fetcher = (url: string) => axios.get(url).then((r) => r.data);
 
 const CardSkeleton = () => (
-  <div className="h-[240px] rounded-xl bg-gray-100 animate-pulse" />
+  <div className="h-[320px] rounded-2xl bg-gray-100 animate-pulse" />
 );
 
 // Heavy components
@@ -60,7 +61,6 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
   const router = useRouter();
   const { user } = useAuthStore();
 
-  /* ---------------- Greeting ---------------- */
   const greeting = useMemo(() => {
     const h = new Date().getHours();
     if (h < 12) return "Good Morning";
@@ -73,7 +73,6 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
     [user?.firstName, user?.companyName, user?.email],
   );
 
-  /* ---------------- Points Earned Alert ---------------- */
   const prevPoints = useRef<number | null>(null);
   const [showAlert, setShowAlert] = useState(false);
 
@@ -82,11 +81,7 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
       prevPoints.current = null;
       return;
     }
-    if (
-      prevPoints.current !== null &&
-      user.points > prevPoints.current &&
-      !showAlert
-    ) {
+    if (prevPoints.current !== null && user.points > prevPoints.current && !showAlert) {
       setShowAlert(true);
       const timer = setTimeout(() => setShowAlert(false), 4000);
       return () => clearTimeout(timer);
@@ -94,54 +89,38 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
     prevPoints.current = user.points;
   }, [user?.points, showAlert]);
 
-  /* ---------------- Setup Status (Banner) ---------------- */
   const { data: verification } = useSWR(
     `/api/landlord/${landlordId}/profileStatus`,
     fetcher,
     { dedupingInterval: 60_000, revalidateOnFocus: false },
   );
 
-  const { data: wallet, mutate } = useSWR(
-    `/api/landlord/payout/${landlordId}`,
-    fetcher,
-    { revalidateOnFocus: false },
-  );
-
-  /* ---------------- Warm subscription cache ---------------- */
   useSWR(`/api/landlord/subscription/active/${landlordId}`, fetcher, {
     dedupingInterval: 60_000,
     revalidateOnFocus: false,
   });
 
-  /* ---------------- Delay heavy chart ---------------- */
   const [showRevenueChart, setShowRevenueChart] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => setShowRevenueChart(true), 800);
     return () => clearTimeout(timer);
   }, []);
 
-  /* ---------------- Modal ---------------- */
   const [showNewModal, setShowNewModal] = useState(false);
 
-  /* ---------------- Onboarding Tour ---------------- */
-  // Detect screen size to pick correct step config
-  // lg breakpoint in Tailwind is 1024px — matches the sidebar visibility
   const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
 
   useOnboarding({
     tourId: "landlord_dashboard",
-    steps: isMobile
-      ? landlordDashboardTourStepsMobile
-      : landlordDashboardTourSteps,
+    steps: isMobile ? landlordDashboardTourStepsMobile : landlordDashboardTourSteps,
     autoStart: true,
   });
 
   return (
     <div className="pb-24 md:pb-6">
-      <div className="px-4 md:px-6 pt-4 md:pt-6 space-y-6">
+      <div className="px-4 md:px-6 pt-4 md:pt-6 space-y-4">
         {showAlert && <PointsEarnedAlert points={user?.points} />}
 
-        {/* ID for tour targeting */}
         <div id="dashboard-header">
           <HeaderContent
             greeting={greeting}
@@ -167,41 +146,37 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
         </div>
 
         {/* Desktop */}
-        <div className="hidden md:block space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div id="dashboard-payment-summary" className="lg:col-span-2">
-              <Suspense fallback={<CardSkeleton />}>
-                <PaymentSummaryCard landlord_id={landlordId} />
-              </Suspense>
-            </div>
-
+        <div className="hidden md:block space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Suspense fallback={<CardSkeleton />}>
+              <PaymentSummaryCard landlord_id={landlordId} />
+            </Suspense>
             <Suspense fallback={<CardSkeleton />}>
               <TodayCalendar landlordId={landlordId} />
             </Suspense>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Suspense fallback={<CardSkeleton />}>
               <div
                 id="dashboard-maintenance"
-                role="button"
-                onClick={() =>
-                  router.push("/pages/landlord/maintenance-request")
-                }
-                className="cursor-pointer transition hover:scale-[1.02] active:scale-95"
+                className="h-full"
               >
                 <PendingMaintenanceDonut landlordId={landlordId} />
               </div>
             </Suspense>
+          </div>
 
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Suspense fallback={<CardSkeleton />}>
               <div id="dashboard-occupancy">
                 <LeaseOccupancyCard landlord_id={landlordId} />
               </div>
             </Suspense>
-
             <Suspense fallback={<CardSkeleton />}>
               <EndingLeaseCard landlord_id={landlordId} />
+            </Suspense>
+            <Suspense fallback={<CardSkeleton />}>
+              <div className="h-full">
+                <LandlordPropertyQuickView landlordId={Number(landlordId)} />
+              </div>
             </Suspense>
           </div>
 

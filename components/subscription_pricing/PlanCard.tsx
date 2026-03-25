@@ -11,37 +11,12 @@ export default function PlanCard({
     isSelected: boolean;
     onSelect: (plan: any) => void;
 }) {
-    const hasTrial = plan.trialDays && plan.trialDays > 0;
-    const isFreePlan = plan.price === 0 && !hasTrial;
-
-    /**
-     * Badge rules:
-     * - Free Plan → Lower transaction fee for 60 days
-     * - Paid Plans with trial → 60-day free trial + discounted transaction fee
-     */
-    const badgeText = isFreePlan
-        ? `LOWER TRANSACTION FEE: ${plan.discountedFeeRate}% FOR 60 DAYS`
-        : hasTrial
-            ? `${plan.trialDays}-DAY FREE TRIAL • ${plan.discountedFeeRate}% TRANSACTION FEE`
-            : null;
-
     return (
         <div
-            className={`relative rounded-xl border transition-all duration-300 bg-white
+            className={`rounded-xl border transition-all duration-300 bg-white
                 ${isSelected ? "border-blue-600 ring-1 ring-blue-500" : "border-gray-200"}
             `}
         >
-            {/* 🔴 PROMO TAG */}
-            {badgeText && (
-                <div className="absolute -top-3 right-4 z-10">
-                    <span
-                        className="inline-flex items-center px-4 py-1.5 rounded-full
-                        bg-red-600 text-white text-xs font-extrabold tracking-wide shadow-lg"
-                    >
-                        {badgeText}
-                    </span>
-                </div>
-            )}
 
             {/* HEADER */}
             <button

@@ -25,6 +25,7 @@ import {
   Settings,
   AlertCircle,
   Handshake,
+  CreditCard,
 } from "lucide-react";
 import useSubscription from "@/hooks/landlord/useSubscription";
 
@@ -121,6 +122,7 @@ export default function LandlordLayout({
             href: "/pages/landlord/chat",
             icon: MessageSquareMore,
           },
+
         ],
       },
       {
@@ -285,6 +287,19 @@ export default function LandlordLayout({
             ))}
           </nav>
 
+          {/* SUBSCRIPTION UPGRADE BANNER */}
+          <div className="p-4 border-t bg-gradient-to-r from-blue-600 to-emerald-600">
+            <Link
+              href="/pages/landlord/subsciption_plan/pricing"
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-white rounded-lg hover:bg-gray-50 transition font-semibold text-sm"
+            >
+              <CreditCard className="w-5 h-5" />
+              {subscription?.plan_name === "pro" || subscription?.plan_name === "enterprise"
+                ? "Manage Subscription"
+                : "Upgrade Plan"}
+            </Link>
+          </div>
+
           {/* FOOTER LOGOUT */}
           <div className="p-4 border-t bg-gray-50">
             <button
@@ -361,7 +376,7 @@ export default function LandlordLayout({
         </div>
       )}
             {/* MAIN */}
-            <main className="flex-1 lg:pl-72  lg:pt-0">{children}</main>
+            <main className="flex-1 lg:pl-72 pt-14 lg:pt-0">{children}</main>
         </div>
     );
 }

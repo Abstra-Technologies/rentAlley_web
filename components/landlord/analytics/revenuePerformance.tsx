@@ -129,20 +129,17 @@ export default function RevenuePerformanceChart({ landlord_id }: Props) {
             onClick={() =>
                 router.push("/pages/landlord/analytics/detailed/revenue")
             }
-            className={`${CARD_CONTAINER_INTERACTIVE} group relative`}
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow cursor-pointer"
         >
             {/* ================= HEADER ================= */}
-            <div className="flex items-center justify-between mb-6">
-                <div className={SECTION_HEADER}>
-                    <span className={GRADIENT_DOT} />
-                    <div>
-                        <h2 className={SECTION_TITLE}>
-                            Overall Revenue Performance
-                        </h2>
-                        <p className="text-xs text-gray-500">
-                            Monthly revenue · {selectedYear ?? ""}
-                        </p>
-                    </div>
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <h2 className="text-base font-semibold text-gray-900">
+                        Overall Revenue Performance
+                    </h2>
+                    <p className="text-xs text-gray-500">
+                        Monthly revenue · {selectedYear ?? ""}
+                    </p>
                 </div>
 
                 {/* Year Selector */}

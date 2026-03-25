@@ -36,18 +36,7 @@ function SubscriptionReview() {
         );
     }
 
-    /* ===============================
-       FREE TRIAL ELIGIBILITY
-    =============================== */
-    const isPaidPlan = selectedPlan.price > 0;
-    const hasTrial = selectedPlan.trialDays > 0;
-
-    // TEMP client-side eligibility (replace with backend later)
-    const isEligibleForFreeTrial = isPaidPlan && hasTrial;
-
-    const trialDays = selectedPlan.trialDays;
-    const originalFee = selectedPlan.transactionFeeRate;
-    const discountedFee = selectedPlan.discountedFeeRate;
+    const basePrice = selectedPlan.price;
 
     /* ===============================
        ADD-ONS
@@ -66,7 +55,6 @@ function SubscriptionReview() {
     /* ===============================
        PRICE COMPUTATION
     =============================== */
-    const basePrice = selectedPlan.price;
     const proratedDiscount = basePrice - proratedAmount;
     const addOnTotal = selectedAddOns.reduce((sum, a) => sum + a.price, 0);
     const finalTotal = proratedAmount + addOnTotal;
@@ -75,6 +63,8 @@ function SubscriptionReview() {
        PAYMENT
     =============================== */
     const goToPayment = async () => {
+        if (!user) return;
+
         try {
             const response = await axios.post("/api/payment/checkout-payment", {
                 amount: finalTotal,
@@ -153,35 +143,6 @@ function SubscriptionReview() {
                                     </span>
                                 </div>
                             </div>
-
-                            {/* FREE TRIAL DETAILS */}
-                            {isEligibleForFreeTrial && (
-                                <div className="mt-5 p-4 rounded-lg border border-blue-200 bg-blue-50">
-                                    <p className="text-sm font-semibold text-blue-800">
-                                        🎉 Free Trial Applied
-                                    </p>
-
-                                    <ul className="mt-2 text-sm text-blue-700 space-y-1">
-                                        <li>
-                                            • <strong>{trialDays} days</strong> free subscription
-                                        </li>
-                                        <li>
-                                            • <strong>{discountedFee}%</strong> transaction fee
-                                            <span className="ml-1 line-through text-gray-500">
-                                                {originalFee}%
-                                            </span>
-                                        </li>
-                                        <li>
-                                            • All-in (gateway + Upkyp + payout)
-                                        </li>
-                                    </ul>
-
-                                    <p className="mt-2 text-xs text-blue-600">
-                                        After {trialDays} days, billing and the{" "}
-                                        {originalFee}% transaction fee will apply.
-                                    </p>
-                                </div>
-                            )}
                         </div>
 
                         {/* ADD-ONS */}
@@ -254,20 +215,6 @@ function SubscriptionReview() {
                                 <span>Add-ons</span>
                                 <span>{formatCurrency(addOnTotal)}</span>
                             </div>
-
-                            {isEligibleForFreeTrial && (
-                                <div className="border-t pt-3 text-sm text-blue-700">
-                                    <p className="font-semibold">
-                                        Free Trial Active
-                                    </p>
-                                    <p>
-                                        {trialDays} days • {discountedFee}% transaction fee
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                        Then {originalFee}%
-                                    </p>
-                                </div>
-                            )}
 
                             <hr />
 

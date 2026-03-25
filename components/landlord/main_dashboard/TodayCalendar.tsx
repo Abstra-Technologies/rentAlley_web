@@ -89,11 +89,10 @@ export default function LandlordCalendar({ landlordId }) {
     ];
 
     return (
-        <div className={`${CARD_CONTAINER} ${CARD_HOVER} min-h-[480px] flex flex-col`}>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 h-full flex flex-col hover:shadow-md transition-shadow">
             {/* HEADER */}
-            <div className={`${SECTION_HEADER} mb-4`}>
-                <div className={GRADIENT_DOT}></div>
-                <h2 className={SECTION_TITLE}>Events</h2>
+            <div className="mb-4">
+                <h2 className="text-base font-semibold text-gray-900">Events</h2>
             </div>
 
             {/* DATE NAVIGATION */}

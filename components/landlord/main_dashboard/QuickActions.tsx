@@ -15,7 +15,6 @@ import {
     Construction,
     ReceiptText,
     UserPen,
-    QrCode, // 🆕
 } from "lucide-react";
 
 import {
@@ -39,11 +38,8 @@ export default function QuickActions({
     onWorkOrder: () => void;
     onIncome: () => void;
 }) {
-    const [scanOpen, setScanOpen] = useState(false); // 🆕
+    const [scanOpen, setScanOpen] = useState(false);
 
-    /* ================================
-         DESKTOP QUICK ACTIONS
-      ================================= */
     const desktopActions = [
         {
             id: "addProperty",
@@ -87,16 +83,7 @@ export default function QuickActions({
         },
     ];
 
-    /* ================================
-         MOBILE MENU ACTIONS
-      ================================= */
     const mobileActions = [
-        // {
-        //     label: "Scan Unit",
-        //     icon: QrCode,
-        //     gradient: "from-slate-700 to-slate-900",
-        //     onClick: () => setScanOpen(true),
-        // },
         {
             label: "Payouts",
             href: "/pages/landlord/payouts",
@@ -155,91 +142,61 @@ export default function QuickActions({
 
     return (
         <>
-            {/* ================= MOBILE VIEW ================= */}
             <div className="md:hidden">
-                <div className={`${SECTION_HEADER} mb-4 px-4`}>
+                <div className={`${SECTION_HEADER} mb-3 px-2`}>
                     <span className={GRADIENT_DOT} />
-                    <h2 className={SECTION_TITLE}>Quick Actions</h2>
+                    <h2 className={`${SECTION_TITLE} text-sm`}>Quick Actions</h2>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 px-4">
-                    {mobileActions.map(({ label, href, icon: Icon, gradient, onClick }) =>
-                            onClick ? (
-                                <button
-                                    key={label}
-                                    onClick={onClick}
-                                    className="group flex flex-col items-center gap-2 p-3 rounded-xl
-                           bg-white border border-gray-200 shadow-sm
-                           ring-1 ring-gray-100 transition-all active:scale-95"
-                                >
-                                    <div
-                                        className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient}
-                              flex items-center justify-center shadow-inner`}
-                                    >
-                                        <Icon className="w-6 h-6 text-white" />
-                                    </div>
-                                    <span className="text-[11px] font-semibold text-gray-700 text-center">
-                  {label}
-                </span>
-                                </button>
-                            ) : (
-                                <Link
-                                    key={label}
-                                    href={href!}
-                                    className="group flex flex-col items-center gap-2 p-3 rounded-xl
-                           bg-white border border-gray-200 shadow-sm"
-                                >
-                                    <div
-                                        className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient}
-                              flex items-center justify-center shadow-inner`}
-                                    >
-                                        <Icon className="w-6 h-6 text-white" />
-                                    </div>
-                                    <span className="text-[11px] font-semibold text-gray-700 text-center">
-                  {label}
-                </span>
-                                </Link>
-                            )
-                    )}
+                <div className="grid grid-cols-3 gap-2 px-2">
+                    {mobileActions.map(({ label, href, icon: Icon, gradient }) => (
+                        <Link
+                            key={label}
+                            href={href!}
+                            className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-white border border-gray-100 shadow-sm active:scale-95 transition-transform"
+                        >
+                            <div
+                                className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm`}
+                            >
+                                <Icon className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-[10px] font-medium text-gray-700 text-center leading-tight">
+                                {label}
+                            </span>
+                        </Link>
+                    ))}
                 </div>
             </div>
 
-            {/* ================= DESKTOP VIEW ================= */}
-            <div className="hidden md:block">
-                <div className="flex flex-wrap gap-6">
+            <div className="hidden md:flex justify-center">
+                <div className="flex flex-wrap justify-center gap-4 lg:gap-6">
                     {desktopActions.map(
                         ({ id, label, icon: Icon, onClick, gradient, iconColor }) => (
                             <button
                                 key={id}
                                 onClick={onClick}
-                                className="group flex flex-col items-center gap-2
-                           transition-all duration-300 hover:scale-105 active:scale-95"
+                                className="group flex flex-col items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95"
                             >
-                                <div className="relative w-14 h-14 rounded-2xl">
-                                    <div className="absolute inset-0 bg-white border border-gray-200
-                                  rounded-2xl shadow-sm ring-1 ring-gray-100
-                                  group-hover:opacity-0 transition-opacity" />
+                                <div className="relative w-12 h-12 lg:w-14 lg:h-14 rounded-2xl">
+                                    <div className="absolute inset-0 bg-white border border-gray-200 rounded-2xl shadow-sm ring-1 ring-gray-100 group-hover:opacity-0 transition-opacity" />
                                     <div
-                                        className={`absolute inset-0 bg-gradient-to-br ${gradient}
-                                rounded-2xl shadow-lg opacity-0
-                                group-hover:opacity-100 transition-opacity`}
+                                        className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-2xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity`}
                                     />
                                     <div className="relative w-full h-full flex items-center justify-center">
                                         <Icon
-                                            className={`w-6 h-6 ${iconColor} group-hover:text-white`}
+                                            className={`w-5 h-5 lg:w-6 lg:h-6 ${iconColor} group-hover:text-white transition-colors`}
                                         />
                                     </div>
                                 </div>
                                 <span className="text-xs font-semibold text-gray-700">
-                  {label}
-                </span>
+                                    {label}
+                                </span>
                             </button>
                         )
                     )}
                 </div>
             </div>
 
-            {/* 🆕 Scan Unit Modal */}
             <ScanUnitModal
                 isOpen={scanOpen}
                 onClose={() => setScanOpen(false)}

@@ -5,7 +5,6 @@ import useSubscriptionData from "@/hooks/landlord/useSubscriptionData";
 import { useProrate } from "@/hooks/landlord/useProrate";
 import PlanCard from "@/components/subscription_pricing/PlanCard";
 import CurrentSubscriptionBanner from "@/components/subscription_pricing/CurrentSubscriptionBanner";
-import TrialBanner from "@/components/subscription_pricing/TrialBanner";
 import ProrateNotice from "@/components/subscription_pricing/ProrateNotice";
 import AddOnServices from "@/components/subscription_pricing/AddOnServices";
 import FAQ from "@/components/subscription_pricing/FAQ";
@@ -18,7 +17,7 @@ import useAuthStore from "@/zustand/authStore";
 
 export default function SubscriptionPlans() {
     const router = useRouter();
-    const { trialUsed, currentSubscription, loading } = useSubscriptionData();
+    const { currentSubscription, loading } = useSubscriptionData();
     const prorate = useProrate(currentSubscription);
     const {user} = useAuthStore();
 
@@ -41,24 +40,17 @@ export default function SubscriptionPlans() {
     const addOnTotal = selectedAddOns.reduce((s, a) => s + a.price, 0);
 
     /* ===============================
-       PLAN TYPE & ELIGIBILITY
+       PLAN TYPE
     =============================== */
-    const isFreePlan = selectedPlan?.price === 0 && selectedPlan?.trialDays === 0;
+    const isFreePlan = selectedPlan?.price === 0;
     const isPaidPlan = selectedPlan?.price > 0;
-    const hasTrial = selectedPlan?.trialDays > 0;
-
-    const isEligibleForTrial = isPaidPlan && hasTrial && !trialUsed;
 
     const originalPlanPrice = selectedPlan?.price || 0;
-    const finalPlanAmount =
-        isFreePlan || isEligibleForTrial
-            ? 0
-            : proratedAmount || originalPlanPrice;
-
+    const finalPlanAmount = proratedAmount || originalPlanPrice;
     const finalTotal = finalPlanAmount + addOnTotal;
 
     /* ===============================
-       ACTIVATE (FREE PLAN / TRIAL)
+       ACTIVATE FREE PLAN
     =============================== */
     const activateSubscription = async () => {
         if (!selectedPlan || !user?.landlord_id) return;
@@ -72,7 +64,7 @@ export default function SubscriptionPlans() {
             });
 
             await Swal.fire({
-                title: "Activated 🎉",
+                title: "Activated",
                 text: `${selectedPlan.name} is now active.`,
                 icon: "success",
                 confirmButtonText: "Go to Dashboard",
@@ -100,13 +92,11 @@ export default function SubscriptionPlans() {
             return;
         }
 
-        // ✅ FREE PLAN or FREE TRIAL → AUTO ACTIVATE
-        if (isFreePlan || isEligibleForTrial) {
+        if (isFreePlan) {
             activateSubscription();
             return;
         }
 
-        // 💳 PAID CHECKOUT
         router.push(
             `/pages/landlord/subsciption_plan/payment/review?planId=${selectedPlan.id}` +
             `&amount=${finalTotal}` +
@@ -122,10 +112,8 @@ export default function SubscriptionPlans() {
         ? activating
             ? "Activating…"
             : "Activate Free Plan"
-        : isEligibleForTrial
-            ? activating
-                ? "Activating…"
-                : "Activate Free Trial"
+        : activating
+            ? "Processing…"
             : "Proceed to Checkout";
 
     /* ===============================
@@ -144,7 +132,6 @@ export default function SubscriptionPlans() {
             </div>
 
             <CurrentSubscriptionBanner currentSubscription={currentSubscription} />
-            <TrialBanner trialUsed={trialUsed} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
                 {/* LEFT */}
@@ -157,18 +144,14 @@ export default function SubscriptionPlans() {
                                 <PlanCard
                                     key={plan.id}
                                     plan={plan}
-                                    isCurrent={
-                                        currentSubscription?.plan_name === plan.name
-                                    }
                                     isSelected={selectedPlan?.id === plan.id}
-                                    trialAvailable={!trialUsed}
                                     onSelect={handleSelectPlan}
                                 />
                             ))}
                         </div>
                     </section>
 
-                    {selectedPlan && currentSubscription && !isEligibleForTrial && !isFreePlan && (
+                    {selectedPlan && currentSubscription && !isFreePlan && (
                         <ProrateNotice proratedAmount={proratedAmount} />
                     )}
 
@@ -194,17 +177,6 @@ export default function SubscriptionPlans() {
                                 <span>Plan Price</span>
                                 <span>{formatCurrency(originalPlanPrice)}</span>
                             </div>
-
-                            {(isFreePlan || isEligibleForTrial) && (
-                                <div className="flex justify-between text-green-600">
-                                    <span>
-                                        {isFreePlan
-                                            ? "Free Plan"
-                                            : `Free Trial (${selectedPlan.trialDays} days)`}
-                                    </span>
-                                    <span>- {formatCurrency(originalPlanPrice)}</span>
-                                </div>
-                            )}
 
                             <div className="flex justify-between">
                                 <span>Add-ons</span>

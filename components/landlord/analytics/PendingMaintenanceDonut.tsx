@@ -88,14 +88,13 @@ export default function PendingMaintenanceDonut({
        UI
     -------------------------------------------------- */
     return (
-        <div className={`${CARD_CONTAINER_INTERACTIVE} h-[500px] flex flex-col`}>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 h-full flex flex-col hover:shadow-md transition-shadow">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
-                <div className={SECTION_HEADER}>
-                    <span className={GRADIENT_DOT} />
-                    <h2 className={SECTION_TITLE}>Maintenance Overview</h2>
+                <div>
+                    <h2 className="text-base font-semibold text-gray-900">Maintenance Overview</h2>
                 </div>
-                <span className="text-xs text-gray-500">{total} total</span>
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{total} total</span>
             </div>
 
             {/* Loading / Error */}

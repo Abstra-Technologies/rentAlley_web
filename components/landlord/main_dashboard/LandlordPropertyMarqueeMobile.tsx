@@ -1,19 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Home, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { MapPin, Home, Eye } from "lucide-react";
 import usePropertyStore from "@/zustand/property/usePropertyStore";
-import {
-  CARD_BASE,
-  GRADIENT_DOT,
-  GRADIENT_TEXT,
-  GRADIENT_PRIMARY,
-  SECTION_HEADER,
-  SECTION_TITLE,
-} from "@/constant/design-constants";
 
 interface Props {
   landlordId: number | undefined;
@@ -22,263 +14,201 @@ interface Props {
 export default function LandlordPropertyMarqueeMobile({ landlordId }: Props) {
   const router = useRouter();
   const { properties, loading, fetchAllProperties } = usePropertyStore();
-  const [index, setIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     if (landlordId) fetchAllProperties(landlordId);
   }, [landlordId, fetchAllProperties]);
 
-  /* ---------------- LOADING STATE ---------------- */
   if (loading) {
     return (
       <div className="px-4">
-        <div className="h-[420px] bg-gray-100 rounded-2xl animate-pulse shadow-sm border border-gray-200" />
+        <div className="h-[480px] rounded-3xl bg-gray-100 animate-pulse" />
       </div>
     );
   }
 
-  /* ---------------- EMPTY STATE ---------------- */
   if (!properties || properties.length === 0) {
     return (
       <div className="px-4">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-            <Home className="w-8 h-8 text-blue-600" />
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-10 text-center">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Home className="w-10 h-10 text-white" />
           </div>
-          <h3 className="text-base font-semibold text-gray-900 mb-2">
-            No Properties Yet
-          </h3>
-          <p className="text-sm text-gray-600">
-            Add your first property to get started
-          </p>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">No Properties Yet</h3>
+          <p className="text-sm text-gray-500">Add your first property to get started</p>
         </div>
       </div>
     );
   }
 
-  const property = properties[index];
-  const swipeConfidenceThreshold = 100;
+  const currentProperty = properties[currentIndex];
+  const nextProperty = properties[currentIndex + 1];
 
-  const handleDragEnd = (_: any, info: any) => {
-    if (
-      info.offset.x < -swipeConfidenceThreshold &&
-      index < properties.length - 1
-    ) {
-      setIndex((prev) => prev + 1);
-    } else if (info.offset.x > swipeConfidenceThreshold && index > 0) {
-      setIndex((prev) => prev - 1);
+  const handleNext = () => {
+    if (currentIndex < properties.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
     }
   };
 
-  const goToPrevious = () => {
-    if (index > 0) setIndex((prev) => prev - 1);
-  };
-
-  const goToNext = () => {
-    if (index < properties.length - 1) setIndex((prev) => prev + 1);
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
   };
 
   return (
-    <div className="block md:hidden w-full">
-      {/* Header with Counter */}
-      <div className="px-4 mb-3 flex items-center justify-between">
-        <div className={SECTION_HEADER}>
-          <span className={GRADIENT_DOT} />
-          <h2 className={SECTION_TITLE}>Your Properties</h2>
-        </div>
-        <div className="flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-          <span className={GRADIENT_TEXT}>{index + 1}</span>
-          <span>/</span>
-          <span>{properties.length}</span>
-        </div>
+    <div className="block md:hidden px-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-bold text-gray-900">Your Properties</h2>
+        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+          {currentIndex + 1} / {properties.length}
+        </span>
       </div>
 
-      {/* Carousel Container */}
-      <div className="relative px-4">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={property.property_id}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={handleDragEnd}
-            initial={{ opacity: 0, scale: 0.96, x: 20 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.96, x: -20 }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-              opacity: { duration: 0.2 },
-            }}
-            className="cursor-grab active:cursor-grabbing"
-          >
-            {/* Property Card */}
-            <div
-              className={`${CARD_BASE} overflow-hidden
-                                shadow-lg hover:shadow-xl
-                                transition-all duration-300
-                                active:scale-[0.98]`}
+      <div className="relative">
+        <AnimatePresence mode="popLayout">
+          {nextProperty && (
+            <motion.div
+              key={`next-${nextProperty.property_id}`}
+              className="absolute inset-0 z-0"
+              initial={{ scale: 0.95, opacity: 0.5 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0.5 }}
             >
-              {/* Image Section with Gradient Overlay */}
-              <div
-                onClick={() =>
-                  router.push(
-                    `/pages/landlord/properties/${property.property_id}`,
-                  )
-                }
-                className="relative w-full aspect-[16/10] bg-gradient-to-br from-gray-100 to-gray-200 cursor-pointer group"
-              >
-                {property.photos?.[0]?.photo_url ? (
-                  <>
-                    <Image
-                      src={property.photos[0].photo_url}
-                      alt={property.property_name}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      sizes="(max-width: 768px) 100vw"
-                      priority
-                    />
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
+              <PropertyCard property={nextProperty} router={router} isNext />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-                    {/* View Details Badge */}
-                    <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <Eye className="w-3.5 h-3.5 text-blue-600" />
-                      <span className="text-xs font-medium text-gray-900">
-                        View Details
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-                    <Home className="w-12 h-12 mb-2" />
-                    <span className="text-xs font-medium">No image</span>
-                  </div>
-                )}
-
-                {/* Property Count Badge */}
-                {properties.length > 1 && (
-                  <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                    <span className="text-xs font-bold text-white">
-                      {index + 1} / {properties.length}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Content Section */}
-              <div className="p-5 space-y-3">
-                {/* Property Name */}
-                <h3 className="text-lg font-bold text-gray-900 line-clamp-1">
-                  {property.property_name}
-                </h3>
-
-                {/* Location */}
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                  <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-                    {[property.street, property.city, property.province]
-                      .filter(Boolean)
-                      .join(", ") || "Address not specified"}
-                  </p>
-                </div>
-
-                {/* View Property Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(
-                      `/pages/landlord/properties/${property.property_id}`,
-                    );
-                  }}
-                  className={`w-full ${GRADIENT_PRIMARY} text-white
-                                        py-3 rounded-xl font-semibold text-sm
-                                        shadow-md hover:shadow-lg
-                                        active:scale-95
-                                        transition-all duration-300
-                                        flex items-center justify-center gap-2`}
-                >
-                  <Eye className="w-4 h-4" />
-                  View Property Details
-                </button>
-              </div>
-            </div>
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={currentProperty.property_id}
+            layoutId={currentProperty.property_id}
+            className="relative z-10"
+            initial={{ scale: 0.95, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: -50 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            <PropertyCard 
+              property={currentProperty} 
+              router={router} 
+              onNext={handleNext}
+              onPrev={handlePrev}
+              isFirst={currentIndex === 0}
+              isLast={currentIndex === properties.length - 1}
+            />
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation Arrows (Only show if multiple properties) */}
-        {properties.length > 1 && (
-          <>
-            {/* Left Arrow */}
-            <button
-              onClick={goToPrevious}
-              disabled={index === 0}
-              className={`absolute left-6 top-1/2 -translate-y-1/2 z-10
-                                w-10 h-10 rounded-full
-                                bg-white shadow-lg border border-gray-200
-                                flex items-center justify-center
-                                transition-all duration-300
-                                ${
-                                  index === 0
-                                    ? "opacity-40 cursor-not-allowed"
-                                    : "hover:scale-110 hover:shadow-xl active:scale-95"
-                                }`}
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-700" />
-            </button>
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <button
+            onClick={handlePrev}
+            disabled={currentIndex === 0}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+              currentIndex === 0
+                ? "bg-gray-100 text-gray-300"
+                : "bg-white shadow-lg border border-gray-100 text-gray-700 active:scale-90"
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            onClick={() => router.push(`/pages/landlord/properties/${currentProperty.property_id}`)}
+            className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+          >
+            <Eye className="w-6 h-6 text-white" />
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={currentIndex === properties.length - 1}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+              currentIndex === properties.length - 1
+                ? "bg-gray-100 text-gray-300"
+                : "bg-white shadow-lg border border-gray-100 text-gray-700 active:scale-90"
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
 
-            {/* Right Arrow */}
-            <button
-              onClick={goToNext}
-              disabled={index === properties.length - 1}
-              className={`absolute right-6 top-1/2 -translate-y-1/2 z-10
-                                w-10 h-10 rounded-full
-                                bg-white shadow-lg border border-gray-200
-                                flex items-center justify-center
-                                transition-all duration-300
-                                ${
-                                  index === properties.length - 1
-                                    ? "opacity-40 cursor-not-allowed"
-                                    : "hover:scale-110 hover:shadow-xl active:scale-95"
-                                }`}
-            >
-              <ChevronRight className="w-5 h-5 text-gray-700" />
-            </button>
-          </>
+        <p className="text-center text-xs text-gray-400 mt-3">
+          Tap to view • Swipe to browse
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PropertyCard({
+  property,
+  router,
+  isNext,
+  onNext,
+  onPrev,
+  isFirst,
+  isLast,
+}: any) {
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-200, 200], [-15, 15]);
+  const opacity = useTransform(x, [-200, 0, 200], [0.5, 1, 0.5]);
+
+  return (
+    <motion.div
+      style={{ x, rotate, opacity }}
+      drag={!isNext ? "x" : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
+      onDragEnd={(_, info) => {
+        if (info.offset.x < -100 && onNext && !isLast) {
+          onNext();
+        } else if (info.offset.x > 100 && onPrev && !isFirst) {
+          onPrev();
+        }
+      }}
+      className={`bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 ${isNext ? "pointer-events-none" : "cursor-grab active:cursor-grabbing"}`}
+    >
+      <div
+        onClick={() => !isNext && router.push(`/pages/landlord/properties/${property.property_id}`)}
+        className="relative aspect-[4/5] bg-gradient-to-br from-gray-100 to-gray-200"
+      >
+        {property.photos?.[0]?.photo_url ? (
+          <Image
+            src={property.photos[0].photo_url}
+            alt={property.property_name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw"
+            priority={!isNext}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+            <Home className="w-16 h-16 mb-2" />
+            <span className="text-sm font-medium">No image</span>
+          </div>
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+        <div className="absolute bottom-0 left-0 right-0 p-5">
+          <h3 className="text-xl font-bold text-white mb-2">{property.property_name}</h3>
+          <div className="flex items-start gap-2 text-white/90">
+            <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
+            <p className="text-sm">
+              {[property.street, property.city, property.province].filter(Boolean).join(", ") || "Address not specified"}
+            </p>
+          </div>
+        </div>
+
+        {isNext && (
+          <div className="absolute inset-0 bg-black/20" />
         )}
       </div>
-
-      {/* Dot Indicators */}
-      {properties.length > 1 && properties.length <= 5 && (
-        <div className="flex items-center justify-center gap-2 mt-4 px-4">
-          {properties.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setIndex(idx)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                idx === index
-                  ? "w-8 bg-gradient-to-r from-blue-600 to-emerald-600"
-                  : "w-2 bg-gray-300 hover:bg-gray-400"
-              }`}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Swipe Hint (Only show on first property) */}
-      {properties.length > 1 && index === 0 && (
-        <motion.div
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 0 }}
-          transition={{ delay: 3, duration: 1 }}
-          className="text-center mt-3 px-4"
-        >
-          <p className="text-xs text-gray-400 font-medium">
-            ← Swipe to browse properties →
-          </p>
-        </motion.div>
-      )}
-    </div>
+    </motion.div>
   );
 }

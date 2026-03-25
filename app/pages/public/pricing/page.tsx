@@ -1,10 +1,45 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { SUBSCRIPTION_PLANS } from "@/constant/subscription/subscriptionPlans";
 import { Check } from "lucide-react";
+import useAuthStore from "@/zustand/authStore";
 
 export default function PricingPage() {
+    const router = useRouter();
+    const { user } = useAuthStore();
+
+    const isLandlord = user?.landlord_id;
+
+    // useEffect(() => {
+    //     if (!isLandlord) {
+    //         router.push("/pages/auth/login");
+    //     }
+    // }, [isLandlord, router]);
+    //
+    // if (!isLandlord) {
+    //     return null;
+    // }
+
+    const handleSelectPlan = (plan: any) => {
+        if (!user?.landlord_id) {
+            localStorage.setItem("pendingPlan", JSON.stringify({
+                planId: plan.id,
+                amount: plan.price,
+                prorated: plan.price,
+                addons: "[]"
+            }));
+            router.push("/pages/auth/login");
+            return;
+        }
+
+        router.push(
+            `/pages/landlord/subsciption_plan/payment/review?planId=${plan.id}&amount=${plan.price}&prorated=${plan.price}&addons=${encodeURIComponent("[]")}`
+        );
+    };
+
     return (
         <main className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 px-6 py-20">
             {/* Header */}
@@ -57,12 +92,6 @@ export default function PricingPage() {
                       </span>
                                         </p>
                                     )}
-
-                                    {plan.trialDays > 0 && (
-                                        <p className="mt-1 text-sm text-emerald-600 font-medium">
-                                            {plan.trialDays}-day free trial
-                                        </p>
-                                    )}
                                 </div>
 
                                 {/* Features */}
@@ -100,25 +129,18 @@ export default function PricingPage() {
                                         >
                                             Contact Sales
                                         </Link>
-                                    ) : isFree ? (
-                                        <Link
-                                            href="/register"
-                                            className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
-                                        >
-                                            Get Started Free
-                                        </Link>
                                     ) : (
-                                        <Link
-                                            href="/register"
-                                            className={`block w-full rounded-xl px-4 py-3 text-center text-sm font-semibold text-white transition
+                                        <button
+                                            onClick={() => handleSelectPlan(plan)}
+                                            className={`w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition
                         ${
                                                 plan.popular
                                                     ? "bg-blue-600 hover:bg-blue-700"
                                                     : "bg-gray-900 hover:bg-gray-800"
                                             }`}
                                         >
-                                            Start Free Trial
-                                        </Link>
+                                            Select Plan
+                                        </button>
                                     )}
                                 </div>
                             </div>
