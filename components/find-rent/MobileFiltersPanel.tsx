@@ -225,7 +225,7 @@ export default function MobileFiltersPanel({
         className="absolute inset-x-0 bottom-0 bg-white rounded-t-[32px] shadow-2xl flex flex-col will-change-transform mx-auto"
         style={{
           maxHeight: "92vh",
-          maxWidth: "480px",
+          maxWidth: "380px",
           width: "100%",
           transform: getTransform(),
           transition: isDragging ? "none" : `transform 0.4s ${SPRING.apple}`,
