@@ -34,10 +34,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             title: "User Management",
             items: [
                 { label: "Tenant Management", href: "/pages/system_admin/tenant_landlord/tenant_mgt", icon: Users },
-                { label: "Landlord Verification", href: "/pages/system_admin/tenant_landlord/verification", icon: Users },
-                { label: "Landlord Management", href: "/pages/system_admin/tenant_landlord/landlord_mgt", icon: Users },
                 { label: "Suspended Accounts", href: "/pages/system_admin/tenant_landlord/suspendedAccounts", icon: Users },
                 { label: "Deactivated Accounts", href: "/pages/system_admin/deactivatedAccounts", icon: Users },
+
+            ],
+        },
+        {
+            title: "Landlord Management",
+            items: [
+                { label: "Landlord Verification", href: "/pages/system_admin/tenant_landlord/verification", icon: Users },
+                { label: "Landlord UserList", href: "/pages/system_admin/tenant_landlord/landlord_mgt", icon: Users },
                 { label: "Beta Program", href: "/pages/system_admin/beta_programs", icon: Users },
 
             ],

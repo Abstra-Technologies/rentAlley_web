@@ -2,6 +2,8 @@
 // UPKYP FIND-RENT UTILITIES
 // ============================================================
 
+import { Building2, Home, Building, Warehouse, BedDouble, Bed, Armchair, LampFloor } from "lucide-react";
+
 // Peso symbol constant (prevents Unicode issues)
 export const PESO = "\u20B1";
 
@@ -24,37 +26,37 @@ export const GESTURE = {
 
 // Property type configurations
 export const PROPERTY_TYPES = [
-  { value: "apartment", label: "Apartment" },
-  { value: "duplex", label: "Duplex" },
-  { value: "house", label: "House" },
-  { value: "townhouse", label: "Townhouse" },
-  { value: "office_space", label: "Office Space" },
-  { value: "warehouse", label: "Warehouse" },
-  { value: "dormitory", label: "Dormitory" },
+  { value: "apartment", label: "Apartment", icon: Building2 },
+  { value: "duplex", label: "Duplex", icon: Home },
+  { value: "house", label: "House", icon: Home },
+  { value: "townhouse", label: "Townhouse", icon: Building },
+  { value: "office_space", label: "Office Space", icon: Building },
+  { value: "warehouse", label: "Warehouse", icon: Warehouse },
+  { value: "dormitory", label: "Dormitory", icon: BedDouble },
 ] as const;
 
 // Unit style configurations
 export const UNIT_STYLES = [
-  { value: "studio", label: "Studio" },
-  { value: "1-bedroom", label: "1 Bedroom" },
-  { value: "2-bedroom", label: "2 Bedroom" },
-  { value: "3-bedroom", label: "3+ Bedroom" },
-  { value: "penthouse", label: "Penthouse" },
+  { value: "studio", label: "Studio", icon: Bed },
+  { value: "1-bedroom", label: "1 Bedroom", icon: Bed },
+  { value: "2-bedroom", label: "2 Bedroom", icon: BedDouble },
+  { value: "3-bedroom", label: "3+ Bedroom", icon: BedDouble },
+  { value: "penthouse", label: "Penthouse", icon: Building },
 ] as const;
 
 // Furnishing options
 export const FURNISHING_OPTIONS = [
-  { value: "fully_furnished", label: "Fully Furnished" },
-  { value: "semi_furnished", label: "Semi Furnished" },
-  { value: "unfurnished", label: "Unfurnished" },
+  { value: "fully_furnished", label: "Fully Furnished", icon: Armchair },
+  { value: "semi_furnished", label: "Semi Furnished", icon: LampFloor },
+  { value: "unfurnished", label: "Unfurnished", icon: Building2 },
 ] as const;
 
 // Philippine regions/locations
 export const LOCATIONS = [
-  { value: "metro_manila", label: "Metro Manila", popular: true },
-  { value: "cebu", label: "Cebu", popular: true },
-  { value: "davao", label: "Davao", popular: true },
-  { value: "laguna", label: "Laguna", popular: true },
+  { value: "metro_manila", label: "Metro Manila", popular: false },
+  { value: "cebu", label: "Cebu", popular: false },
+  { value: "davao", label: "Davao", popular: false },
+  { value: "laguna", label: "Laguna", popular: false },
   { value: "cavite", label: "Cavite", popular: false },
   { value: "bulacan", label: "Bulacan", popular: false },
   { value: "pampanga", label: "Pampanga", popular: false },
@@ -67,12 +69,12 @@ export const LOCATIONS = [
 
 // Price range presets
 export const PRICE_RANGES = [
-  { min: 0, max: 5000, label: `Under ${PESO}5K` },
-  { min: 5000, max: 10000, label: `${PESO}5K - ${PESO}10K` },
-  { min: 10000, max: 20000, label: `${PESO}10K - ${PESO}20K` },
-  { min: 20000, max: 35000, label: `${PESO}20K - ${PESO}35K` },
-  { min: 35000, max: 50000, label: `${PESO}35K - ${PESO}50K` },
-  { min: 50000, max: 0, label: `${PESO}50K+` },
+  { min: 0, max: 5000, label: `Under 5K` },
+  { min: 5000, max: 10000, label: `5K - 10K` },
+  { min: 10000, max: 20000, label: `10K - 20K` },
+  { min: 20000, max: 35000, label: `20K - 35K` },
+  { min: 35000, max: 50000, label: `35K - 50K` },
+  { min: 50000, max: 0, label: `50K+` },
 ] as const;
 
 // Size presets (in sqm)

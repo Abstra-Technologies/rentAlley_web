@@ -25,6 +25,7 @@ import {
   GESTURE,
   SPRING,
 } from "./utils";
+import { PROPERTY_PREFERENCES } from "@/constant/propertyPreferences";
 
 interface MobileFiltersPanelProps {
   isOpen: boolean;
@@ -152,11 +153,21 @@ export default function MobileFiltersPanel({
 
   const toggleFilter = useCallback(
     <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
-      setLocalFilters((prev) => ({
-        ...prev,
-        [key]:
-          prev[key] === value ? (typeof value === "number" ? 0 : "") : value,
-      }));
+      setLocalFilters((prev) => {
+        if (key === "propertyPreferences" && typeof value === "string") {
+          const current = prev.propertyPreferences || [];
+          return {
+            ...prev,
+            propertyPreferences: current.includes(value)
+              ? current.filter((v) => v !== value)
+              : [...current, value],
+          };
+        }
+        return {
+          ...prev,
+          [key]: prev[key] === value ? (typeof value === "number" ? 0 : "") : value,
+        };
+      });
     },
     []
   );
@@ -176,11 +187,13 @@ export default function MobileFiltersPanel({
       minSize: 0,
       location: "",
       unitStyle: "",
+      propertyPreferences: [],
     });
   }, [filters.searchQuery]);
 
   const activeCount = Object.entries(localFilters).filter(([key, value]) => {
     if (key === "searchQuery") return false;
+    if (key === "propertyPreferences") return (value as string[])?.length > 0;
     return typeof value === "number" ? value > 0 : value !== "";
   }).length;
 
@@ -209,9 +222,11 @@ export default function MobileFiltersPanel({
 
       <div
         ref={sheetRef}
-        className="absolute inset-x-0 bottom-0 bg-white rounded-t-[32px] shadow-2xl flex flex-col will-change-transform"
+        className="absolute inset-x-0 bottom-0 bg-white rounded-t-[32px] shadow-2xl flex flex-col will-change-transform mx-auto"
         style={{
           maxHeight: "92vh",
+          maxWidth: "480px",
+          width: "100%",
           transform: getTransform(),
           transition: isDragging ? "none" : `transform 0.4s ${SPRING.apple}`,
         }}
@@ -238,7 +253,7 @@ export default function MobileFiltersPanel({
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900">Filters</h2>
-              <p className="text-sm text-slate-500">Refine your search</p>
+              <p className="text-sm text-slate-500">Refinea your search</p>
             </div>
           </div>
           <button
@@ -250,73 +265,30 @@ export default function MobileFiltersPanel({
           </button>
         </div>
 
+        {/* Reset Button */}
+        {activeCount > 0 && (
+          <div className="px-6 pt-4">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="flex items-center gap-2 text-sm text-slate-500 hover:text-rose-600 font-medium px-4 py-2 rounded-lg hover:bg-rose-50 transition-all"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset Filters
+            </button>
+          </div>
+        )}
+
         {/* Scrollable Content */}
         <div
           className="flex-1 overflow-y-auto overscroll-contain px-6"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
-          {/* Location */}
-          <FilterSection
-            title="Location"
-            icon={<MapPin className="w-5 h-5 text-emerald-600" />}
-            delay={0}
-          >
-            <div className="flex flex-wrap gap-2">
-              {LOCATIONS.map((loc) => (
-                <FilterChip
-                  key={loc.value}
-                  label={loc.label}
-                  isSelected={localFilters.location === loc.value}
-                  onClick={() => toggleFilter("location", loc.value)}
-                  badge={loc.popular ? "Popular" : undefined}
-                />
-              ))}
-            </div>
-          </FilterSection>
-
-          {/* Property Type */}
-          <FilterSection
-            title="Property Type"
-            icon={<Building2 className="w-5 h-5 text-blue-600" />}
-            delay={50}
-          >
-            <div className="grid grid-cols-2 gap-2">
-              {PROPERTY_TYPES.map((type) => (
-                <FilterChip
-                  key={type.value}
-                  label={type.label}
-                  isSelected={localFilters.propertyType === type.value}
-                  onClick={() => toggleFilter("propertyType", type.value)}
-                  fullWidth
-                />
-              ))}
-            </div>
-          </FilterSection>
-
-          {/* Unit Style */}
-          <FilterSection
-            title="Unit Style"
-            icon={<Bed className="w-5 h-5 text-purple-600" />}
-            delay={100}
-          >
-            <div className="grid grid-cols-2 gap-2">
-              {UNIT_STYLES.map((style) => (
-                <FilterChip
-                  key={style.value}
-                  label={style.label}
-                  isSelected={localFilters.unitStyle === style.value}
-                  onClick={() => toggleFilter("unitStyle", style.value)}
-                  fullWidth
-                />
-              ))}
-            </div>
-          </FilterSection>
-
           {/* Price Range */}
           <FilterSection
             title="Price Range"
             icon={<Banknote className="w-5 h-5 text-amber-600" />}
-            delay={150}
+            delay={0}
           >
             <div className="flex flex-wrap gap-2 mb-4">
               {PRICE_RANGES.map((range, idx) => (
@@ -386,11 +358,68 @@ export default function MobileFiltersPanel({
             </div>
           </FilterSection>
 
+          {/* Location */}
+          <FilterSection
+            title="Location"
+            icon={<MapPin className="w-5 h-5 text-emerald-600" />}
+            delay={50}
+          >
+            <div className="grid grid-cols-4 gap-2">
+              {LOCATIONS.map((loc) => (
+                <LocationCard
+                  key={loc.value}
+                  label={loc.label}
+                  isSelected={localFilters.location === loc.value}
+                  onClick={() => toggleFilter("location", loc.value)}
+                  popular={loc.popular}
+                />
+              ))}
+            </div>
+          </FilterSection>
+
+          {/* Property Type */}
+          <FilterSection
+            title="Property Type"
+            icon={<Building2 className="w-5 h-5 text-blue-600" />}
+            delay={100}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {PROPERTY_TYPES.map((type) => (
+                <FilterChip
+                  key={type.value}
+                  label={type.label}
+                  isSelected={localFilters.propertyType === type.value}
+                  onClick={() => toggleFilter("propertyType", type.value)}
+                  fullWidth
+                />
+              ))}
+            </div>
+          </FilterSection>
+
+          {/* Unit Style */}
+          <FilterSection
+            title="Unit Style"
+            icon={<Bed className="w-5 h-5 text-purple-600" />}
+            delay={150}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {UNIT_STYLES.map((style) => (
+                <FilterChip
+                  key={style.value}
+                  label={style.label}
+                  isSelected={localFilters.unitStyle === style.value}
+                  onClick={() => toggleFilter("unitStyle", style.value)}
+                  fullWidth
+                />
+              ))}
+            </div>
+          </FilterSection>
+
           {/* Furnishing */}
           <FilterSection
             title="Furnishing"
             icon={<Sofa className="w-5 h-5 text-teal-600" />}
-            delay={200}
+            delay={300}
           >
             <div className="flex flex-wrap gap-2">
               {FURNISHING_OPTIONS.map((opt) => (
@@ -419,6 +448,33 @@ export default function MobileFiltersPanel({
                   onClick={() => toggleFilter("minSize", size)}
                 />
               ))}
+            </div>
+          </FilterSection>
+
+          {/* Property Preferences */}
+          <FilterSection
+            title="Property Preferences"
+            icon={
+              <svg className="w-5 h-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            }
+            delay={300}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {PROPERTY_PREFERENCES.map((pref) => {
+                const Icon = pref.icon;
+                const isSelected = localFilters.propertyPreferences?.includes(pref.key) || false;
+                return (
+                  <FilterChip
+                    key={pref.key}
+                    label={pref.label}
+                    isSelected={isSelected}
+                    onClick={() => toggleFilter("propertyPreferences", pref.key)}
+                    fullWidth
+                  />
+                );
+              })}
             </div>
           </FilterSection>
 
@@ -546,6 +602,43 @@ function FilterChip({
           }`}
         >
           {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function LocationCard({
+  label,
+  isSelected,
+  onClick,
+  popular,
+}: {
+  label: string;
+  isSelected: boolean;
+  onClick: () => void;
+  popular?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`
+        px-3 py-2 rounded-lg transition-all duration-200 active:scale-95
+        ${isSelected
+          ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md"
+          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+        }
+        ${isSelected ? "ring-2 ring-emerald-500 ring-offset-1" : ""}
+        relative flex items-center justify-center
+      `}
+    >
+      <span className="text-xs font-semibold text-center truncate">
+        {label}
+      </span>
+      {popular && (
+        <span className="absolute -top-1 -right-1 px-1.5 py-0.5 text-[9px] font-bold bg-blue-500 text-white rounded-full">
+          Top
         </span>
       )}
     </button>

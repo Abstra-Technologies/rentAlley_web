@@ -44,4 +44,5 @@ export interface FilterState {
   minSize?: number;
   location?: string;
   unitStyle?: string;
+  propertyPreferences?: string[];
 }

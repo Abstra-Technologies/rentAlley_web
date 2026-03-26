@@ -248,25 +248,73 @@ export default function LandlordList() {
         );
 
     /* =====================================================
-       RENDER
+        SCORECARDS
+    ===================================================== */
+    const scorecards = {
+        total: landlords.length,
+        active: landlords.filter((l) => l.status === "active").length,
+        suspended: landlords.filter((l) => l.status === "suspended").length,
+        verified: landlords.filter((l) => l.is_verified).length,
+    };
+
+    const ScoreCard = ({
+        title,
+        value,
+        accent,
+    }: {
+        title: string;
+        value: number;
+        accent: "blue" | "green" | "red" | "yellow";
+    }) => {
+        const accentClasses = {
+            blue: "bg-blue-50 border-blue-200 text-blue-700",
+            green: "bg-green-50 border-green-200 text-green-700",
+            red: "bg-red-50 border-red-200 text-red-700",
+            yellow: "bg-yellow-50 border-yellow-200 text-yellow-700",
+        };
+        return (
+            <div
+                className={`rounded-lg border p-3 sm:p-4 ${accentClasses[accent]}`}
+            >
+                <p className="text-[10px] sm:text-xs opacity-70">{title}</p>
+                <p className="text-xl sm:text-2xl font-bold">{value}</p>
+            </div>
+        );
+    };
+
+    /* =====================================================
+        RENDER
     ===================================================== */
     return (
-        <div className="flex">
-            <div className="flex-1 p-6 max-w-7xl mx-auto">
-                <h1 className="text-2xl font-semibold text-blue-600 mb-6">
-                    Landlords List
+        <div className="min-h-screen bg-gray-50">
+            <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+                <h1 className="text-xl sm:text-2xl font-semibold text-blue-600 mb-4 sm:mb-6">
+                    Landlords Management
                 </h1>
 
-                <TextField
-                    label="Search landlords..."
-                    variant="outlined"
-                    fullWidth
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="mb-4"
-                />
+                {/* Scorecards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                    <ScoreCard title="Total" value={scorecards.total} accent="blue" />
+                    <ScoreCard title="Active" value={scorecards.active} accent="green" />
+                    <ScoreCard title="Suspended" value={scorecards.suspended} accent="red" />
+                    <ScoreCard title="Verified" value={scorecards.verified} accent="yellow" />
+                </div>
 
-                <Paper>
+                {/* Search */}
+                <div className="mb-4">
+                    <TextField
+                        label="Search landlords..."
+                        variant="outlined"
+                        fullWidth
+                        size="small"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="bg-white"
+                    />
+                </div>
+
+                {/* Table - Mobile responsive */}
+                <div className="overflow-x-auto bg-white rounded-lg shadow -mx-4 sm:mx-0">
                     <TableContainer>
                         <Table>
                             <TableHead>
@@ -275,11 +323,8 @@ export default function LandlordList() {
                                         { key: "index", label: "#" },
                                         { key: "user_id", label: "User ID" },
                                         { key: "email", label: "Email" },
-                                        { key: "status", label: "Status" },
                                         { key: "is_verified", label: "Verified" },
-                                        { key: "createdAt", label: "Created At" },
-                                        { key: "lastLoginAt", label: "Last Login" },
-                                        { key: "actions", label: "Actions" },
+                                        { key: "actions", label: "" },
                                     ].map((col) => (
                                         <TableCell key={col.key} align="center">
                                             {col.key !== "actions" &&
@@ -310,7 +355,7 @@ export default function LandlordList() {
                             <TableBody>
                                 {filteredAndSortedLandlords.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={8} align="center">
+                                        <TableCell colSpan={7} align="center">
                                             No landlords found.
                                         </TableCell>
                                     </TableRow>
@@ -327,7 +372,7 @@ export default function LandlordList() {
 
                                                 <TableCell
                                                     align="center"
-                                                    className="text-blue-600 cursor-pointer hover:underline"
+                                                    className="text-blue-600 cursor-pointer hover:underline whitespace-nowrap"
                                                     onClick={() =>
                                                         router.push(
                                                             `./viewProfile/landlord/${landlord.user_id}`
@@ -337,81 +382,62 @@ export default function LandlordList() {
                                                     {landlord.user_id}
                                                 </TableCell>
 
-                                                <TableCell align="center">
+                                                <TableCell align="center" className="whitespace-nowrap">
                                                     {landlord.email}
                                                 </TableCell>
 
-                                                <TableCell align="center">
-                                                    {renderStatusBadge(
-                                                        landlord.status
-                                                    )}
-                                                </TableCell>
 
                                                 <TableCell align="center">
                                                     {landlord.is_verified ? (
                                                         <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                                                            ✅ Yes
+                                                            Yes
                                                         </span>
                                                     ) : (
                                                         <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
-                                                            ❌ No
+                                                            No
                                                         </span>
                                                     )}
                                                 </TableCell>
 
-                                                <TableCell align="center">
-                                                    {new Date(
-                                                        landlord.createdAt
-                                                    ).toLocaleDateString()}
-                                                </TableCell>
+
 
                                                 <TableCell align="center">
-                                                    {landlord.lastLoginAt ? (
-                                                        new Date(
-                                                            landlord.lastLoginAt
-                                                        ).toLocaleString()
-                                                    ) : (
-                                                        <span className="text-gray-400">
-                                                            Never logged in
-                                                        </span>
-                                                    )}
-                                                </TableCell>
+                                                    <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                                        <Button
+                                                            variant="contained"
+                                                            size="small"
+                                                            onClick={() =>
+                                                                router.push(
+                                                                    `./viewProfile/landlord/${landlord.user_id}`
+                                                                )
+                                                            }
+                                                            startIcon={
+                                                                <Eye size={14} />
+                                                            }
+                                                            className="!text-xs !py-1 !px-2"
+                                                        >
+                                                            <span className="hidden sm:inline">View</span>
+                                                        </Button>
 
-                                                <TableCell align="center">
-                                                    <Button
-                                                        variant="contained"
-                                                        size="small"
-                                                        onClick={() =>
-                                                            router.push(
-                                                                `./viewProfile/landlord/${landlord.user_id}`
-                                                            )
-                                                        }
-                                                        startIcon={
-                                                            <Eye size={16} />
-                                                        }
-                                                    >
-                                                        View
-                                                    </Button>
-
-                                                    {landlord.status ===
-                                                        "active" && (
-                                                            <Button
-                                                                variant="contained"
-                                                                color="secondary"
-                                                                size="small"
-                                                                style={{
-                                                                    marginLeft: 8,
-                                                                }}
-                                                                onClick={() =>
-                                                                    handleSuspend(
-                                                                        landlord.user_id,
-                                                                        landlord.email
-                                                                    )
-                                                                }
-                                                            >
-                                                                Suspend
-                                                            </Button>
-                                                        )}
+                                                        {landlord.status ===
+                                                            "active" && (
+                                                                <Button
+                                                                    variant="contained"
+                                                                    color="secondary"
+                                                                    size="small"
+                                                                    onClick={() =>
+                                                                        handleSuspend(
+                                                                            landlord.user_id,
+                                                                            landlord.email
+                                                                        )
+                                                                    }
+                                                                    className="!text-xs !py-1 !px-2"
+                                                                >
+                                                                    <span className="hidden sm:inline">Suspend</span>
+                                                                    <span className="sm:hidden">🚫</span>
+                                                                </Button>
+                                                            )}
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         )
@@ -420,7 +446,7 @@ export default function LandlordList() {
                             </TableBody>
                         </Table>
                     </TableContainer>
-                </Paper>
+                </div>
             </div>
         </div>
     );

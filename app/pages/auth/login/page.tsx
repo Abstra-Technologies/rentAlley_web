@@ -41,22 +41,22 @@ function Login() {
 
     return (
         <div
-            className="relative min-h-screen bg-cover bg-center bg-no-repeat"
+            className="relative h-screen w-screen overflow-hidden"
             style={{
                 backgroundImage:
                     "url('https://res.cloudinary.com/dptmeluy0/image/upload/v1767326297/f2aa6c44-eb73-41ea-9d68-5c11237a7cd5_uwielr.jpg')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
             }}
         >
-            {/* VERY light black overlay */}
             <div className="absolute inset-0 bg-black/30" />
 
-            <div className="relative z-10 flex flex-col min-h-screen">
-                <main className="flex-1 flex flex-col lg:flex-row items-center justify-center px-4 sm:px-6 py-12 gap-12 lg:gap-20">
-
+            <div className="relative z-10 h-full flex items-center justify-center p-4">
+                <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-16">
                     {/* Hero Text */}
-                    <div className="hidden lg:block max-w-lg text-center lg:text-left space-y-5">
+                    <div className="hidden lg:block max-w-md text-center">
                         <h1
-                            className="text-4xl sm:text-5xl font-extrabold leading-tight text-white"
+                            className="text-3xl lg:text-4xl font-extrabold leading-tight text-white"
                             style={{
                                 textShadow:
                                     "0 2px 4px rgba(0,0,0,0.35), 0 10px 28px rgba(0,0,0,0.25)",
@@ -70,25 +70,21 @@ function Login() {
                                     textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                                 }}
                             >
-                          Upkyp
-                        </span>
-
-
+                                Upkyp
+                            </span>
                         </h1>
-
                         <p
-                            className="text-lg text-gray-100"
+                            className="text-base text-gray-100 mt-3"
                             style={{
                                 textShadow: "0 1px 3px rgba(0,0,0,0.4)",
                             }}
                         >
-                            From browsing to billing, Upkyp keeps your rentals organized and
-                            hassle-free.
+                            From browsing to billing, Upkyp keeps your rentals organized.
                         </p>
                     </div>
 
                     {/* Forms */}
-                    <div className="w-full max-w-md">
+                    <div className="w-full max-w-sm">
                         <div className="hidden sm:block">
                             <LoginForm callbackUrl={callbackUrl} />
                         </div>
@@ -96,7 +92,7 @@ function Login() {
                             <MobileLoginForm />
                         </div>
                     </div>
-                </main>
+                </div>
             </div>
         </div>
     );

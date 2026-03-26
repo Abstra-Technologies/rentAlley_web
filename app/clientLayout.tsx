@@ -180,13 +180,16 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                     }));
 
                 // 4) Save to backend if new
-                const cacheKey = "push_endpoint";
-                if (localStorage.getItem(cacheKey) !== subscription.endpoint) {
+                const cacheKey = admin ? "push_endpoint_admin" : "push_endpoint";
+                const isNewSubscription = localStorage.getItem(cacheKey) !== subscription.endpoint;
+                
+                if (isNewSubscription) {
                     await fetch("/api/push/subscribe", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            userId: user_id,
+                            userId: user?.user_id || null,
+                            adminId: admin?.admin_id || null,
                             subscription,
                             userAgent: navigator.userAgent,
                         }),
