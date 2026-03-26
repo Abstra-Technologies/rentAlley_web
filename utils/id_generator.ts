@@ -1,5 +1,9 @@
 import crypto from "crypto";
 
+export function generateWalletId(): string {
+    return crypto.randomUUID();
+}
+
 function randomAlphaNumeric(length: number): string {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let result = "";

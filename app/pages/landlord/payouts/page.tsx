@@ -425,7 +425,7 @@ export default function PayoutsPage() {
                                         <div className="flex items-start gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                                             <CreditCard className="w-5 h-5 text-emerald-600 mt-0.5" />
                                             <div>
-                                                <p className="text-sm font-medium text-gray-900">E-wallets & Over-the-Counter</p>
+                                                <p className="text-sm font-medium text-gray-900">E-wallets & Online Banking</p>
                                                 <p className="text-xs text-gray-600">Settlement within the same day or next business day</p>
                                             </div>
                                         </div>
@@ -433,7 +433,7 @@ export default function PayoutsPage() {
                                             <CreditCard className="w-5 h-5 text-amber-600 mt-0.5" />
                                             <div>
                                                 <p className="text-sm font-medium text-gray-900">Credit Cards</p>
-                                                <p className="text-xs text-gray-600">Settlement may take 2-3 business days</p>
+                                                <p className="text-xs text-gray-600">Settlement may take 2-5 business days</p>
                                             </div>
                                         </div>
                                     </div>
@@ -449,7 +449,7 @@ export default function PayoutsPage() {
                                         {[
                                             "Tenant makes payment via any channel",
                                             "Payment is confirmed and recorded",
-                                            "Xendit processes settlement (1-3 days)",
+                                            "Xendit processes settlement (1-5 days)",
                                             "Once settled, payout is initiated",
                                             "Funds are transferred to your account (₱10 fee applies)"
                                         ].map((step, i) => (
