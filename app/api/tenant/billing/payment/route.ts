@@ -64,15 +64,14 @@ function formatBillingPeriod(date: string | Date) {
 /* POST: CREATE INVOICE                                                       */
 /* -------------------------------------------------------------------------- */
 
-/* -------------------------------------------------------------------------- */
-/* PAYMENT INIT (PLATFORM ONLY - NO SUBACCOUNT)                               */
-/* -------------------------------------------------------------------------- */
-
 export async function POST(req: NextRequest) {
     let conn: mysql.Connection | null = null;
 
     try {
+        debug("REQUEST RECEIVED");
+
         const body = await req.json();
+        debug("REQUEST BODY", body);
 
         const {
             amount,
@@ -83,6 +82,8 @@ export async function POST(req: NextRequest) {
             lastName,
             emailAddress,
         } = body;
+
+        /* ---------------- VALIDATION ---------------- */
 
         if (!amount || !billing_id || !tenant_id) {
             return httpError(400, "Missing required fields.");
@@ -96,29 +97,41 @@ export async function POST(req: NextRequest) {
             return httpError(500, "Xendit secret key not configured.");
         }
 
+        /* ---------------- DATABASE ---------------- */
+
         conn = await getDbConnection();
 
         const [rows]: any = await conn.execute(
             `
-            SELECT
-                b.billing_id,
-                b.lease_id AS agreement_id,
-                b.billing_period,
-                b.total_amount_due,
-                u.unit_name,
-                p.property_name,
-                l.landlord_id,
-                l.xendit_account_id
-            FROM Billing b
-            JOIN LeaseAgreement la ON b.lease_id = la.agreement_id
-            JOIN Unit u ON la.unit_id = u.unit_id
-            JOIN Property p ON u.property_id = p.property_id
-            JOIN Landlord l ON p.landlord_id = l.landlord_id
-            WHERE b.billing_id = ?
-            LIMIT 1
-            `,
+        SELECT
+            b.billing_id,
+            b.lease_id AS agreement_id,
+            b.billing_period,
+            b.total_amount_due,
+            u.unit_name,
+            p.property_name,
+            l.landlord_id,
+            l.xendit_account_id,
+            s.plan_code,
+            s.is_active,
+            pl.split_rule_id
+        FROM Billing b
+        JOIN LeaseAgreement la ON b.lease_id = la.agreement_id
+        JOIN Unit u ON la.unit_id = u.unit_id
+        JOIN Property p ON u.property_id = p.property_id
+        JOIN Landlord l ON p.landlord_id = l.landlord_id
+        LEFT JOIN Subscription s 
+            ON s.landlord_id = l.landlord_id 
+            AND s.is_active = 1
+        LEFT JOIN Plan pl 
+            ON pl.plan_code = s.plan_code
+        WHERE b.billing_id = ?
+        LIMIT 1
+      `,
             [billing_id]
         );
+
+        debug("BILLING QUERY RESULT", rows);
 
         if (!rows.length) {
             return httpError(404, "Billing not found.");
@@ -126,7 +139,11 @@ export async function POST(req: NextRequest) {
 
         const billing = rows[0];
 
-        /* ---------------- CUSTOMER (PLATFORM ONLY) ---------------- */
+        if (!billing.xendit_account_id) {
+            return httpError(400, "Landlord subaccount not configured.");
+        }
+
+        /* ---------------- CUSTOMER ---------------- */
 
         const [tenantRows]: any = await conn.execute(
             `SELECT xendit_customer_id FROM Tenant WHERE tenant_id = ? LIMIT 1`,
@@ -136,6 +153,8 @@ export async function POST(req: NextRequest) {
         let xenditCustomerId = tenantRows?.[0]?.xendit_customer_id ?? null;
 
         if (!xenditCustomerId) {
+            debug("CREATING XENDIT CUSTOMER");
+
             xenditCustomerId = await createXenditCustomer({
                 referenceId: `tenant-${tenant_id}`,
                 firstName,
@@ -157,6 +176,8 @@ export async function POST(req: NextRequest) {
             .update(`billing-${billing.billing_id}`)
             .digest("hex");
 
+        debug("IDEMPOTENCY KEY", idempotencyKey);
+
         /* ---------------- REDIRECTS ---------------- */
 
         const successRedirectUrl =
@@ -165,12 +186,13 @@ export async function POST(req: NextRequest) {
         const failureRedirectUrl =
             `${redirectUrl.failure}?billing_id=${billing.billing_id}`;
 
-        /* ---------------- INVOICE ---------------- */
+
+        /* ---------------- PAYLOAD ---------------- */
 
         const invoicePayload = {
             external_id: `billing-${billing.billing_id}`,
             amount: Number(amount),
-            currency: "PHP",
+            currency: CURRENCY,
             description: `Billing for ${billing.property_name} - ${billing.unit_name}
 Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
             customer: {
@@ -180,35 +202,71 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
             failure_redirect_url: failureRedirectUrl,
         };
 
-        const headers = {
+        /* ---------------- HEADERS ---------------- */
+
+        const headers: Record<string, string> = {
             "Content-Type": "application/json",
             Authorization:
                 "Basic " +
                 Buffer.from(`${XENDIT_SECRET_KEY}:`).toString("base64"),
             "Idempotency-Key": idempotencyKey,
+
+            // 🔥 ALWAYS SEND TO SUBACCOUNT
+            "for-user-id": billing.xendit_account_id,
         };
 
-        const response = await fetch("https://api.xendit.co/v2/invoices", {
+        // 🔥 APPLY SPLIT RULE ONLY IF EXISTS
+        if (billing.split_rule_id) {
+            debug("SPLIT RULE DETECTED", billing.split_rule_id);
+            headers["with-split-rule"] = billing.split_rule_id;
+        } else {
+            debug("NO SPLIT RULE — 100% TO LANDLORD");
+        }
+
+        /* ---------------- CALL XENDIT ---------------- */
+
+        const response = await fetch(XENDIT_API_URL, {
             method: "POST",
             headers,
             body: JSON.stringify(invoicePayload),
         });
 
-        const data = await response.json();
+        const rawText = await response.text();
+
+        let responseData: any;
+        try {
+            responseData = JSON.parse(rawText);
+        } catch {
+            responseData = rawText;
+        }
+
+        debug("XENDIT RESPONSE STATUS", response.status);
+        debug("XENDIT RESPONSE BODY", responseData);
 
         if (!response.ok) {
-            return httpError(response.status, "Invoice creation failed", data);
+            return httpError(
+                response.status,
+                "Xendit invoice creation failed.",
+                responseData
+            );
         }
+
+        debug("INVOICE CREATED SUCCESSFULLY");
 
         return NextResponse.json({
             success: true,
-            checkoutUrl: data.invoice_url,
-            invoiceId: data.id,
+            checkoutUrl: responseData.invoice_url,
+            invoiceId: responseData.id,
+            billing_id: billing.billing_id,
+            agreement_id: billing.agreement_id,
         });
 
     } catch (err: any) {
+        debug("FATAL ERROR", err?.stack || err?.message);
+
         return httpError(500, "Payment initialization failed.", err?.message);
     } finally {
         if (conn) await conn.end().catch(() => {});
+        debug("REQUEST COMPLETED");
     }
 }
